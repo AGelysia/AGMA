@@ -576,12 +576,14 @@ run_offline_lifecycle_case() {
   printf 'paper-smoke case=offline-lifecycle result=passed\n'
 }
 
+for program in curl find mv node npm rg sha256sum ss tail wc; do
+  command -v "$program" >/dev/null 2>&1 \
+    || { printf 'Paper smoke requires %s\n' "$program" >&2; exit 1; }
+done
 if ! command -v "$JAVA_BIN" >/dev/null 2>&1; then
   printf 'Java executable not found: %s\n' "$JAVA_BIN" >&2
   exit 1
 fi
-command -v ss >/dev/null 2>&1 \
-  || { printf 'Paper smoke requires ss to verify loopback confinement\n' >&2; exit 1; }
 validate_selected_cases
 [[ ! -e "$CACHE_ROOT" || -d "$CACHE_ROOT" && ! -L "$CACHE_ROOT" ]] \
   || { printf 'Paper smoke cache path must be a real directory\n' >&2; exit 1; }

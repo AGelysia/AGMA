@@ -42,7 +42,7 @@ if [[ -n "$EVIDENCE_DIR" ]]; then
   TEST_RESULTS="$EVIDENCE_DIR/test-results"
 fi
 
-for program in git java node npm sha256sum; do
+for program in cmp curl find git java node npm realpath rg sha256sum ss unzip xargs; do
   command -v "$program" >/dev/null 2>&1 || fail "required program was not found: $program"
 done
 JAVA_SPECIFICATION="$(java -XshowSettings:properties -version 2>&1 \

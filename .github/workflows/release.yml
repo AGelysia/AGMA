@@ -30,6 +30,10 @@ jobs:
           cache: npm
           cache-dependency-path: agent-runtime/package-lock.json
       - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+      - name: Install release tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends ripgrep
       - name: Verify tag
         shell: bash
         run: |
