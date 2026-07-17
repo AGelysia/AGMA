@@ -23,5 +23,12 @@ fi
 npm run build
 
 cd "$ROOT"
+./scripts/test-standalone-managed-runtime.sh
+./scripts/test-standalone-client-release.sh
 ./gradlew "${GRADLE_ARGS[@]}" :paper-plugin:build
 ./gradlew "${GRADLE_ARGS[@]}" :client-mod:build
+./gradlew "${GRADLE_ARGS[@]}" :standalone-client:core:build
+./gradlew "${GRADLE_ARGS[@]}" :standalone-client:runtime-supervisor-core:build
+./gradlew "${GRADLE_ARGS[@]}" :standalone-client:fabric-common:build
+./gradlew "${GRADLE_ARGS[@]}" :standalone-client:fabric-mc12111:build
+./gradlew "${GRADLE_ARGS[@]}" :standalone-client:fabric-mc1182:build

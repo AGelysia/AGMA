@@ -1,6 +1,14 @@
 import { randomUUID } from "node:crypto";
 
 import type { RuntimeConfig } from "../config/runtime-config.js";
+import {
+  containsSensitiveExactClaim,
+  hasApplicableConflictFreeEvidence,
+  renderUntrustedEvidenceChannel,
+  type EvidenceClaim,
+} from "../evidence/evidence-normalizer.js";
+import type { WebAuthorization, WebSearchContext } from "../evidence/search-provider.js";
+import type { WebEvidenceCollector } from "../evidence/web-evidence-pipeline.js";
 import { type ModuleId, ModuleRegistry } from "../modules/module-manifest.js";
 import {
   ModelGenerationError,
@@ -27,7 +35,7 @@ import type {
   ToolExecutionResult,
   ToolResultPayload,
 } from "../tools/tool-types.js";
-import type { UsageAccounting } from "../usage/usage-accounting.js";
+import type { ProviderUsageRecordResult, UsageAccounting } from "../usage/usage-accounting.js";
 import { RequestAdmissionController, type RequestAdmissionRejection } from "./request-admission.js";
 import {
   createAuthoritativeRecipePresentation,
@@ -179,6 +187,23 @@ export interface AgentRequestInput {
   readonly sessionId: string | null;
   readonly module: ModuleId;
   readonly message: string;
+  readonly localContext?: {
+    readonly minecraftVersion: string;
+    readonly catalogGenerationId: string;
+    readonly target: {
+      readonly id: string;
+      readonly displayName?: string;
+      readonly modId?: string;
+      readonly modVersion?: string;
+    };
+  };
+  readonly webAuthorization?: WebAuthorization;
+  readonly webContext?: WebSearchContext;
+  readonly inventoryAuthorization?: {
+    readonly authorizationId: string;
+    readonly generationId: string;
+    readonly resourceIds: readonly string[];
+  };
 }
 
 export interface AgentCompletionPayload {
@@ -186,6 +211,24 @@ export interface AgentCompletionPayload {
   readonly playerUuid: string;
   readonly fallbackText: string;
   readonly structuredViews: readonly AgentStructuredView[];
+  readonly costMicroUsd?: number;
+  readonly costKind?: "reported" | "estimated" | "mixed";
+  readonly sources?: readonly AgentCompletionSource[];
+}
+
+export interface AgentCompletionSource {
+  readonly claimId: string;
+  readonly title: string;
+  readonly url: string;
+  readonly publisher: string;
+  readonly retrievedAt: string;
+  readonly applicability: {
+    readonly minecraftVersion: string;
+    readonly modVersions: Readonly<Record<string, string>>;
+    readonly modpackVersion: string | null;
+    readonly match: "match" | "mismatch" | "unknown";
+  };
+  readonly warnings: readonly string[];
 }
 
 export interface StructuredTextView {
@@ -260,6 +303,8 @@ export type SessionResumeResponse =
   | { readonly type: "session.resumed"; readonly payload: SessionResumedPayload }
   | { readonly type: "agent.error"; readonly payload: AgentErrorPayload };
 
+export type RequestAudience = "paper" | "client";
+
 export interface AgentRequestServiceOptions {
   readonly provider: ModelProvider;
   readonly config: RuntimeConfig;
@@ -271,6 +316,8 @@ export interface AgentRequestServiceOptions {
   readonly tools: ToolRegistry;
   readonly localTools?: LocalToolExecution;
   readonly usage?: UsageAccounting;
+  readonly audience?: RequestAudience;
+  readonly webEvidence?: WebEvidenceCollector;
 }
 
 interface PendingToolCall {
@@ -294,8 +341,31 @@ interface RequestRecord {
   executionSessionId: string | null;
   createsSession: boolean;
   pendingTool: PendingToolCall | undefined;
+  clientGenerationId: string | undefined;
   usageAdmitted: boolean;
   readonly issuedToolCallIds: Set<string>;
+  inventoryAuthorizationUsed: boolean;
+  providerCostMicroUsd: number;
+  readonly providerUsageKinds: Set<ProviderUsageRecordResult["usageKind"]>;
+}
+
+function recordProviderCost(
+  record: Pick<RequestRecord, "providerCostMicroUsd" | "providerUsageKinds">,
+  usage: ProviderUsageRecordResult,
+): void {
+  const total = record.providerCostMicroUsd + usage.costMicroUsd;
+  if (!Number.isSafeInteger(total) || total < 0) {
+    throw new Error("Provider request cost exceeds its bounded total.");
+  }
+  record.providerCostMicroUsd = total;
+  record.providerUsageKinds.add(usage.usageKind);
+}
+
+function providerCostKind(
+  usageKinds: ReadonlySet<ProviderUsageRecordResult["usageKind"]>,
+): "reported" | "estimated" | "mixed" {
+  if (usageKinds.has("REPORTED") && usageKinds.has("ESTIMATED")) return "mixed";
+  return usageKinds.has("REPORTED") ? "reported" : "estimated";
 }
 
 class ToolLoopError extends Error {
@@ -334,13 +404,16 @@ function limitedError(
   };
 }
 
-function budgetError(playerUuid: string): AgentTerminalResponse {
+function budgetError(playerUuid: string, audience: RequestAudience): AgentTerminalResponse {
   return {
     type: "agent.error",
     payload: {
       playerUuid,
       code: "BUDGET_EXCEEDED",
-      fallbackText: "The monthly AI budget has been reached. Ask an administrator to review it.",
+      fallbackText:
+        audience === "client"
+          ? "The monthly AI budget has been reached. Review the standalone client budget settings."
+          : "The monthly AI budget has been reached. Ask an administrator to review it.",
       retryable: false,
     },
   };
@@ -349,6 +422,7 @@ function budgetError(playerUuid: string): AgentTerminalResponse {
 function providerError(
   playerUuid: string,
   code: ModelGenerationFailureCode,
+  audience: RequestAudience,
 ): AgentTerminalResponse {
   switch (code) {
     case "MODEL_AUTHENTICATION_FAILED":
@@ -357,7 +431,10 @@ function providerError(
         payload: {
           playerUuid,
           code: "MODEL_AUTHENTICATION_FAILED",
-          fallbackText: "The AI model is unavailable. Ask an administrator to check it.",
+          fallbackText:
+            audience === "client"
+              ? "Model authentication failed. Review the standalone client Provider settings."
+              : "The AI model is unavailable. Ask an administrator to check it.",
           retryable: false,
         },
       };
@@ -427,6 +504,7 @@ function isUsableFallbackText(value: unknown): value is string {
 function sessionError(
   playerUuid: string,
   code: "SESSION_NOT_FOUND" | "CONVERSATION_STORAGE_DISABLED",
+  audience: RequestAudience,
 ): { readonly type: "agent.error"; readonly payload: AgentErrorPayload } {
   return {
     type: "agent.error",
@@ -436,7 +514,9 @@ function sessionError(
       fallbackText:
         code === "SESSION_NOT_FOUND"
           ? "That conversation is not available."
-          : "Conversation history is disabled on this server.",
+          : audience === "client"
+            ? "Conversation history is disabled in the standalone client."
+            : "Conversation history is disabled on this server.",
       retryable: false,
     },
   };
@@ -460,6 +540,7 @@ function internalError(playerUuid: string): {
 function toolLoopError(
   playerUuid: string,
   code: "TOOL_REJECTED" | "TOOL_ROUND_LIMIT",
+  audience: RequestAudience,
 ): { readonly type: "agent.error"; readonly payload: AgentErrorPayload } {
   return {
     type: "agent.error",
@@ -468,8 +549,12 @@ function toolLoopError(
       code,
       fallbackText:
         code === "TOOL_REJECTED"
-          ? "The requested server lookup was not allowed."
-          : "The AI used too many server lookups. Try a more specific question.",
+          ? audience === "client"
+            ? "The requested local capability was not allowed."
+            : "The requested server lookup was not allowed."
+          : audience === "client"
+            ? "The AI used too many local lookups. Try a more specific question."
+            : "The AI used too many server lookups. Try a more specific question.",
       retryable: code === "TOOL_ROUND_LIMIT",
     },
   };
@@ -487,6 +572,8 @@ export class AgentRequestService {
   readonly #tools: ToolRegistry;
   readonly #localTools: LocalToolExecution;
   readonly #usage: UsageAccounting | undefined;
+  readonly #audience: RequestAudience;
+  readonly #webEvidence: WebEvidenceCollector | undefined;
   readonly #requests = new Map<string, RequestRecord>();
   readonly #runs = new Set<Promise<void>>();
   #closed = false;
@@ -507,6 +594,8 @@ export class AgentRequestService {
     this.#tools = options.tools;
     this.#localTools = options.localTools ?? new UnavailableLocalToolExecutor();
     this.#usage = options.usage;
+    this.#audience = options.audience ?? "paper";
+    this.#webEvidence = options.webEvidence;
     this.#timeoutMilliseconds = timeoutMilliseconds;
     this.#admission = new RequestAdmissionController(
       {
@@ -558,7 +647,7 @@ export class AgentRequestService {
           this.#safeRespond(
             respond,
             usageDecision.reason === "MONTHLY_BUDGET_EXCEEDED"
-              ? budgetError(input.playerUuid)
+              ? budgetError(input.playerUuid, this.#audience)
               : limitedError(input.playerUuid, "PLAYER_DAILY_LIMIT"),
           );
           return;
@@ -583,8 +672,12 @@ export class AgentRequestService {
       executionSessionId: null,
       createsSession: false,
       pendingTool: undefined,
+      clientGenerationId: undefined,
       usageAdmitted,
       issuedToolCallIds: new Set(),
+      inventoryAuthorizationUsed: false,
+      providerCostMicroUsd: 0,
+      providerUsageKinds: new Set(),
     };
     this.#requests.set(input.requestId, record);
     const decision = this.#admission.admit({
@@ -669,12 +762,21 @@ export class AgentRequestService {
     if (payload.status === "succeeded") {
       return this.#tools.validateResult(descriptor, payload);
     }
-    if (payload.result !== null || payload.error === null || payload.trust !== "authoritative") {
+    if (
+      payload.result !== null ||
+      payload.error === null ||
+      !/^[A-Z][A-Z0-9_]{0,63}$/u.test(payload.error.code) ||
+      payload.error.message.length < 1 ||
+      payload.error.message.length > 1024
+    ) {
       return false;
     }
-    return payload.status === "rejected"
-      ? payload.source === "paper_policy"
-      : payload.source === descriptor.source;
+    if (payload.status === "rejected") {
+      return descriptor.execution === "connector_remote"
+        ? payload.source === "client_policy" && payload.trust === "client_visible"
+        : payload.source === "paper_policy" && payload.trust === "authoritative";
+    }
+    return payload.source === descriptor.source && payload.trust === descriptor.trust;
   }
 
   public resume(
@@ -686,7 +788,10 @@ export class AgentRequestService {
       return;
     }
     if (!this.#conversations.enabled) {
-      this.#safeRespond(respond, sessionError(input.playerUuid, "CONVERSATION_STORAGE_DISABLED"));
+      this.#safeRespond(
+        respond,
+        sessionError(input.playerUuid, "CONVERSATION_STORAGE_DISABLED", this.#audience),
+      );
       return;
     }
     try {
@@ -698,7 +803,7 @@ export class AgentRequestService {
       this.#safeRespond(
         respond,
         session === undefined
-          ? sessionError(input.playerUuid, "SESSION_NOT_FOUND")
+          ? sessionError(input.playerUuid, "SESSION_NOT_FOUND", this.#audience)
           : {
               type: "session.resumed",
               payload: { playerUuid: input.playerUuid, sessionId: session.id },
@@ -749,13 +854,13 @@ export class AgentRequestService {
         this.#safeRespond(
           record.respond,
           error instanceof ModelGenerationError
-            ? providerError(record.input.playerUuid, error.code)
+            ? providerError(record.input.playerUuid, error.code, this.#audience)
             : error instanceof ConversationOwnershipError
-              ? sessionError(record.input.playerUuid, "SESSION_NOT_FOUND")
+              ? sessionError(record.input.playerUuid, "SESSION_NOT_FOUND", this.#audience)
               : error instanceof ToolLoopError
-                ? toolLoopError(record.input.playerUuid, error.code)
+                ? toolLoopError(record.input.playerUuid, error.code, this.#audience)
                 : error instanceof UsageBudgetError
-                  ? budgetError(record.input.playerUuid)
+                  ? budgetError(record.input.playerUuid, this.#audience)
                   : internalError(record.input.playerUuid),
         );
       })
@@ -773,12 +878,35 @@ export class AgentRequestService {
   async #run(record: RequestRecord): Promise<void> {
     const manifest = this.#modules.get(record.input.module);
     const history = this.#prepareConversation(record);
-    const input = buildContextWindow(history, record.input.message, {
+    let evidenceClaims: readonly EvidenceClaim[] = [];
+    const authorization = record.input.webAuthorization ?? "off";
+    let evidenceChannel = "";
+    if (this.#audience === "client" && this.#webEvidence !== undefined) {
+      const evidence = await this.#webEvidence.collect({
+        authorization,
+        question: record.input.message,
+        ...(record.input.webContext === undefined ? {} : { context: record.input.webContext }),
+        signal: record.controller.signal,
+      });
+      evidenceClaims = evidence.claims;
+      evidenceChannel = renderUntrustedEvidenceChannel(evidence.claims);
+    }
+    const modelMessage =
+      evidenceChannel.length === 0
+        ? record.input.message
+        : `${record.input.message}\n\n${evidenceChannel}`;
+    const input = buildContextWindow(history, modelMessage, {
       maximumMessages: this.#config.limits.maxContextMessages,
       maximumCharacters: this.#config.limits.maxContextCharacters,
     });
-    const allowedTools = this.#tools.forAllowlist(manifest.toolAllowlist);
+    const allowedTools =
+      evidenceChannel.length === 0 ? this.#tools.forAllowlist(manifest.toolAllowlist) : [];
     const allowedToolIds = new Set(allowedTools.map((tool) => tool.id));
+    const inventoryAuthorization = record.input.inventoryAuthorization;
+    const instructions =
+      inventoryAuthorization === undefined
+        ? manifest.instructions
+        : `${manifest.instructions}\nTrusted single-use inventory authorization: call game_inventory_snapshot at most once, using exactly authorizationId=${inventoryAuthorization.authorizationId}, generationId=${inventoryAuthorization.generationId}, and resourceIds=${JSON.stringify(inventoryAuthorization.resourceIds)}. Do not reveal the authorization ID.`;
     let sequence = 0;
     let continuation: ModelGenerationContinuation | undefined;
     let toolOutput: ModelToolOutput | undefined;
@@ -824,7 +952,7 @@ export class AgentRequestService {
           provider: this.#config.model.provider,
           model: this.#config.model.model,
           apiKey: this.#config.model.apiKey,
-          instructions: manifest.instructions,
+          instructions,
           input,
           tools: toolsAvailable ? allowedTools : [],
           ...(continuation === undefined ? {} : { continuation }),
@@ -866,7 +994,7 @@ export class AgentRequestService {
         throw error;
       }
       if (this.#usage !== undefined) {
-        this.#usageOperation(() =>
+        const usage = this.#usageOperation(() =>
           this.#usage?.recordProviderUsage({
             requestId: record.input.requestId,
             playerUuid: record.input.playerUuid,
@@ -875,6 +1003,9 @@ export class AgentRequestService {
             ...(result.usage === undefined ? {} : { usage: result.usage }),
           }),
         );
+        if (usage !== undefined) recordProviderCost(record, usage);
+      } else if (this.#audience === "client") {
+        record.providerUsageKinds.add(result.usage === undefined ? "ESTIMATED" : "REPORTED");
       }
       if (result.type === "final") {
         if (authoritativeRecipe !== undefined) {
@@ -887,13 +1018,19 @@ export class AgentRequestService {
             "Paper could not produce a server-validated build preview. No blocks were changed.",
           );
         } else {
+          const fallbackText =
+            authorization !== "off" &&
+            containsSensitiveExactClaim(result.fallbackText) &&
+            !hasApplicableConflictFreeEvidence(evidenceClaims)
+              ? "I could not verify an exact drop rate, coordinate, or version conclusion from applicable conflict-free web evidence."
+              : result.fallbackText;
           this.#complete(
             record,
             recipeToolAttempted
               ? unavailableRecipeFallback()
               : record.input.module === "recipe"
                 ? uncheckedRecipeFallback()
-                : result.fallbackText,
+                : fallbackText,
           );
         }
         return;
@@ -908,6 +1045,30 @@ export class AgentRequestService {
         !this.#tools.validateArguments(descriptor, result.arguments)
       ) {
         throw new ToolLoopError("TOOL_REJECTED");
+      }
+      if (descriptor.execution === "connector_remote") {
+        const requestedGeneration = result.arguments["generationId"];
+        if (
+          record.clientGenerationId !== undefined &&
+          requestedGeneration !== undefined &&
+          requestedGeneration !== record.clientGenerationId
+        ) {
+          throw new ToolLoopError("TOOL_REJECTED");
+        }
+      }
+      if (descriptor.id === "game.inventory.snapshot") {
+        const authorization = record.input.inventoryAuthorization;
+        if (
+          authorization === undefined ||
+          record.inventoryAuthorizationUsed ||
+          result.arguments["authorizationId"] !== authorization.authorizationId ||
+          result.arguments["generationId"] !== authorization.generationId ||
+          JSON.stringify(result.arguments["resourceIds"]) !==
+            JSON.stringify(authorization.resourceIds)
+        ) {
+          throw new ToolLoopError("TOOL_REJECTED");
+        }
+        record.inventoryAuthorizationUsed = true;
       }
       if (
         descriptor.id === "build.preview.create" &&
@@ -961,6 +1122,22 @@ export class AgentRequestService {
           sequence,
         };
         toolResult = await this.#awaitToolResult(record, descriptor, payload);
+      }
+      if (descriptor.execution === "connector_remote" && toolResult.status === "succeeded") {
+        const generationId = toolResult.result?.["generationId"];
+        if (
+          typeof generationId !== "string" ||
+          (record.clientGenerationId !== undefined && generationId !== record.clientGenerationId)
+        ) {
+          throw new ToolLoopError("TOOL_REJECTED");
+        }
+        record.clientGenerationId = generationId;
+        if (
+          descriptor.id === "game.inventory.snapshot" &&
+          toolResult.result?.["authorizationId"] !== result.arguments["authorizationId"]
+        ) {
+          throw new ToolLoopError("TOOL_REJECTED");
+        }
       }
       if (toolResult.status === "rejected") {
         throw new ToolLoopError("TOOL_REJECTED");
@@ -1049,6 +1226,12 @@ export class AgentRequestService {
         playerUuid: record.input.playerUuid,
         fallbackText,
         structuredViews,
+        ...(this.#audience === "client"
+          ? {
+              costMicroUsd: record.providerCostMicroUsd,
+              costKind: providerCostKind(record.providerUsageKinds),
+            }
+          : {}),
       },
     });
   }

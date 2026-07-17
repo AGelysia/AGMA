@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1.0",
+  "scenario": "no_viewer",
+  "minecraftVersion": "1.21.11",
+  "installedViewers": [],
+  "adapterStates": [
+    {
+      "viewer": "jei",
+      "version": null,
+      "artifactKind": "none",
+      "status": "not_installed"
+    },
+    {
+      "viewer": "emi",
+      "version": null,
+      "artifactKind": "none",
+      "status": "not_installed"
+    }
+  ],
+  "selectedSource": "vanilla_client",
+  "catalog": {
+    "generationId": "Fixture-no-viewer",
+    "resources": [],
+    "processes": []
+  },
+  "expected": {
+    "startup": "ready",
+    "fallbackAvailable": true,
+    "duplicateProcesses": false
+  }
+}

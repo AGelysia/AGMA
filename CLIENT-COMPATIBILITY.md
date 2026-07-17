@@ -1,7 +1,33 @@
-# AGMA 0.1.0 Client Compatibility
+# AGMA Client Compatibility
 
 AGMA client support is deliberately narrow. The server always provides a private text fallback, so
 the Fabric client and projection mods are optional.
+
+## Standalone Client 0.2.0
+
+The standalone product is independent of the 0.1.0 Paper/server companion. Install exactly one JAR
+matching the Minecraft and operating-system row:
+
+| Component | Minecraft 1.21.11 | Minecraft 1.18.2 |
+| --- | --- | --- |
+| AGMA standalone | 0.2.0 | 0.2.0 |
+| Java | 21+ | 17+ |
+| Fabric Loader | 0.19.3 | 0.19.3 |
+| Fabric API | 0.141.5+1.21.11 | 0.77.0+1.18.2 |
+| JEI, optional | 27.17.0.50 | 10.2.1.1010 |
+| EMI, optional | unavailable; no older substitution | 0.7.3+1.18.2 hover context only; recipe enumeration fails closed |
+| Embedded Runtime | Node.js 22.23.1, Linux or Windows x86_64 | Node.js 22.23.1, Linux or Windows x86_64 |
+
+Without JEI, the client uses its vanilla registry and recipe fallback. On 1.18.2, complete item-only
+JEI recipes are plannable; recipes with unsupported custom ingredients or ambiguous roles remain
+display-only. Missing, renamed, forked, or mismatched viewers do not prevent the base standalone JAR
+from starting.
+
+The standalone catalog contains only data visible to the client. Multiplayer recipe and process
+coverage can be partial. Opaque inputs, server-only conditions, cycles, and bounded-planner limits
+are shown as unresolved instead of being inferred by the model.
+
+## Server Companion 0.1.0
 
 ## Supported Matrix
 

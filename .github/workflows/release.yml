@@ -1,4 +1,4 @@
-name: Release
+name: Compatibility Release
 
 on:
   push:
@@ -9,11 +9,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: compatibility-release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
@@ -39,8 +39,25 @@ jobs:
         run: |
           version="$(node -p "require('./agent-runtime/package.json').version")"
           [[ "$GITHUB_REF_NAME" == "v$version" ]]
-      - name: Build and verify release
+      - name: Build and verify compatibility release
         run: ./scripts/release-check.sh
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: compatibility-release-${{ github.sha }}
+          path: release/
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: compatibility-release-${{ github.sha }}
+          path: release
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}

@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/game-inventory-snapshot-result.schema.json",
+  "title": "AGMA Client Inventory Snapshot Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "generationId",
+    "authorizationId",
+    "entries",
+    "truncated",
+    "warnings"
+  ],
+  "properties": {
+    "generationId": {
+      "$ref": "client-tool-common.schema.json#/$defs/generationId"
+    },
+    "authorizationId": { "type": "string", "format": "uuid" },
+    "entries": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["resourceId", "componentsFingerprint", "count"],
+        "properties": {
+          "resourceId": {
+            "$ref": "../resource-ref.schema.json#/$defs/namespacedId"
+          },
+          "componentsFingerprint": {
+            "oneOf": [
+              { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+              { "type": "null" }
+            ]
+          },
+          "count": { "type": "number", "minimum": 0, "maximum": 1000000000 }
+        }
+      }
+    },
+    "truncated": { "type": "boolean" },
+    "warnings": {
+      "type": "array",
+      "maxItems": 32,
+      "items": { "$ref": "client-tool-common.schema.json#/$defs/warning" }
+    }
+  }
+}

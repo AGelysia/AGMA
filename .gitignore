@@ -21,6 +21,7 @@ run/
 agent-runtime/node_modules/
 agent-runtime/coverage/
 agent-runtime/dist/
+agent-runtime/dist-standalone/
 
 # Release output
 dist/

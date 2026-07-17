@@ -1,0 +1,48 @@
+{
+  "unknownToolResult": {
+    "requestId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    "toolCallId": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    "subjectId": "11111111-1111-4111-8111-111111111111",
+    "tool": "paper.command",
+    "sequence": 0,
+    "result": {}
+  },
+  "oversizedToolCall": {
+    "requestId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    "toolCallId": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    "subjectId": "11111111-1111-4111-8111-111111111111",
+    "tool": "game.resource.search",
+    "sequence": 0,
+    "arguments": {
+      "a": 1,
+      "b": 2,
+      "c": 3,
+      "d": 4,
+      "e": 5,
+      "f": 6,
+      "g": 7,
+      "h": 8,
+      "i": 9
+    }
+  },
+  "unboundedError": {
+    "requestId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    "toolCallId": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    "subjectId": "11111111-1111-4111-8111-111111111111",
+    "tool": "game.resource.search",
+    "sequence": 0,
+    "status": "failed",
+    "code": "not-canonical",
+    "message": "bad",
+    "retryable": false
+  },
+  "arbitraryWebUrl": {
+    "sessionId": null,
+    "message": "Fetch this URL",
+    "webAuthorization": "once",
+    "webContext": {
+      "minecraftVersion": "1.21.11",
+      "url": "https://attacker.invalid/metadata"
+    }
+  }
+}

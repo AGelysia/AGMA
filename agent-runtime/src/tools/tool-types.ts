@@ -14,7 +14,16 @@ export const coreToolIds = [
   "project.update",
 ] as const;
 
-export type CoreToolId = (typeof coreToolIds)[number];
+export const clientToolIds = [
+  "game.resource.search",
+  "game.process.lookup",
+  "game.process.uses",
+  "game.process.plan",
+  "game.inventory.snapshot",
+] as const;
+
+export type ClientToolId = (typeof clientToolIds)[number];
+export type CoreToolId = (typeof coreToolIds)[number] | ClientToolId;
 
 export type ToolResultStatus = "succeeded" | "rejected" | "failed";
 export type ToolResultSource =
@@ -26,8 +35,17 @@ export type ToolResultSource =
   | "web_documentation"
   | "model_knowledge"
   | "capability"
-  | "runtime_storage";
-export type ToolResultTrust = "authoritative" | "verified" | "untrusted";
+  | "runtime_storage"
+  | "client_catalog"
+  | "client_context"
+  | "client_planner"
+  | "client_policy";
+export type ToolResultTrust =
+  | "authoritative"
+  | "verified"
+  | "untrusted"
+  | "client_visible"
+  | "deterministic";
 
 export interface ToolResultError {
   readonly code: string;

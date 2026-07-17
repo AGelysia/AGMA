@@ -2,9 +2,10 @@
 
 ## Supported Version
 
-Security fixes are provided for AGMA 0.1.0 on the exact supported Minecraft 1.21.11 server and
-client line. Modified artifacts, older Minecraft versions, and dependency combinations not listed
-in [CLIENT-COMPATIBILITY.md](CLIENT-COMPATIBILITY.md) are unsupported.
+Security fixes are provided for the AGMA 0.1.0 Minecraft 1.21.11 server line and the separately
+versioned AGMA Standalone Client 0.2.0 line for Minecraft 1.18.2 and 1.21.11. Modified artifacts and
+dependency combinations not listed in [CLIENT-COMPATIBILITY.md](CLIENT-COMPATIBILITY.md) are
+unsupported.
 
 Paper is the authoritative boundary. Model output, player input, custom provider responses, server
 documents, client payloads, optional mods, and client acknowledgements are all untrusted.
@@ -12,6 +13,11 @@ documents, client payloads, optional mods, and client acknowledgements are all u
 AGMA 0.1.0 has no shell, arbitrary command executor, automatic block placement, printer, generic
 world-write interface, or automatic loading of a generated projection. A valid protocol document or
 model tool call never grants a permission by itself.
+
+The standalone client likewise exposes no server payload channel, shell, arbitrary URL fetch tool,
+or world-write capability. Its managed Runtime binds to literal loopback, uses an authenticated
+connector, and accepts only closed client catalog tools. Local planner output is client-visible
+evidence, not multiplayer server authority.
 
 ## Report a Vulnerability
 
@@ -82,6 +88,13 @@ admission bound, not a provider billing cap.
 The client receives only bounded presentation data. It never receives the provider key or Runtime
 token. Client feature claims and UI actions do not authorize server actions.
 
+For the standalone client, provider and Brave Search keys remain in the local Minecraft instance.
+Web access is disabled by default and the game UI grants it for one request at a time. AGMA does not
+automatically collect account identity, UUID, server address, world seed, coordinates, chat history,
+full inventory, local paths, or keys for a web request. The question typed by the player is sent with
+bounded Minecraft, target, mod, and modpack context. Inventory authorization is single-use and
+returns normalized quantities for only a bounded dependency set.
+
 ## Projection Safety
 
 Build-preview integration is enabled only for the exact reviewed Minecraft 1.21.11, Fabric Loader
@@ -100,7 +113,8 @@ list, and removal each require an explicit player action. AGMA does not automati
 
 ## Release Integrity
 
-Download the named release assets and verify them with the published `SHA256SUMS`. Do not treat
+Download the named release assets and verify them with the published `SHA256SUMS`; the standalone
+release also publishes a CycloneDX SBOM covered by that checksum. Do not treat
 GitHub's automatically generated source archives as ready-to-run distributions. The integrated JAR
 contains a pinned offline Runtime and verifies it before installation; it does not download a
 `latest` executable at server startup.

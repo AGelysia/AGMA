@@ -90,11 +90,32 @@ const manifestById = new Map<ModuleId, ModuleManifest>(
 );
 
 export class ModuleRegistry {
+  readonly #profile: "paper" | "client";
+  readonly #clientGeneralManifest: ModuleManifest;
+
+  public constructor(
+    profile: "paper" | "client" = "paper",
+    allowedClientTools: readonly string[] = [],
+  ) {
+    this.#profile = profile;
+    this.#clientGeneralManifest = Object.freeze({
+      id: "general",
+      displayName: "General",
+      instructions:
+        "Answer the local player's Minecraft question as concise plain text. Client tool results describe only bounded client-visible local catalog or explicitly authorized context, never hidden multiplayer rules or server authority. Preserve ambiguous resource candidates and deterministic planner warnings. Do not claim access to commands, server-only facts, or world changes.",
+      toolAllowlist: Object.freeze([...allowedClientTools]),
+    });
+  }
+
   public list(): readonly ModuleManifest[] {
-    return manifests;
+    return this.#profile === "client" ? [this.#clientGeneralManifest] : manifests;
   }
 
   public get(id: ModuleId): ModuleManifest {
+    if (this.#profile === "client") {
+      if (id !== "general") throw new TypeError("Unknown client Agent module.");
+      return this.#clientGeneralManifest;
+    }
     const manifest = manifestById.get(id);
     if (manifest === undefined) {
       throw new TypeError("Unknown Agent module.");

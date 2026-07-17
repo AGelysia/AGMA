@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/evidence-claim.schema.json",
+  "title": "AGMA Standalone Evidence Claim",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "claimId",
+    "statement",
+    "sourceUrl",
+    "sourceTitle",
+    "publisher",
+    "retrievedAt",
+    "evidenceSpanSha256",
+    "applicability",
+    "sourceQuality",
+    "conflicts",
+    "warnings"
+  ],
+  "properties": {
+    "claimId": {
+      "$ref": "resource-ref.schema.json#/$defs/symbolicId"
+    },
+    "statement": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048
+    },
+    "sourceUrl": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 2048,
+      "pattern": "^https://[^@/#]+(?:[/:?][^#]*)?$"
+    },
+    "sourceTitle": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "publisher": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "retrievedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "evidenceSpanSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "applicability": {
+      "$ref": "#/$defs/applicability"
+    },
+    "sourceQuality": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "conflicts": {
+      "type": "array",
+      "maxItems": 32,
+      "items": { "type": "string", "minLength": 1, "maxLength": 1024 }
+    },
+    "warnings": {
+      "type": "array",
+      "maxItems": 32,
+      "items": { "type": "string", "minLength": 1, "maxLength": 1024 }
+    }
+  },
+  "$defs": {
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "applicability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minecraftVersion", "modVersions", "modpackVersion", "match"],
+      "properties": {
+        "minecraftVersion": { "$ref": "#/$defs/version" },
+        "modVersions": {
+          "type": "object",
+          "maxProperties": 64,
+          "propertyNames": { "$ref": "resource-ref.schema.json#/$defs/symbolicId" },
+          "additionalProperties": { "$ref": "#/$defs/version" }
+        },
+        "modpackVersion": {
+          "oneOf": [{ "$ref": "#/$defs/version" }, { "type": "null" }]
+        },
+        "match": {
+          "enum": ["match", "mismatch", "unknown"]
+        }
+      }
+    }
+  }
+}

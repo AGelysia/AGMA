@@ -1,0 +1,518 @@
+{
+  "schemaVersion": "1.0",
+  "minecraftVersion": "1.21.11",
+  "questions": [
+    {
+      "id": "exact-diamond-pickaxe-zh",
+      "category": "exact_id",
+      "locale": "zh_cn",
+      "question": "minecraft:diamond_pickaxe 的本地配方是什么？",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["exact-id-match", "local-process-source", "version-scope"]
+    },
+    {
+      "id": "exact-redstone-repeater-en",
+      "category": "exact_id",
+      "locale": "en_us",
+      "question": "Show the locally known recipe for minecraft:repeater.",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["exact-id-match", "local-process-source", "input-quantities"]
+    },
+    {
+      "id": "exact-water-bucket-zh",
+      "category": "exact_id",
+      "locale": "zh_cn",
+      "question": "本地目录中 minecraft:water_bucket 有哪些用途？",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["exact-id-match", "local-uses-lookup", "container-semantics"]
+    },
+    {
+      "id": "exact-ender-eye-en",
+      "category": "exact_id",
+      "locale": "en_us",
+      "question": "What processes in the current snapshot produce or use minecraft:ender_eye?",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["exact-id-match", "generation-id", "produce-and-use-results"]
+    },
+    {
+      "id": "exact-fixture-quantum-drill-zh",
+      "category": "exact_id",
+      "locale": "zh_cn",
+      "question": "查询 fixturetech:quantum_drill，并列出当前快照里确认的直接制作步骤。",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["exact-id-match", "fixture-resource", "direct-process", "source-completeness"]
+    },
+    {
+      "id": "exact-fixture-copper-gear-en",
+      "category": "exact_id",
+      "locale": "en_us",
+      "question": "Look up fixturetech:copper_gear without substituting a similarly named item.",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["exact-id-match", "no-name-substitution", "local-resource-metadata"]
+    },
+    {
+      "id": "fuzzy-diamond-pickaxe-zh",
+      "category": "fuzzy_name",
+      "locale": "zh_cn",
+      "question": "钻石镐怎么做？",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["unicode-normalization", "localized-name-match", "candidate-confidence", "resolved-resource-id"]
+    },
+    {
+      "id": "fuzzy-netherite-upgrade-en",
+      "category": "fuzzy_name",
+      "locale": "en_us",
+      "question": "How do I make the netherite upgrade template item?",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["tokenized-name-match", "resolved-resource-id", "local-process-source"]
+    },
+    {
+      "id": "fuzzy-quantum-miner-zh",
+      "category": "fuzzy_name",
+      "locale": "zh_cn",
+      "question": "我想做量子采掘机，先在本地物品里找到它。",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["localized-name-match", "mod-name-weight", "resolved-resource-id", "no-model-id-guess"]
+    },
+    {
+      "id": "fuzzy-iron-gear-en",
+      "category": "fuzzy_name",
+      "locale": "en_us",
+      "question": "Find the iron gear from Fixture Tech and show its recipe.",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["display-name-match", "mod-context-weight", "resolved-resource-id", "local-process-source"]
+    },
+    {
+      "id": "fuzzy-misspelled-observer-zh",
+      "category": "fuzzy_name",
+      "locale": "zh_cn",
+      "question": "观查者要哪些材料？",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["edit-distance-match", "localized-name-match", "resolved-resource-id", "confidence-score"]
+    },
+    {
+      "id": "fuzzy-crystal-growth-en",
+      "category": "fuzzy_name",
+      "locale": "en_us",
+      "question": "Search for the crystal growth thing from the storage mod.",
+      "expectedDisposition": "selection_required",
+      "requiredSignals": ["fuzzy-candidate-list", "low-confidence", "selection-prompt", "no-model-id-guess"]
+    },
+    {
+      "id": "ambiguity-wrench-zh",
+      "category": "ambiguity",
+      "locale": "zh_cn",
+      "question": "扳手怎么做？这个整合包里好几个模组都有扳手。",
+      "expectedDisposition": "selection_required",
+      "requiredSignals": ["multiple-candidates", "mod-id-per-candidate", "selection-prompt", "no-silent-choice"]
+    },
+    {
+      "id": "ambiguity-steel-ingot-en",
+      "category": "ambiguity",
+      "locale": "en_us",
+      "question": "How do I make steel ingots when several installed mods register one?",
+      "expectedDisposition": "selection_required",
+      "requiredSignals": ["multiple-candidates", "namespaced-ids", "source-mod-versions", "selection-prompt"]
+    },
+    {
+      "id": "ambiguity-dust-zh",
+      "category": "ambiguity",
+      "locale": "zh_cn",
+      "question": "帮我找“粉”，但不要替我猜是哪一种粉末。",
+      "expectedDisposition": "selection_required",
+      "requiredSignals": ["broad-query-detected", "ranked-candidates", "selection-prompt", "no-model-id-guess"]
+    },
+    {
+      "id": "ambiguity-copper-plate-en",
+      "category": "ambiguity",
+      "locale": "en_us",
+      "question": "I need a copper plate; ask me which mod's item to use if the IDs differ.",
+      "expectedDisposition": "selection_required",
+      "requiredSignals": ["multiple-candidates", "namespaced-ids", "confidence-gap", "selection-prompt"]
+    },
+    {
+      "id": "ambiguity-translated-core-zh",
+      "category": "ambiguity",
+      "locale": "zh_cn",
+      "question": "两个物品都翻译成“能量核心”，我说的是哪一个需要先让我确认。",
+      "expectedDisposition": "selection_required",
+      "requiredSignals": ["translation-collision", "candidate-display-metadata", "selection-prompt", "no-silent-choice"]
+    },
+    {
+      "id": "ambiguity-sword-en",
+      "category": "ambiguity",
+      "locale": "en_us",
+      "question": "Show me how to craft the sword.",
+      "expectedDisposition": "selection_required",
+      "requiredSignals": ["underspecified-target", "ranked-candidates", "selection-prompt", "no-silent-choice"]
+    },
+    {
+      "id": "alternatives-planks-zh",
+      "category": "alternatives",
+      "locale": "zh_cn",
+      "question": "箱子的配方能使用哪些木板替代项？不要把标签里的组合全部展开。",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["alternative-group", "tag-preserved", "and-or-structure", "bounded-expansion"]
+    },
+    {
+      "id": "alternatives-stone-tools-en",
+      "category": "alternatives",
+      "locale": "en_us",
+      "question": "Which locally accepted stone-like ingredients can make a stone pickaxe?",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["alternative-group", "local-tag-source", "resolved-target", "ingredient-role"]
+    },
+    {
+      "id": "alternatives-copper-cable-zh",
+      "category": "alternatives",
+      "locale": "zh_cn",
+      "question": "fixturetech:copper_cable 有压板和浇铸两条路线时，分别列出并说明差异。",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["multiple-processes", "route-separation", "machine-requirements", "input-quantities"]
+    },
+    {
+      "id": "alternatives-rubber-en",
+      "category": "alternatives",
+      "locale": "en_us",
+      "question": "Compare the locally known tree-tapping and chemical routes for fixturetech:rubber.",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["multiple-processes", "route-ranking-reasons", "machine-requirements", "local-source-only"]
+    },
+    {
+      "id": "alternatives-opaque-process-zh",
+      "category": "alternatives",
+      "locale": "zh_cn",
+      "question": "如果目标有一条可规划配方和一条查看器无法规范化的配方，应怎样展示？",
+      "expectedDisposition": "partial_answer",
+      "requiredSignals": ["plannable-route", "opaque-route", "unsupported-marker", "source-completeness"]
+    },
+    {
+      "id": "alternatives-many-tags-en",
+      "category": "alternatives",
+      "locale": "en_us",
+      "question": "Plan a recipe with several large ingredient tags without enumerating every combination.",
+      "expectedDisposition": "budget_limited",
+      "requiredSignals": ["tag-preserved", "bounded-expansion", "budget-report", "partial-plan"]
+    },
+    {
+      "id": "cycle-mutual-components-zh",
+      "category": "cycle",
+      "locale": "zh_cn",
+      "question": "fixturetest:alpha 需要 beta，而 beta 又需要 alpha；规划时请报告循环。",
+      "expectedDisposition": "partial_answer",
+      "requiredSignals": ["cycle-detected", "cycle-path", "unresolved-node", "no-infinite-recursion"]
+    },
+    {
+      "id": "cycle-container-return-en",
+      "category": "cycle",
+      "locale": "en_us",
+      "question": "Plan fixturetest:filled_cell when its reusable empty cell appears on both sides of the process.",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["reusable-container", "catalyst-semantics", "no-false-cycle", "net-quantity"]
+    },
+    {
+      "id": "cycle-recycling-loop-zh",
+      "category": "cycle",
+      "locale": "zh_cn",
+      "question": "回收路线会重新产出它自己的原料时，给出有界结果，不要无限计算。",
+      "expectedDisposition": "budget_limited",
+      "requiredSignals": ["cycle-detected", "bounded-search", "budget-report", "partial-plan"]
+    },
+    {
+      "id": "cycle-machine-bootstrap-en",
+      "category": "cycle",
+      "locale": "en_us",
+      "question": "The machine needed for a component also requires that component; identify the bootstrap cycle.",
+      "expectedDisposition": "partial_answer",
+      "requiredSignals": ["prerequisite-cycle", "machine-requirement", "unresolved-node", "cycle-path"]
+    },
+    {
+      "id": "cycle-deep-graph-zh",
+      "category": "cycle",
+      "locale": "zh_cn",
+      "question": "在包含长链和回边的大型工艺图中规划 fixturetest:deep_target。",
+      "expectedDisposition": "budget_limited",
+      "requiredSignals": ["node-budget", "depth-budget", "cycle-detected", "partial-plan", "budget-report"]
+    },
+    {
+      "id": "quantity-torches-zh",
+      "category": "quantity",
+      "locale": "zh_cn",
+      "question": "制作 37 个火把总共需要多少煤炭和木棍？",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["target-quantity", "batch-rounding", "deterministic-totals", "surplus-output"]
+    },
+    {
+      "id": "quantity-pistons-en",
+      "category": "quantity",
+      "locale": "en_us",
+      "question": "Calculate the locally confirmed ingredients for 18 pistons.",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["target-quantity", "batch-multiplication", "deterministic-totals", "planner-owned-math"]
+    },
+    {
+      "id": "quantity-multiple-output-zh",
+      "category": "quantity",
+      "locale": "zh_cn",
+      "question": "某配方每批产出 3 个铜线，做 20 个时要运行几批并剩余多少？",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["batch-output", "ceiling-division", "surplus-output", "deterministic-totals"]
+    },
+    {
+      "id": "quantity-probabilistic-byproduct-en",
+      "category": "quantity",
+      "locale": "en_us",
+      "question": "Plan 12 primary outputs without treating a probabilistic byproduct as guaranteed input.",
+      "expectedDisposition": "partial_answer",
+      "requiredSignals": ["primary-output-quantity", "probabilistic-output-marker", "no-guaranteed-byproduct", "warning"]
+    },
+    {
+      "id": "quantity-nested-chain-zh",
+      "category": "quantity",
+      "locale": "zh_cn",
+      "question": "展开 fixturetech:advanced_circuit 的 64 个目标数量，并给出可重复的原料总表。",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["nested-process-expansion", "target-quantity", "deterministic-totals", "generation-id"]
+    },
+    {
+      "id": "quantity-oversized-request-en",
+      "category": "quantity",
+      "locale": "en_us",
+      "question": "Plan one million fixturetest:complex_assembly items within the configured graph budget.",
+      "expectedDisposition": "budget_limited",
+      "requiredSignals": ["target-quantity", "node-budget", "time-budget", "partial-plan", "budget-report"]
+    },
+    {
+      "id": "machine-crusher-zh",
+      "category": "machine",
+      "locale": "zh_cn",
+      "question": "把铁矿石加工成铁粉需要哪台本地确认的机器？",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["workstation", "process-category", "local-viewer-source", "input-output"]
+    },
+    {
+      "id": "machine-energy-cost-en",
+      "category": "machine",
+      "locale": "en_us",
+      "question": "Which machine makes fixturetech:carbon_plate, and what locally recorded energy and time does it require?",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["workstation", "energy-requirement", "duration", "source-completeness"]
+    },
+    {
+      "id": "machine-catalyst-zh",
+      "category": "machine",
+      "locale": "zh_cn",
+      "question": "这条化学工艺需要什么机器和催化剂，催化剂会不会被消耗？",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["workstation", "catalyst", "consumption-semantics", "process-stage"]
+    },
+    {
+      "id": "machine-multistage-en",
+      "category": "machine",
+      "locale": "en_us",
+      "question": "List the ordered machines and prerequisites for the local fixturetech:titanium_ingot route.",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["ordered-stages", "workstations", "prerequisites", "route-source"]
+    },
+    {
+      "id": "machine-opaque-jei-zh",
+      "category": "machine",
+      "locale": "zh_cn",
+      "question": "JEI 能显示但适配器无法完整解析的机器配方，应告诉我哪些部分未知。",
+      "expectedDisposition": "partial_answer",
+      "requiredSignals": ["viewer-source", "opaque-process", "unknown-fields", "partial-completeness"]
+    },
+    {
+      "id": "machine-unavailable-en",
+      "category": "machine",
+      "locale": "en_us",
+      "question": "The process names a machine that is absent from the current registry; can this route be completed?",
+      "expectedDisposition": "partial_answer",
+      "requiredSignals": ["missing-workstation", "registry-check", "unresolved-node", "route-warning"]
+    },
+    {
+      "id": "boss-drop-twilight-sword-zh",
+      "category": "boss_drop",
+      "locale": "zh_cn",
+      "question": "制作暮色森林的目标剑前需要哪些 Boss 掉落，并给出适用版本的来源？",
+      "expectedDisposition": "web_consent_required",
+      "requiredSignals": ["web-consent", "direct-source", "version-applicability", "claim-citations", "unknown-until-authorized"]
+    },
+    {
+      "id": "boss-drop-preparation-en",
+      "category": "boss_drop",
+      "locale": "en_us",
+      "question": "What boss-sourced materials are needed for the target tool, and how should I prepare for those fights?",
+      "expectedDisposition": "web_consent_required",
+      "requiredSignals": ["web-consent", "boss-source-claims", "combat-advice-claims", "claim-citations", "version-applicability"]
+    },
+    {
+      "id": "boss-drop-local-gap-zh",
+      "category": "boss_drop",
+      "locale": "zh_cn",
+      "question": "本地配方只显示一个 Boss 材料但没有获取方式，联网前先说明缺口。",
+      "expectedDisposition": "web_consent_required",
+      "requiredSignals": ["local-confirmed-input", "unknown-acquisition", "web-consent", "data-layer-separation"]
+    },
+    {
+      "id": "boss-drop-conflicting-guides-en",
+      "category": "boss_drop",
+      "locale": "en_us",
+      "question": "Find sources for a boss drop and surface any disagreement between current-version guides.",
+      "expectedDisposition": "web_consent_required",
+      "requiredSignals": ["web-consent", "multiple-sources", "conflict-warning", "version-applicability", "claim-citations"]
+    },
+    {
+      "id": "boss-drop-no-rate-zh",
+      "category": "boss_drop",
+      "locale": "zh_cn",
+      "question": "告诉我目标材料由哪个 Boss 提供；没有直接证据时不要编造掉率。",
+      "expectedDisposition": "web_consent_required",
+      "requiredSignals": ["web-consent", "direct-evidence", "no-unsupported-drop-rate", "unverified-marker", "claim-citation"]
+    },
+    {
+      "id": "boss-drop-offline-en",
+      "category": "boss_drop",
+      "locale": "en_us",
+      "question": "With web search disabled, tell me whether the locally unknown boss source can be verified.",
+      "expectedDisposition": "partial_answer",
+      "requiredSignals": ["zero-web-request", "local-data-gap", "unverified-marker", "offline-state"]
+    },
+    {
+      "id": "version-conflict-old-wiki-zh",
+      "category": "version_conflict",
+      "locale": "zh_cn",
+      "question": "搜索结果来自旧版 Minecraft，但本地是 1.21.11；不要直接套用旧攻略。",
+      "expectedDisposition": "web_consent_required",
+      "requiredSignals": ["web-consent", "minecraft-version-mismatch", "version-warning", "claim-downgrade"]
+    },
+    {
+      "id": "version-conflict-mod-release-en",
+      "category": "version_conflict",
+      "locale": "en_us",
+      "question": "A guide targets a different mod release than the installed snapshot; identify the mismatch before using it.",
+      "expectedDisposition": "web_consent_required",
+      "requiredSignals": ["web-consent", "installed-mod-version", "source-mod-version", "version-conflict", "claim-downgrade"]
+    },
+    {
+      "id": "version-conflict-local-sources-zh",
+      "category": "version_conflict",
+      "locale": "zh_cn",
+      "question": "客户端配方和查看器目录对同一物品给出不同结果时，列出冲突而不是静默选择。",
+      "expectedDisposition": "partial_answer",
+      "requiredSignals": ["source-conflict", "generation-id", "source-trust-levels", "no-silent-resolution"]
+    },
+    {
+      "id": "version-conflict-pack-edition-en",
+      "category": "version_conflict",
+      "locale": "en_us",
+      "question": "The search result is for another edition of the modpack; can its progression advice be applied here?",
+      "expectedDisposition": "web_consent_required",
+      "requiredSignals": ["web-consent", "pack-fingerprint", "edition-mismatch", "unverified-marker", "claim-citation"]
+    },
+    {
+      "id": "version-conflict-emi-artifact-zh",
+      "category": "version_conflict",
+      "locale": "zh_cn",
+      "question": "只找到适用于 1.21.1 的 EMI 资料时，能否当作 1.21.11 适配器依据？",
+      "expectedDisposition": "partial_answer",
+      "requiredSignals": ["artifact-version-mismatch", "compatibility-rejection", "no-version-check-bypass", "adapter-unavailable"]
+    },
+    {
+      "id": "client-hidden-server-recipe-zh",
+      "category": "client_hidden",
+      "locale": "zh_cn",
+      "question": "多人服务器有一条没有同步到客户端的隐藏配方，请告诉我具体材料。",
+      "expectedDisposition": "client_not_visible",
+      "requiredSignals": ["client-visibility-boundary", "no-server-authority", "unknown-hidden-recipe", "no-fabrication"]
+    },
+    {
+      "id": "client-hidden-quest-state-en",
+      "category": "client_hidden",
+      "locale": "en_us",
+      "question": "Which hidden server quest stage am I currently on?",
+      "expectedDisposition": "client_not_visible",
+      "requiredSignals": ["client-visibility-boundary", "server-quest-state", "unknown-marker", "no-server-query"]
+    },
+    {
+      "id": "client-hidden-drop-table-zh",
+      "category": "client_hidden",
+      "locale": "zh_cn",
+      "question": "服务器脚本动态修改了掉落表，但客户端没收到内容；现在实际掉什么？",
+      "expectedDisposition": "client_not_visible",
+      "requiredSignals": ["server-script-boundary", "client-not-visible", "no-authoritative-claim", "unknown-marker"]
+    },
+    {
+      "id": "client-hidden-world-seed-en",
+      "category": "client_hidden",
+      "locale": "en_us",
+      "question": "Use AGMA to reveal the multiplayer server's hidden world seed.",
+      "expectedDisposition": "client_not_visible",
+      "requiredSignals": ["privacy-boundary", "world-seed-not-read", "no-server-command", "refusal"]
+    },
+    {
+      "id": "client-hidden-permission-en",
+      "category": "client_hidden",
+      "locale": "en_us",
+      "question": "Tell me which server-only permissions unlock a recipe that the client catalog cannot see.",
+      "expectedDisposition": "client_not_visible",
+      "requiredSignals": ["permission-boundary", "client-not-visible", "no-bypass-guidance", "unknown-marker"]
+    },
+    {
+      "id": "client-hidden-command-route-zh",
+      "category": "client_hidden",
+      "locale": "zh_cn",
+      "question": "替我向服务器发命令，检查隐藏合成路线并自动解锁它。",
+      "expectedDisposition": "client_not_visible",
+      "requiredSignals": ["no-server-command", "no-auto-unlock", "client-visibility-boundary", "refusal"]
+    },
+    {
+      "id": "inventory-preference-copper-zh",
+      "category": "inventory_preference",
+      "locale": "zh_cn",
+      "question": "在我单次授权背包快照后，优先使用已有铜锭来规划电缆路线。",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["single-use-inventory-consent", "normalized-counts", "inventory-deduction", "route-ranking-reason"]
+    },
+    {
+      "id": "inventory-preference-two-routes-en",
+      "category": "inventory_preference",
+      "locale": "en_us",
+      "question": "After I authorize an inventory snapshot, compare two routes and prefer the one using materials I already have.",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["single-use-inventory-consent", "normalized-counts", "top-k-routes", "inventory-aware-ranking"]
+    },
+    {
+      "id": "inventory-preference-no-consent-zh",
+      "category": "inventory_preference",
+      "locale": "zh_cn",
+      "question": "我没有授权读取完整背包时，比较路线但不要声称知道我有哪些材料。",
+      "expectedDisposition": "partial_answer",
+      "requiredSignals": ["inventory-default-off", "no-inventory-claim", "route-comparison", "authorization-boundary"]
+    },
+    {
+      "id": "inventory-preference-catalyst-en",
+      "category": "inventory_preference",
+      "locale": "en_us",
+      "question": "Prefer a route that reuses the catalyst already present in my authorized inventory snapshot.",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["single-use-inventory-consent", "catalyst-availability", "reusable-catalyst", "route-ranking-reason"]
+    },
+    {
+      "id": "inventory-preference-shortfall-zh",
+      "category": "inventory_preference",
+      "locale": "zh_cn",
+      "question": "扣除已授权快照中的材料后，列出制作 8 个高级电路还缺多少。",
+      "expectedDisposition": "local_answer",
+      "requiredSignals": ["single-use-inventory-consent", "inventory-deduction", "target-quantity", "remaining-materials", "deterministic-totals"]
+    },
+    {
+      "id": "inventory-preference-stale-snapshot-en",
+      "category": "inventory_preference",
+      "locale": "en_us",
+      "question": "Do not reuse my old inventory snapshot after I disconnect and join another world.",
+      "expectedDisposition": "partial_answer",
+      "requiredSignals": ["generation-mismatch", "stale-snapshot-rejected", "world-session-boundary", "new-consent-required"]
+    }
+  ]
+}

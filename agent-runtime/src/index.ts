@@ -17,10 +17,14 @@ export {
 } from "./bootstrap/startup-error.js";
 export {
   loadRuntimeConfig,
+  runtimeServiceConfig,
   runtimeConfigWarningCodes,
   type LoadedRuntimeConfig,
   type LoadRuntimeConfigOptions,
   type RuntimeConfig,
+  type ClientRuntimeConfig,
+  type RuntimeConfigDocument,
+  type ResolvedRuntimeConfig,
   type KnowledgeRootKind,
   type RuntimeKnowledgeRootPath,
   type RuntimeConfigWarning,
@@ -78,6 +82,7 @@ export {
   type AgentErrorPayload,
   type AgentRequestInput,
   type AgentRequestServiceOptions,
+  type RequestAudience,
   type AgentRuntimeResponse,
   type AgentTerminalResponse,
   type SessionResumeInput,
@@ -145,7 +150,9 @@ export {
   type LocalToolExecution,
 } from "./tools/local-tool-executor.js";
 export {
+  clientToolIds,
   coreToolIds,
+  type ClientToolId,
   type CoreToolId,
   type ToolCallPayload,
   type ToolExecutionResult,

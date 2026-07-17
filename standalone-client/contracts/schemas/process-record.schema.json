@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/process-record.schema.json",
+  "title": "AGMA Standalone Process Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "processId",
+    "categoryId",
+    "displayName",
+    "inputRelation",
+    "workstations",
+    "inputs",
+    "catalysts",
+    "outputs",
+    "durationTicks",
+    "energy",
+    "conditions",
+    "stages",
+    "source",
+    "plannable",
+    "warnings"
+  ],
+  "properties": {
+    "processId": {
+      "$ref": "resource-ref.schema.json#/$defs/namespacedId"
+    },
+    "categoryId": {
+      "$ref": "resource-ref.schema.json#/$defs/namespacedId"
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "inputRelation": {
+      "const": "and"
+    },
+    "workstations": {
+      "type": "array",
+      "maxItems": 32,
+      "items": { "$ref": "resource-ref.schema.json" }
+    },
+    "inputs": {
+      "type": "array",
+      "maxItems": 128,
+      "items": { "$ref": "#/$defs/inputGroup" }
+    },
+    "catalysts": {
+      "type": "array",
+      "maxItems": 64,
+      "items": { "$ref": "#/$defs/catalyst" }
+    },
+    "outputs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": { "$ref": "#/$defs/output" },
+      "contains": {
+        "type": "object",
+        "required": ["primary"],
+        "properties": { "primary": { "const": true } }
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "durationTicks": {
+      "oneOf": [
+        { "type": "integer", "minimum": 0, "maximum": 86400000 },
+        { "type": "null" }
+      ]
+    },
+    "energy": {
+      "oneOf": [
+        {
+          "allOf": [
+            { "$ref": "resource-ref.schema.json" },
+            {
+              "type": "object",
+              "properties": { "kind": { "const": "energy" } }
+            }
+          ]
+        },
+        { "type": "null" }
+      ]
+    },
+    "conditions": {
+      "type": "array",
+      "maxItems": 64,
+      "items": { "type": "string", "minLength": 1, "maxLength": 512 }
+    },
+    "stages": {
+      "type": "array",
+      "maxItems": 128,
+      "items": { "$ref": "#/$defs/stage" }
+    },
+    "source": {
+      "$ref": "resource-ref.schema.json#/$defs/source"
+    },
+    "plannable": {
+      "type": "boolean"
+    },
+    "warnings": {
+      "type": "array",
+      "maxItems": 64,
+      "items": { "type": "string", "minLength": 1, "maxLength": 512 }
+    }
+  },
+  "$defs": {
+    "symbolicId": {
+      "$ref": "resource-ref.schema.json#/$defs/symbolicId"
+    },
+    "inputGroup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["groupId", "relation", "alternatives"],
+      "properties": {
+        "groupId": { "$ref": "#/$defs/symbolicId" },
+        "relation": { "const": "or" },
+        "alternatives": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": { "$ref": "resource-ref.schema.json" }
+        }
+      }
+    },
+    "catalyst": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resource", "consumed", "returnedResource"],
+      "properties": {
+        "resource": { "$ref": "resource-ref.schema.json" },
+        "consumed": { "type": "boolean" },
+        "returnedResource": {
+          "oneOf": [
+            { "$ref": "resource-ref.schema.json" },
+            { "type": "null" }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "consumed": { "const": false } } },
+          "then": { "properties": { "returnedResource": { "type": "null" } } }
+        }
+      ]
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resource", "probability", "primary"],
+      "properties": {
+        "resource": { "$ref": "resource-ref.schema.json" },
+        "probability": { "type": "number", "minimum": 0, "maximum": 1 },
+        "primary": { "type": "boolean" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "primary": { "const": true } } },
+          "then": { "properties": { "probability": { "const": 1 } } }
+        }
+      ]
+    },
+    "stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["index", "description", "inputGroupIds"],
+      "properties": {
+        "index": { "type": "integer", "minimum": 0, "maximum": 127 },
+        "description": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "inputGroupIds": {
+          "type": "array",
+          "maxItems": 128,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/symbolicId" }
+        }
+      }
+    }
+  }
+}

@@ -7,6 +7,9 @@ import { ToolRegistry } from "../src/tools/tool-registry.js";
 import { coreToolIds } from "../src/tools/tool-types.js";
 
 const schemas = await SchemaRegistry.load();
+const clientSchemas = await SchemaRegistry.load(
+  new URL("../../standalone-client/contracts/", import.meta.url).pathname,
+);
 const registry = new ToolRegistry(schemas);
 const fixture = JSON.parse(
   await readFile(
@@ -26,8 +29,137 @@ const buildFixture = JSON.parse(
     "utf8",
   ),
 ) as { arguments: Record<string, unknown>; result: Record<string, unknown> };
+const clientFixture = JSON.parse(
+  await readFile(
+    new URL(
+      "../../standalone-client/contracts/fixtures/valid/connector-tool-contracts.json",
+      import.meta.url,
+    ),
+    "utf8",
+  ),
+) as Record<string, Record<string, unknown>>;
+const standaloneFixture = JSON.parse(
+  await readFile(
+    new URL(
+      "../../standalone-client/contracts/fixtures/valid/standalone-contracts.json",
+      import.meta.url,
+    ),
+    "utf8",
+  ),
+) as { resource: Record<string, unknown> };
 
 describe("Runtime Tool Registry", () => {
+  it("registers no Paper or local tools in the C1 client profile", () => {
+    const clientRegistry = new ToolRegistry(schemas, "client");
+
+    expect(clientRegistry.list()).toEqual([]);
+    expect(clientRegistry.byProviderName("server_info_read")).toBeUndefined();
+    expect(() => clientRegistry.forAllowlist(["server.info.read"])).toThrow();
+  });
+
+  it("registers only explicit client Tools and activates the negotiated capability subset", () => {
+    const clientRegistry = new ToolRegistry(clientSchemas, "client", [
+      "game.resource.search",
+      "game.process.lookup",
+      "game.process.plan",
+      "game.inventory.snapshot",
+    ]);
+
+    expect(clientRegistry.list().map((tool) => tool.id)).toEqual([
+      "game.resource.search",
+      "game.process.lookup",
+      "game.process.plan",
+      "game.inventory.snapshot",
+    ]);
+    expect(clientRegistry.list().every((tool) => tool.execution === "connector_remote")).toBe(true);
+    expect(clientRegistry.forAllowlist(["game.resource.search", "game.process.plan"])).toEqual([]);
+
+    clientRegistry.activateClientCapabilities(["game.resource.search", "paper.command"]);
+    expect(
+      clientRegistry
+        .forAllowlist(["game.resource.search", "game.process.plan"])
+        .map((tool) => tool.id),
+    ).toEqual(["game.resource.search"]);
+    expect(clientRegistry.byProviderName("game_resource_search")?.source).toBe("client_catalog");
+    expect(clientRegistry.byProviderName("game_process_plan")).toBeUndefined();
+    expect(clientRegistry.byProviderName("server_info_read")).toBeUndefined();
+
+    const search = clientRegistry.byProviderName("game_resource_search");
+    if (search === undefined) throw new Error("missing client search Tool");
+    expect(
+      clientRegistry.validateArguments(search, clientFixture["resourceSearchArguments"] ?? {}),
+    ).toBe(true);
+    expect(clientRegistry.validateArguments(search, { query: "iron", limit: 21 })).toBe(false);
+    expect(
+      clientRegistry.validateResult(search, {
+        status: "succeeded",
+        source: "client_catalog",
+        trust: "client_visible",
+        result: clientFixture["resourceSearchResult"] ?? {},
+        error: null,
+      }),
+    ).toBe(true);
+    const resultWithCandidate = {
+      ...(clientFixture["resourceSearchResult"] ?? {}),
+      visibility: "singleplayer",
+      completeness: "complete",
+      candidates: [
+        {
+          rank: 1,
+          score: 1,
+          matchedBy: "exact_id",
+          resource: standaloneFixture.resource,
+        },
+      ],
+    };
+    expect(
+      clientRegistry.validateResult(search, {
+        status: "succeeded",
+        source: "client_catalog",
+        trust: "client_visible",
+        result: resultWithCandidate,
+        error: null,
+      }),
+    ).toBe(true);
+    expect(
+      clientRegistry.validateResult(search, {
+        status: "succeeded",
+        source: "client_catalog",
+        trust: "client_visible",
+        result: { ...resultWithCandidate, generationId: "different-generation" },
+        error: null,
+      }),
+    ).toBe(false);
+
+    clientRegistry.activateClientCapabilities(["game.process.plan"]);
+    const plan = clientRegistry.byProviderName("game_process_plan");
+    if (plan === undefined) throw new Error("missing client planner Tool");
+    expect(
+      clientRegistry.validateResult(plan, {
+        status: "succeeded",
+        source: "client_planner",
+        trust: "deterministic",
+        result: clientFixture["processPlanResult"] ?? {},
+        error: null,
+      }),
+    ).toBe(true);
+    const route = (clientFixture["processPlanResult"]?.["routes"] as readonly unknown[])[0] as
+      | Readonly<Record<string, unknown>>
+      | undefined;
+    expect(
+      clientRegistry.validateResult(plan, {
+        status: "succeeded",
+        source: "client_planner",
+        trust: "deterministic",
+        result: {
+          ...(clientFixture["processPlanResult"] ?? {}),
+          routes: route === undefined ? [] : [{ ...route, materials: undefined }],
+        },
+        error: null,
+      }),
+    ).toBe(false);
+  });
+
   it("exposes unique provider-safe remote and local tools with self-contained parameters", () => {
     const tools = registry.list();
 

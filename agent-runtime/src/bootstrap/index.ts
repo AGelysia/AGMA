@@ -1,10 +1,18 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import type { Readable } from "node:stream";
+import { fileURLToPath } from "node:url";
 
 import { isMainModule } from "./main-module.js";
 import { asRuntimeStartupError, RuntimeStartupError } from "./startup-error.js";
-import { loadRuntimeConfig, type LoadRuntimeConfigOptions } from "../config/runtime-config.js";
+import {
+  loadRuntimeConfig,
+  runtimeServiceConfig,
+  type LoadRuntimeConfigOptions,
+} from "../config/runtime-config.js";
 import { checkLogDirectory } from "../health/filesystem.js";
+import { createConfiguredEvidencePipeline } from "../evidence/pipeline-factory.js";
+import type { SafeHttpFetcher } from "../evidence/safe-http-fetcher.js";
+import type { SearchProvider } from "../evidence/search-provider.js";
 import { checkModelProvider, type ModelProviderHealthCheck } from "../health/model-provider.js";
 import { registerHealthRoute, RuntimeHealthState } from "../health/runtime-health.js";
 import {
@@ -14,6 +22,7 @@ import {
 } from "../health/runtime-lock.js";
 import { checkRuntimeSqlite, type RuntimeSqliteHandle } from "../health/sqlite.js";
 import { loadMarkdownKnowledge } from "../knowledge/markdown-loader.js";
+import { ModuleRegistry } from "../modules/module-manifest.js";
 import { RuntimeLogger } from "../observability/runtime-logger.js";
 import { SchemaRegistry } from "../protocol/schema-registry.js";
 import { UnsupportedModelProvider, type ModelProvider } from "../providers/model-provider.js";
@@ -27,6 +36,7 @@ import { migrateRuntimeStorage } from "../storage/migrations.js";
 import { SqliteProjectRepository } from "../storage/project-repository.js";
 import { LocalToolExecutor } from "../tools/local-tool-executor.js";
 import { ToolRegistry } from "../tools/tool-registry.js";
+import { registerConnectorHandshakeRoute } from "../transport/connector-handshake.js";
 import { registerPaperHandshakeRoute } from "../transport/paper-handshake.js";
 import {
   SqliteUsageAccounting,
@@ -40,6 +50,10 @@ export interface BootstrapOptions extends LoadRuntimeConfigOptions {
   readonly modelProviderHealthCheck?: ModelProviderHealthCheck;
   readonly modelProvider?: ModelProvider;
   readonly protocolRoot?: string;
+  readonly standaloneProtocolRoot?: string;
+  readonly connectorToolTimeoutMilliseconds?: number;
+  readonly searchProvider?: SearchProvider;
+  readonly safeHttpFetcher?: SafeHttpFetcher;
   readonly now?: () => Date;
   readonly signal?: AbortSignal;
 }
@@ -54,6 +68,7 @@ export interface BootstrapResult {
   readonly identity: RuntimeIdentity;
   readonly health: RuntimeHealthState;
   readonly costs: UsageAccounting;
+  readonly profile: "paper" | "client";
   readonly listenAddress: RuntimeListenAddress;
 }
 
@@ -138,6 +153,51 @@ async function checkProtocolSchema(protocolRoot?: string): Promise<SchemaRegistr
   }
 }
 
+function defaultStandaloneProtocolRoot(): string {
+  return fileURLToPath(new URL("../../../standalone-client/contracts/", import.meta.url));
+}
+
+async function checkConnectorProtocolSchema(protocolRoot?: string): Promise<SchemaRegistry> {
+  try {
+    const registry = await SchemaRegistry.load(protocolRoot ?? defaultStandaloneProtocolRoot());
+    const requiredSchemas = [
+      "connector-hello.schema.json",
+      "connector-envelope.schema.json",
+      "connector-request.schema.json",
+      "connector-cancel.schema.json",
+      "connector-complete.schema.json",
+      "connector-error.schema.json",
+      "connector-status-request.schema.json",
+      "connector-status.schema.json",
+      "connector-tool-call.schema.json",
+      "connector-tool-result.schema.json",
+      "connector-tool-error.schema.json",
+      "connector-tool-cancel.schema.json",
+      "tools/game-resource-search-arguments.schema.json",
+      "tools/game-resource-search-result.schema.json",
+      "tools/game-process-lookup-arguments.schema.json",
+      "tools/game-process-lookup-result.schema.json",
+      "tools/game-process-uses-arguments.schema.json",
+      "tools/game-process-uses-result.schema.json",
+      "tools/game-process-plan-arguments.schema.json",
+      "tools/game-process-plan-result.schema.json",
+      "tools/game-inventory-snapshot-arguments.schema.json",
+      "tools/game-inventory-snapshot-result.schema.json",
+    ];
+    if (requiredSchemas.some((schema) => !registry.schemaReferences.includes(schema))) {
+      throw new Error("A required connector schema alias is unavailable");
+    }
+    return registry;
+  } catch (error) {
+    throw new RuntimeStartupError({
+      code: "PROTOCOL_SCHEMA_UNAVAILABLE",
+      stage: "protocol",
+      safeMessage: "Standalone connector protocol schema could not be loaded.",
+      cause: error,
+    });
+  }
+}
+
 export async function bootstrap(options: BootstrapOptions = {}): Promise<BootstrapResult> {
   const logger = options.logger ?? new RuntimeLogger();
   let sqlite: RuntimeSqliteHandle | undefined;
@@ -147,6 +207,7 @@ export async function bootstrap(options: BootstrapOptions = {}): Promise<Bootstr
   try {
     requireStartupActive(options.signal);
     const loaded = await loadRuntimeConfig(options);
+    const runtimeConfig = runtimeServiceConfig(loaded.resolved);
     requireStartupActive(options.signal);
     for (const warning of loaded.warnings) {
       logger.configWarning(warning);
@@ -155,8 +216,16 @@ export async function bootstrap(options: BootstrapOptions = {}): Promise<Bootstr
     await checkLogDirectory(loaded.paths.rootDirectory, loaded.paths.logDirectory);
     requireStartupActive(options.signal);
     const schemaRegistry = await checkProtocolSchema(options.protocolRoot);
+    const connectorSchemaRegistry =
+      loaded.resolved.profile === "client"
+        ? await checkConnectorProtocolSchema(options.standaloneProtocolRoot)
+        : undefined;
     requireStartupActive(options.signal);
-    const tools = new ToolRegistry(schemaRegistry);
+    const tools = new ToolRegistry(
+      connectorSchemaRegistry ?? schemaRegistry,
+      loaded.resolved.profile,
+      loaded.resolved.allowedClientTools,
+    );
     sqlite = await checkRuntimeSqlite(loaded.paths.rootDirectory, loaded.paths.sqlite);
     requireStartupActive(options.signal);
     const storageNow = options.now?.() ?? new Date();
@@ -166,29 +235,29 @@ export async function bootstrap(options: BootstrapOptions = {}): Promise<Bootstr
     try {
       migrateRuntimeStorage(sqlite.database, storageNow.toISOString());
       runtimeDatabaseLock = acquireRuntimeDatabaseLock(sqlite.database, storageNow.toISOString());
-      conversations = loaded.config.privacy.storeConversations
+      conversations = runtimeConfig.privacy.storeConversations
         ? new SqliteConversationRepository(sqlite.database)
         : new DisabledConversationRepository();
       projects = new SqliteProjectRepository(sqlite.database);
       costs = new SqliteUsageAccounting(sqlite.database, {
-        serverId: loaded.config.server.id,
-        provider: loaded.config.model.provider,
-        model: loaded.config.model.model,
+        serverId: runtimeConfig.server.id,
+        provider: runtimeConfig.model.provider,
+        model: runtimeConfig.model.model,
         pricing: {
-          inputMicroUsdPerMillionTokens: loaded.config.model.inputMicroUsdPerMillionTokens,
-          outputMicroUsdPerMillionTokens: loaded.config.model.outputMicroUsdPerMillionTokens,
+          inputMicroUsdPerMillionTokens: runtimeConfig.model.inputMicroUsdPerMillionTokens,
+          outputMicroUsdPerMillionTokens: runtimeConfig.model.outputMicroUsdPerMillionTokens,
         },
         limits: {
-          dailyRequestsPerPlayer: loaded.config.limits.dailyRequestsPerPlayer,
-          monthlyBudgetMicroUsd: usdToMicroUsd(loaded.config.limits.monthlyBudgetUsd),
-          providerRoundReservationMicroUsd: loaded.config.limits.providerRoundReservationMicroUsd,
+          dailyRequestsPerPlayer: runtimeConfig.limits.dailyRequestsPerPlayer,
+          monthlyBudgetMicroUsd: usdToMicroUsd(runtimeConfig.limits.monthlyBudgetUsd),
+          providerRoundReservationMicroUsd: runtimeConfig.limits.providerRoundReservationMicroUsd,
         },
       });
       costs.recoverAbandonedRequests(storageNow.getTime());
       costs.pruneHistoricalDetails(storageNow.getTime());
-      if (loaded.config.privacy.storeConversations && loaded.config.privacy.retentionDays > 0) {
+      if (runtimeConfig.privacy.storeConversations && runtimeConfig.privacy.retentionDays > 0) {
         const cutoff = new Date(
-          storageNow.getTime() - loaded.config.privacy.retentionDays * 24 * 60 * 60 * 1000,
+          storageNow.getTime() - runtimeConfig.privacy.retentionDays * 24 * 60 * 60 * 1000,
         );
         conversations.purgeExpired(cutoff.toISOString());
       }
@@ -219,37 +288,71 @@ export async function bootstrap(options: BootstrapOptions = {}): Promise<Bootstr
     const provider =
       options.modelProvider ??
       (options.modelProviderHealthCheck === undefined
-        ? createProductionModelProvider(loaded.config.model)
+        ? createProductionModelProvider(runtimeConfig.model)
         : new UnsupportedModelProvider());
     const providerHealthCheck = options.modelProviderHealthCheck ?? provider;
     await checkModelProvider(
-      loaded.config,
+      runtimeConfig,
       providerHealthCheck,
-      loaded.config.model.timeoutSeconds * 1000,
+      runtimeConfig.model.timeoutSeconds * 1000,
       options.signal,
     );
     requireStartupActive(options.signal);
 
-    const health = new RuntimeHealthState(options.now?.().toISOString());
+    const health = new RuntimeHealthState(
+      options.now?.().toISOString(),
+      loaded.resolved.profile === "client" ? "client-1.0" : "1.0",
+    );
+    const webEvidence = createConfiguredEvidencePipeline(loaded.resolved, {
+      ...(options.searchProvider === undefined ? {} : { searchProvider: options.searchProvider }),
+      ...(options.safeHttpFetcher === undefined ? {} : { fetcher: options.safeHttpFetcher }),
+      ...(options.now === undefined ? {} : { now: options.now }),
+    });
     const agentRequests = new AgentRequestService({
       provider,
-      config: loaded.config,
+      config: runtimeConfig,
       conversations,
       tools,
       localTools,
       usage: costs,
+      modules: new ModuleRegistry(loaded.resolved.profile, loaded.resolved.allowedClientTools),
+      audience: loaded.resolved.profile,
+      ...(webEvidence === undefined ? {} : { webEvidence }),
       ...(options.now === undefined ? {} : { now: () => options.now?.().getTime() ?? Date.now() }),
     });
     app = createRuntimeApp();
-    await registerPaperHandshakeRoute(app, {
-      serverId: loaded.config.server.id,
-      serverToken: loaded.config.transport.serverToken,
-      schemaRegistry,
-      health,
-      agentRequests,
-      usage: costs,
-      ...(options.now === undefined ? {} : { now: options.now }),
-    });
+    if (loaded.resolved.profile === "paper") {
+      await registerPaperHandshakeRoute(app, {
+        serverId: runtimeConfig.server.id,
+        serverToken: runtimeConfig.transport.serverToken,
+        schemaRegistry,
+        health,
+        agentRequests,
+        usage: costs,
+        ...(options.now === undefined ? {} : { now: options.now }),
+      });
+    } else {
+      if (connectorSchemaRegistry === undefined) {
+        throw new RuntimeStartupError({
+          code: "PROTOCOL_SCHEMA_UNAVAILABLE",
+          stage: "protocol",
+          safeMessage: "Standalone connector protocol schema could not be loaded.",
+        });
+      }
+      await registerConnectorHandshakeRoute(app, {
+        scopeId: loaded.resolved.scopeId,
+        subjectId: loaded.resolved.subjectId,
+        connectorToken: loaded.resolved.authenticationSecret,
+        schemaRegistry: connectorSchemaRegistry,
+        health,
+        agentRequests,
+        tools,
+        ...(options.connectorToolTimeoutMilliseconds === undefined
+          ? {}
+          : { toolTimeoutMilliseconds: options.connectorToolTimeoutMilliseconds }),
+        ...(options.now === undefined ? {} : { now: options.now }),
+      });
+    }
     registerHealthRoute(app, health);
     app.addHook("preClose", async () => {
       await agentRequests.close();
@@ -270,9 +373,10 @@ export async function bootstrap(options: BootstrapOptions = {}): Promise<Bootstr
       identity: runtimeIdentity,
       health,
       costs,
+      profile: loaded.resolved.profile,
       listenAddress: {
-        host: loaded.config.transport.host,
-        port: loaded.config.transport.port,
+        host: runtimeConfig.transport.host,
+        port: runtimeConfig.transport.port,
       },
     };
   } catch (error) {

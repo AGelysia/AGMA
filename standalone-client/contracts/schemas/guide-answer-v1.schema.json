@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/guide-answer-v1.schema.json",
+  "title": "AGMA Standalone Guide Answer v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "target",
+    "targetResolution",
+    "materials",
+    "processes",
+    "bossAndDrops",
+    "preparation",
+    "unknowns",
+    "evidence",
+    "snapshot"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "guide-answer-v1"
+    },
+    "target": {
+      "oneOf": [{ "$ref": "resource-ref.schema.json" }, { "type": "null" }]
+    },
+    "targetResolution": {
+      "enum": ["exact", "player_selected", "ambiguous", "not_found"]
+    },
+    "materials": {
+      "type": "array",
+      "maxItems": 2048,
+      "items": { "$ref": "#/$defs/materialTotal" }
+    },
+    "processes": {
+      "type": "array",
+      "maxItems": 2048,
+      "items": { "$ref": "process-record.schema.json" }
+    },
+    "bossAndDrops": {
+      "type": "array",
+      "maxItems": 256,
+      "items": { "$ref": "#/$defs/claimBinding" }
+    },
+    "preparation": {
+      "type": "array",
+      "maxItems": 256,
+      "items": { "$ref": "#/$defs/claimBinding" }
+    },
+    "unknowns": {
+      "type": "array",
+      "maxItems": 512,
+      "items": { "$ref": "#/$defs/unknown" }
+    },
+    "evidence": {
+      "type": "array",
+      "maxItems": 256,
+      "items": { "$ref": "evidence-claim.schema.json" }
+    },
+    "snapshot": {
+      "$ref": "#/$defs/snapshot"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "targetResolution": { "enum": ["ambiguous", "not_found"] }
+        },
+        "required": ["targetResolution"]
+      },
+      "then": {
+        "properties": {
+          "target": { "type": "null" },
+          "materials": { "type": "array", "maxItems": 0 },
+          "processes": { "type": "array", "maxItems": 0 }
+        }
+      },
+      "else": {
+        "properties": { "target": { "$ref": "resource-ref.schema.json" } }
+      }
+    }
+  ],
+  "$defs": {
+    "materialTotal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resource", "basis"],
+      "properties": {
+        "resource": { "$ref": "resource-ref.schema.json" },
+        "basis": { "enum": ["local_confirmed", "local_inferred"] }
+      }
+    },
+    "claimBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statement", "claimIds"],
+      "properties": {
+        "statement": { "type": "string", "minLength": 1, "maxLength": 2048 },
+        "claimIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": { "$ref": "resource-ref.schema.json#/$defs/symbolicId" }
+        }
+      }
+    },
+    "unknown": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["disposition", "detail"],
+      "properties": {
+        "disposition": {
+          "enum": ["unverified", "client_not_visible", "unsupported"]
+        },
+        "detail": { "type": "string", "minLength": 1, "maxLength": 2048 }
+      }
+    },
+    "snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["generationId", "packFingerprint", "queriedAt", "visibility"],
+      "properties": {
+        "generationId": { "$ref": "resource-ref.schema.json#/$defs/generationId" },
+        "packFingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "queriedAt": { "type": "string", "format": "date-time" },
+        "visibility": {
+          "enum": ["singleplayer_authoritative", "client_visible_partial", "no_world"]
+        }
+      }
+    }
+  }
+}

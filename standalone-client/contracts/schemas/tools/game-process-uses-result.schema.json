@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/game-process-uses-result.schema.json",
+  "title": "AGMA Client Process Uses Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["generationId", "status", "processes", "truncated", "warnings"],
+  "properties": {
+    "generationId": {
+      "$ref": "client-tool-common.schema.json#/$defs/generationId"
+    },
+    "status": {
+      "enum": ["ready", "reloading", "unavailable", "stale_generation"]
+    },
+    "processes": {
+      "type": "array",
+      "maxItems": 16,
+      "items": { "$ref": "../process-record.schema.json" }
+    },
+    "truncated": { "type": "boolean" },
+    "warnings": {
+      "type": "array",
+      "maxItems": 32,
+      "items": { "$ref": "client-tool-common.schema.json#/$defs/warning" }
+    }
+  }
+}

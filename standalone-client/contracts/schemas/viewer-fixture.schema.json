@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/viewer-fixture.schema.json",
+  "title": "AGMA Standalone Viewer Compatibility Fixture",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "scenario",
+    "minecraftVersion",
+    "installedViewers",
+    "adapterStates",
+    "selectedSource",
+    "catalog",
+    "expected"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "scenario": { "enum": ["no_viewer", "jei_only", "emi_only", "jei_and_emi"] },
+    "minecraftVersion": { "const": "1.21.11" },
+    "installedViewers": {
+      "type": "array",
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": { "enum": ["jei", "emi"] }
+    },
+    "adapterStates": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/adapterState" }
+    },
+    "selectedSource": { "enum": ["vanilla_client", "jei", "emi"] },
+    "catalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["generationId", "resources", "processes"],
+      "properties": {
+        "generationId": { "$ref": "resource-ref.schema.json#/$defs/generationId" },
+        "resources": {
+          "type": "array",
+          "maxItems": 128,
+          "items": { "$ref": "resource-ref.schema.json" }
+        },
+        "processes": {
+          "type": "array",
+          "maxItems": 128,
+          "items": { "$ref": "process-record.schema.json" }
+        }
+      }
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startup", "fallbackAvailable", "duplicateProcesses"],
+      "properties": {
+        "startup": { "enum": ["ready", "degraded"] },
+        "fallbackAvailable": { "const": true },
+        "duplicateProcesses": { "const": false }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "scenario": { "const": "no_viewer" } } },
+      "then": {
+        "properties": {
+          "installedViewers": { "type": "array", "maxItems": 0 },
+          "selectedSource": { "const": "vanilla_client" },
+          "adapterStates": {
+            "type": "array",
+            "allOf": [
+              { "contains": { "$ref": "#/$defs/jeiNotInstalled" } },
+              { "contains": { "$ref": "#/$defs/emiNotInstalled" } }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "scenario": { "const": "jei_only" } } },
+      "then": {
+        "properties": {
+          "installedViewers": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 1,
+            "contains": { "const": "jei" }
+          },
+          "selectedSource": { "const": "jei" },
+          "adapterStates": {
+            "type": "array",
+            "allOf": [
+              { "contains": { "$ref": "#/$defs/jeiReady" } },
+              { "contains": { "$ref": "#/$defs/emiNotInstalled" } }
+            ]
+          },
+          "catalog": {
+            "type": "object",
+            "properties": { "processes": { "type": "array", "minItems": 1 } }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "scenario": { "const": "emi_only" } } },
+      "then": {
+        "properties": {
+          "installedViewers": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 1,
+            "contains": { "const": "emi" }
+          },
+          "selectedSource": { "const": "vanilla_client" },
+          "adapterStates": {
+            "type": "array",
+            "allOf": [
+              { "contains": { "$ref": "#/$defs/jeiNotInstalled" } },
+              { "contains": { "$ref": "#/$defs/emiFixtureOnly" } }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "scenario": { "const": "jei_and_emi" } } },
+      "then": {
+        "properties": {
+          "installedViewers": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "contains": { "const": "jei" }
+          },
+          "selectedSource": { "const": "jei" },
+          "adapterStates": {
+            "type": "array",
+            "allOf": [
+              { "contains": { "$ref": "#/$defs/jeiReady" } },
+              { "contains": { "$ref": "#/$defs/emiFixtureOnly" } }
+            ]
+          },
+          "catalog": {
+            "type": "object",
+            "properties": { "processes": { "type": "array", "minItems": 1 } }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "adapterState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["viewer", "version", "artifactKind", "status"],
+      "properties": {
+        "viewer": { "enum": ["jei", "emi"] },
+        "version": {
+          "oneOf": [
+            { "type": "string", "minLength": 1, "maxLength": 128 },
+            { "type": "null" }
+          ]
+        },
+        "artifactKind": { "enum": ["reviewed", "test_fixture", "none"] },
+        "status": {
+          "enum": ["ready", "not_installed", "unavailable_for_target", "fixture_only"]
+        }
+      }
+    },
+    "jeiReady": {
+      "type": "object",
+      "required": ["viewer", "version", "artifactKind", "status"],
+      "properties": {
+        "viewer": { "const": "jei" },
+        "version": { "const": "27.17.0.50" },
+        "artifactKind": { "const": "reviewed" },
+        "status": { "const": "ready" }
+      }
+    },
+    "jeiNotInstalled": {
+      "type": "object",
+      "required": ["viewer", "version", "artifactKind", "status"],
+      "properties": {
+        "viewer": { "const": "jei" },
+        "version": { "type": "null" },
+        "artifactKind": { "const": "none" },
+        "status": { "const": "not_installed" }
+      }
+    },
+    "emiNotInstalled": {
+      "type": "object",
+      "required": ["viewer", "version", "artifactKind", "status"],
+      "properties": {
+        "viewer": { "const": "emi" },
+        "version": { "type": "null" },
+        "artifactKind": { "const": "none" },
+        "status": { "const": "not_installed" }
+      }
+    },
+    "emiFixtureOnly": {
+      "type": "object",
+      "required": ["viewer", "version", "artifactKind", "status"],
+      "properties": {
+        "viewer": { "const": "emi" },
+        "version": { "const": "fixture-1.21.11" },
+        "artifactKind": { "const": "test_fixture" },
+        "status": { "const": "fixture_only" }
+      }
+    }
+  }
+}

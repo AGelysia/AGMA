@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/connector-tool-call.schema.json",
+  "title": "AGMA Runtime To Client Tool Call",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "requestId",
+    "toolCallId",
+    "subjectId",
+    "tool",
+    "sequence",
+    "arguments"
+  ],
+  "properties": {
+    "requestId": { "type": "string", "format": "uuid" },
+    "toolCallId": { "type": "string", "format": "uuid" },
+    "subjectId": { "type": "string", "format": "uuid" },
+    "tool": { "$ref": "connector-tool-common.schema.json#/$defs/toolId" },
+    "sequence": { "$ref": "connector-tool-common.schema.json#/$defs/sequence" },
+    "arguments": { "type": "object", "maxProperties": 8 }
+  }
+}

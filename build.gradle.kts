@@ -18,11 +18,27 @@ allprojects {
 tasks.register("checkAll") {
     group = "verification"
     description = "Runs the JVM checks. Runtime checks are run with npm."
-    dependsOn(":paper-plugin:check", ":client-mod:check")
+    dependsOn(
+        ":paper-plugin:check",
+        ":client-mod:check",
+        ":standalone-client:core:check",
+        ":standalone-client:runtime-supervisor-core:check",
+        ":standalone-client:fabric-common:check",
+        ":standalone-client:fabric-mc12111:check",
+        ":standalone-client:fabric-mc1182:check",
+    )
 }
 
 tasks.register("formatAll") {
     group = "formatting"
     description = "Formats the JVM projects. Runtime formatting is run with npm."
-    dependsOn(":paper-plugin:spotlessApply", ":client-mod:spotlessApply")
+    dependsOn(
+        ":paper-plugin:spotlessApply",
+        ":client-mod:spotlessApply",
+        ":standalone-client:core:spotlessApply",
+        ":standalone-client:runtime-supervisor-core:spotlessApply",
+        ":standalone-client:fabric-common:spotlessApply",
+        ":standalone-client:fabric-mc12111:spotlessApply",
+        ":standalone-client:fabric-mc1182:spotlessApply",
+    )
 }

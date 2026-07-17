@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "status": "c0-locked",
+  "threadPolicy": {
+    "networkOnClientThread": false,
+    "sqliteOnClientThread": false,
+    "fullIndexBuildOnClientThread": false,
+    "modelCallOnClientThread": false
+  },
+  "catalog": {
+    "resourceCount": 100000,
+    "processCount": 100000,
+    "residentMemoryMiBMaximum": 256,
+    "queryP95MillisecondsMaximum": 50,
+    "rebuildPublishesAtomically": true,
+    "rebuildReportsProgress": true,
+    "rebuildIsCancellable": true
+  },
+  "planner": {
+    "nodeMaximum": 2000,
+    "depthMaximum": 12,
+    "topKMaximum": 3,
+    "wallClockMillisecondsMaximum": 500,
+    "overBudgetDisposition": "partial"
+  },
+  "webEvidence": {
+    "enabledBeforeC6": false,
+    "searchResultMaximum": 5,
+    "bodyPageMaximum": 3,
+    "concurrencyMaximum": 2,
+    "compressedBytesPerPageMaximum": 2097152,
+    "decompressedBytesPerPageMaximum": 4194304,
+    "decompressedBytesPerWorkflowMaximum": 12582912
+  },
+  "ui": {
+    "largePerFrameAllocationsAllowed": false,
+    "dynamicAnswerMayResizeFixedControls": false
+  }
+}

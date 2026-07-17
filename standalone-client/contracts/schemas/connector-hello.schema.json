@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/connector-hello.schema.json",
+  "title": "AGMA Standalone Connector Hello Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "connectorKind",
+    "type",
+    "messageId",
+    "requestId",
+    "timestamp",
+    "nonce",
+    "component",
+    "componentVersion",
+    "scopeId",
+    "supportedProtocolVersions",
+    "selectedProtocolVersion",
+    "capabilities",
+    "authentication"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "connectorKind": { "const": "standalone_client" },
+    "type": { "const": "connector.hello" },
+    "messageId": { "type": "string", "format": "uuid" },
+    "requestId": {
+      "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }]
+    },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "nonce": {
+      "type": "string",
+      "minLength": 22,
+      "maxLength": 86,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "component": { "enum": ["standalone_client", "runtime"] },
+    "componentVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$"
+    },
+    "scopeId": { "type": "string", "format": "uuid" },
+    "supportedProtocolVersions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": { "const": "client-1.0" }
+    },
+    "selectedProtocolVersion": {
+      "oneOf": [{ "const": "client-1.0" }, { "type": "null" }]
+    },
+    "capabilities": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/capability" }
+    },
+    "authentication": {
+      "$ref": "#/$defs/authentication"
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "component": { "const": "standalone_client" } } },
+      "then": {
+        "properties": {
+          "requestId": { "type": "null" },
+          "selectedProtocolVersion": { "type": "null" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "component": { "const": "runtime" } } },
+      "then": {
+        "properties": {
+          "requestId": { "type": "string", "format": "uuid" },
+          "selectedProtocolVersion": { "const": "client-1.0" }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "$ref": "resource-ref.schema.json#/$defs/symbolicId" },
+        "version": { "type": "integer", "minimum": 1, "maximum": 1000000 }
+      }
+    },
+    "authentication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scheme", "keyId", "challenge", "proof"],
+      "properties": {
+        "scheme": { "const": "hmac-sha256" },
+        "keyId": { "$ref": "resource-ref.schema.json#/$defs/symbolicId" },
+        "challenge": {
+          "type": "string",
+          "minLength": 22,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "proof": {
+          "type": "string",
+          "minLength": 43,
+          "maxLength": 43,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        }
+      }
+    }
+  }
+}

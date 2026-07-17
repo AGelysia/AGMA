@@ -1,0 +1,334 @@
+{
+  "manifestVersion": "1.0",
+  "schemaDraft": "https://json-schema.org/draft/2020-12/schema",
+  "protocolVersion": "1.0",
+  "formatAssertionsRequired": true,
+  "cases": [
+    {
+      "id": "standalone.contracts.valid",
+      "category": "valid",
+      "file": "valid/standalone-contracts.json",
+      "validations": [
+        {
+          "schema": "resource-ref.schema.json",
+          "documentPointer": "/resource",
+          "expectedValid": true
+        },
+        {
+          "schema": "process-record.schema.json",
+          "documentPointer": "/process",
+          "expectedValid": true
+        },
+        {
+          "schema": "evidence-claim.schema.json",
+          "documentPointer": "/evidence",
+          "expectedValid": true
+        },
+        {
+          "schema": "guide-answer-v1.schema.json",
+          "documentPointer": "/guide",
+          "expectedValid": true
+        },
+        {
+          "schema": "guide-answer-v1.schema.json",
+          "documentPointer": "/notFoundGuide",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-hello.schema.json",
+          "documentPointer": "/connectorRequest",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-hello.schema.json",
+          "documentPointer": "/connectorResponse",
+          "expectedValid": true
+        },
+        {
+          "schema": "runtime-client-profile.schema.json",
+          "documentPointer": "/profile",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-envelope.schema.json",
+          "documentPointer": "/applicationRequest",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-request.schema.json",
+          "documentPointer": "/applicationRequest/payload",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-envelope.schema.json",
+          "documentPointer": "/applicationComplete",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-complete.schema.json",
+          "documentPointer": "/applicationComplete/payload",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-envelope.schema.json",
+          "documentPointer": "/applicationCancel",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-cancel.schema.json",
+          "documentPointer": "/applicationCancel/payload",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-envelope.schema.json",
+          "documentPointer": "/applicationStatusRequest",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-status-request.schema.json",
+          "documentPointer": "/applicationStatusRequest/payload",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-envelope.schema.json",
+          "documentPointer": "/applicationStatus",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-status.schema.json",
+          "documentPointer": "/applicationStatus/payload",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "standalone.contracts.invalid",
+      "category": "invalid_policy",
+      "file": "invalid/standalone-contracts-invalid.json",
+      "validations": [
+        {
+          "schema": "process-record.schema.json",
+          "documentPointer": "/processMalformed",
+          "expectedValid": false
+        },
+        {
+          "schema": "guide-answer-v1.schema.json",
+          "documentPointer": "/guideMalformed",
+          "expectedValid": false
+        },
+        {
+          "schema": "resource-ref.schema.json",
+          "documentPointer": "/resourceWrongTrust",
+          "expectedValid": false
+        },
+        {
+          "schema": "evidence-claim.schema.json",
+          "documentPointer": "/evidenceHttp",
+          "expectedValid": false
+        },
+        {
+          "schema": "connector-hello.schema.json",
+          "documentPointer": "/connectorSelectedTooEarly",
+          "expectedValid": false
+        },
+        {
+          "schema": "runtime-client-profile.schema.json",
+          "documentPointer": "/profileNetworkEnabled",
+          "expectedValid": false
+        },
+        {
+          "schema": "viewer-fixture.schema.json",
+          "documentPointer": "/viewerIncoherent",
+          "expectedValid": false
+        },
+        {
+          "schema": "connector-envelope.schema.json",
+          "documentPointer": "/applicationResponseWithoutCorrelation",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "standalone.connector-tools.valid",
+      "category": "valid",
+      "file": "valid/connector-tool-contracts.json",
+      "validations": [
+        {
+          "schema": "tools/game-resource-search-arguments.schema.json",
+          "documentPointer": "/resourceSearchArguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/game-resource-search-result.schema.json",
+          "documentPointer": "/resourceSearchResult",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/game-process-lookup-arguments.schema.json",
+          "documentPointer": "/processLookupArguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/game-process-lookup-result.schema.json",
+          "documentPointer": "/processLookupResult",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/game-process-uses-arguments.schema.json",
+          "documentPointer": "/processUsesArguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/game-process-uses-result.schema.json",
+          "documentPointer": "/processUsesResult",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/game-process-plan-arguments.schema.json",
+          "documentPointer": "/processPlanArguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/game-process-plan-result.schema.json",
+          "documentPointer": "/processPlanResult",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/game-inventory-snapshot-arguments.schema.json",
+          "documentPointer": "/inventorySnapshotArguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/game-inventory-snapshot-result.schema.json",
+          "documentPointer": "/inventorySnapshotResult",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-envelope.schema.json",
+          "documentPointer": "/webEvidenceRequest",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-request.schema.json",
+          "documentPointer": "/webEvidenceRequest/payload",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-envelope.schema.json",
+          "documentPointer": "/toolCall",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-tool-call.schema.json",
+          "documentPointer": "/toolCall/payload",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-envelope.schema.json",
+          "documentPointer": "/toolResult",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-tool-result.schema.json",
+          "documentPointer": "/toolResult/payload",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-envelope.schema.json",
+          "documentPointer": "/toolError",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-tool-error.schema.json",
+          "documentPointer": "/toolError/payload",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-envelope.schema.json",
+          "documentPointer": "/toolCancel",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-tool-cancel.schema.json",
+          "documentPointer": "/toolCancel/payload",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "standalone.connector-tools.invalid",
+      "category": "invalid_policy",
+      "file": "invalid/connector-tool-contracts-invalid.json",
+      "validations": [
+        {
+          "schema": "connector-tool-result.schema.json",
+          "documentPointer": "/unknownToolResult",
+          "expectedValid": false
+        },
+        {
+          "schema": "connector-tool-call.schema.json",
+          "documentPointer": "/oversizedToolCall",
+          "expectedValid": false
+        },
+        {
+          "schema": "connector-tool-error.schema.json",
+          "documentPointer": "/unboundedError",
+          "expectedValid": false
+        },
+        {
+          "schema": "connector-request.schema.json",
+          "documentPointer": "/arbitraryWebUrl",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "standalone.viewer.no-viewer",
+      "category": "valid",
+      "file": "valid/standalone-viewer-no-viewer.json",
+      "validations": [
+        {
+          "schema": "viewer-fixture.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "standalone.viewer.jei-only",
+      "category": "valid",
+      "file": "valid/standalone-viewer-jei-only.json",
+      "validations": [
+        {
+          "schema": "viewer-fixture.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "standalone.viewer.emi-only",
+      "category": "valid",
+      "file": "valid/standalone-viewer-emi-only.json",
+      "validations": [
+        {
+          "schema": "viewer-fixture.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "standalone.viewer.jei-and-emi",
+      "category": "valid",
+      "file": "valid/standalone-viewer-jei-emi.json",
+      "validations": [
+        {
+          "schema": "viewer-fixture.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ]
+    }
+  ]
+}

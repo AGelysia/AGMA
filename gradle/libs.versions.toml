@@ -1,14 +1,21 @@
 [versions]
 fabric-api = "0.141.4+1.21.11"
+fabric-api12111 = "0.141.5+1.21.11"
+fabric-api1182 = "0.77.0+1.18.2"
 fabric-loader = "0.19.3"
 google-java-format = "1.35.0"
 gson = "2.11.0"
+emi1182 = "0.7.3+1.18.2"
+jei12111 = "27.17.0.50"
+jei1182 = "10.2.1.1010"
 java-websocket = "1.6.0"
 json-canonicalization = "1.1"
 json-schema-validator = "1.5.9"
 junit = "6.0.3"
 loom = "1.17.13"
 minecraft = "1.21.11"
+minecraft12111 = "1.21.11"
+minecraft1182 = "1.18.2"
 mockito = "5.18.0"
 mockbukkit = "4.110.0"
 byte-buddy = "1.18.8"
@@ -17,6 +24,8 @@ spotless = "8.8.0"
 
 [libraries]
 fabric-api = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api" }
+fabric-api12111 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api12111" }
+fabric-api1182 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api1182" }
 fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader" }
 byte-buddy = { module = "net.bytebuddy:byte-buddy", version.ref = "byte-buddy" }
 byte-buddy-agent = { module = "net.bytebuddy:byte-buddy-agent", version.ref = "byte-buddy" }
@@ -25,10 +34,15 @@ junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
+minecraft12111 = { module = "com.mojang:minecraft", version.ref = "minecraft12111" }
+minecraft1182 = { module = "com.mojang:minecraft", version.ref = "minecraft1182" }
 mockito = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockbukkit = { module = "org.mockbukkit.mockbukkit:mockbukkit-v1.21", version.ref = "mockbukkit" }
 paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+emi1182 = { module = "maven.modrinth:emi", version.ref = "emi1182" }
+jei-api12111 = { module = "mezz.jei:jei-1.21.11-fabric-api", version.ref = "jei12111" }
+jei-api1182 = { module = "mezz.jei:jei-1.18.2-fabric-api", version.ref = "jei1182" }
 java-websocket = { module = "org.java-websocket:Java-WebSocket", version.ref = "java-websocket" }
 json-canonicalization = { module = "io.github.erdtman:java-json-canonicalization", version.ref = "json-canonicalization" }
 snakeyaml = { module = "org.yaml:snakeyaml", version = "2.2" }

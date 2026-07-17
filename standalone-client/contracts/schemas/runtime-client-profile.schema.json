@@ -1,0 +1,310 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/runtime-client-profile.schema.json",
+  "title": "AGMA Runtime Client Profile Configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "configVersion",
+    "profile",
+    "identity",
+    "transport",
+    "model",
+    "storage",
+    "logging",
+    "limits",
+    "privacy",
+    "toolPolicy",
+    "networkPolicy",
+    "storagePolicy"
+  ],
+  "properties": {
+    "configVersion": { "const": 3 },
+    "profile": { "const": "client" },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["installationId", "scope"],
+      "properties": {
+        "installationId": { "type": "string", "format": "uuid" },
+        "scope": { "const": "installation" }
+      }
+    },
+    "transport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["host", "port", "connectorToken", "authenticationDomain"],
+      "properties": {
+        "host": { "const": "127.0.0.1" },
+        "port": { "type": "integer", "minimum": 1024, "maximum": 65535 },
+        "connectorToken": { "$ref": "#/$defs/secretReference" },
+        "authenticationDomain": { "const": "agma-connector-handshake-v1" }
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "baseUrl",
+        "apiKey",
+        "model",
+        "timeoutSeconds",
+        "inputMicroUsdPerMillionTokens",
+        "outputMicroUsdPerMillionTokens"
+      ],
+      "properties": {
+        "provider": {
+          "enum": ["openai", "anthropic", "deepseek", "gemini", "openai-compatible"]
+        },
+        "baseUrl": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 2048,
+              "pattern": "^(?:https://[^@/?#]+(?:/[^?#]*)?|http://127\\.0\\.0\\.1(?::[0-9]{1,5})?(?:/[^?#]*)?)$"
+            },
+            { "type": "null" }
+          ]
+        },
+        "apiKey": { "$ref": "#/$defs/secretReference" },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$"
+        },
+        "timeoutSeconds": { "type": "integer", "minimum": 1, "maximum": 120 },
+        "inputMicroUsdPerMillionTokens": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000000000
+        },
+        "outputMicroUsdPerMillionTokens": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000000000
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "provider": { "const": "openai-compatible" } },
+            "required": ["provider"]
+          },
+          "then": { "properties": { "baseUrl": { "type": "string" } } }
+        }
+      ]
+    },
+    "storage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sqlitePath"],
+      "properties": {
+        "sqlitePath": { "$ref": "#/$defs/privateRelativePath" }
+      }
+    },
+    "logging": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["directory", "level"],
+      "properties": {
+        "directory": { "$ref": "#/$defs/privateRelativePath" },
+        "level": { "enum": ["debug", "info", "warn", "error"] }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maxConcurrentRequests",
+        "maxQueuedRequests",
+        "maxToolRounds",
+        "maxContextMessages",
+        "maxContextCharacters",
+        "requestCooldownSeconds",
+        "dailyRequests",
+        "monthlyBudgetMicroUsd",
+        "providerRoundReservationMicroUsd"
+      ],
+      "properties": {
+        "maxConcurrentRequests": { "type": "integer", "minimum": 1, "maximum": 8 },
+        "maxQueuedRequests": { "type": "integer", "minimum": 0, "maximum": 128 },
+        "maxToolRounds": { "type": "integer", "minimum": 1, "maximum": 8 },
+        "maxContextMessages": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "maxContextCharacters": { "type": "integer", "minimum": 4096, "maximum": 65536 },
+        "requestCooldownSeconds": { "type": "integer", "minimum": 0, "maximum": 3600 },
+        "dailyRequests": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+        "monthlyBudgetMicroUsd": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000000000
+        },
+        "providerRoundReservationMicroUsd": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000000000
+        }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["storeConversations", "retentionDays", "logMessageContent", "logToolCalls"],
+      "properties": {
+        "storeConversations": { "type": "boolean" },
+        "retentionDays": { "type": "integer", "minimum": 0, "maximum": 3650 },
+        "logMessageContent": { "const": false },
+        "logToolCalls": { "const": false }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "storeConversations": { "const": false } } },
+          "then": { "properties": { "retentionDays": { "const": 0 } } }
+        }
+      ]
+    },
+    "toolPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed", "denied", "inventoryDefaultEnabled"],
+      "properties": {
+        "allowed": {
+          "type": "array",
+          "maxItems": 5,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "game.resource.search",
+              "game.process.lookup",
+              "game.process.uses",
+              "game.process.plan",
+              "game.inventory.snapshot"
+            ]
+          }
+        },
+        "denied": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "paper.command",
+              "paper.permission",
+              "server.payload",
+              "world.write",
+              "arbitrary.web.fetch"
+            ]
+          },
+          "allOf": [
+            {
+              "contains": { "const": "paper.command" },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": { "const": "server.payload" },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": { "const": "world.write" },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": { "const": "arbitrary.web.fetch" },
+              "minContains": 1,
+              "maxContains": 1
+            }
+          ]
+        },
+        "inventoryDefaultEnabled": { "const": false }
+      }
+    },
+    "networkPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["webSearchDefaultEnabled", "remoteCustomUrlRequiresHttps"],
+      "properties": {
+        "webSearchDefaultEnabled": { "const": false },
+        "remoteCustomUrlRequiresHttps": { "const": true }
+      }
+    },
+    "webEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "apiKey",
+        "requestCostMicroUsd",
+        "monthlyBudgetMicroUsd",
+        "defaultAuthorization",
+        "persistentAuthorizationEnabled",
+        "country",
+        "searchLanguage"
+      ],
+      "properties": {
+        "provider": { "const": "brave" },
+        "apiKey": { "$ref": "#/$defs/secretReference" },
+        "requestCostMicroUsd": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000000
+        },
+        "monthlyBudgetMicroUsd": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000000000
+        },
+        "defaultAuthorization": { "const": "off" },
+        "persistentAuthorizationEnabled": { "type": "boolean" },
+        "country": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 2,
+          "pattern": "^[A-Z]{2}$"
+        },
+        "searchLanguage": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 8,
+          "pattern": "^[a-z]{2,3}(?:-[a-z]{2})?$"
+        }
+      }
+    },
+    "storagePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope", "separateFromPaper"],
+      "properties": {
+        "scope": { "const": "installation" },
+        "separateFromPaper": { "const": true }
+      }
+    }
+  },
+  "$defs": {
+    "secretReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "reference"],
+      "properties": {
+        "source": { "enum": ["environment", "credential_store", "private_file"] },
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9][A-Za-z0-9._/-]*$"
+        }
+      }
+    },
+    "privateRelativePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9][A-Za-z0-9._/-]*$"
+    }
+  }
+}

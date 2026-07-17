@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "schemas": [
+    "connector-cancel.schema.json",
+    "connector-complete.schema.json",
+    "connector-envelope.schema.json",
+    "connector-error.schema.json",
+    "connector-hello.schema.json",
+    "connector-request.schema.json",
+    "connector-status-request.schema.json",
+    "connector-status.schema.json",
+    "connector-tool-call.schema.json",
+    "connector-tool-cancel.schema.json",
+    "connector-tool-common.schema.json",
+    "connector-tool-error.schema.json",
+    "connector-tool-result.schema.json",
+    "evidence-claim.schema.json",
+    "guide-answer-v1.schema.json",
+    "process-record.schema.json",
+    "resource-ref.schema.json",
+    "tools/client-tool-common.schema.json",
+    "tools/game-inventory-snapshot-arguments.schema.json",
+    "tools/game-inventory-snapshot-result.schema.json",
+    "tools/game-process-lookup-arguments.schema.json",
+    "tools/game-process-lookup-result.schema.json",
+    "tools/game-process-plan-arguments.schema.json",
+    "tools/game-process-plan-result.schema.json",
+    "tools/game-process-uses-arguments.schema.json",
+    "tools/game-process-uses-result.schema.json",
+    "tools/game-resource-search-arguments.schema.json",
+    "tools/game-resource-search-result.schema.json"
+  ]
+}

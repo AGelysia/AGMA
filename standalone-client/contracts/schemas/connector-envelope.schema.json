@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/connector-envelope.schema.json",
+  "title": "AGMA Standalone Connector Application Envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "connectorKind",
+    "protocolVersion",
+    "messageId",
+    "requestId",
+    "scopeId",
+    "type",
+    "timestamp",
+    "nonce",
+    "payload"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "connectorKind": { "const": "standalone_client" },
+    "protocolVersion": { "const": "client-1.0" },
+    "messageId": { "type": "string", "format": "uuid" },
+    "requestId": {
+      "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }]
+    },
+    "scopeId": { "type": "string", "format": "uuid" },
+    "type": {
+      "enum": [
+        "client.request",
+        "client.cancel",
+        "client.status.request",
+        "client.tool.call",
+        "client.tool.result",
+        "client.tool.error",
+        "client.tool.cancel",
+        "client.complete",
+        "client.error",
+        "client.status"
+      ]
+    },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "nonce": {
+      "type": "string",
+      "minLength": 22,
+      "maxLength": 86,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "payload": {
+      "type": "object",
+      "maxProperties": 16
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "enum": ["client.request", "client.cancel", "client.status.request"]
+          }
+        },
+        "required": ["type"]
+      },
+      "then": {
+        "properties": {
+          "requestId": { "type": "null" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "enum": [
+              "client.tool.call",
+              "client.tool.result",
+              "client.tool.error",
+              "client.tool.cancel",
+              "client.complete",
+              "client.error",
+              "client.status"
+            ]
+          }
+        },
+        "required": ["type"]
+      },
+      "then": {
+        "properties": {
+          "requestId": { "type": "string", "format": "uuid" }
+        }
+      }
+    }
+  ]
+}

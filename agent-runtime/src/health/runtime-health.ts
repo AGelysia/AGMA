@@ -29,9 +29,14 @@ export interface RuntimeHealthView {
 export class RuntimeHealthState {
   #status: RuntimeHealthStatus = "STARTING";
   readonly #checkedAt: string;
+  readonly #protocolVersion: string;
 
-  public constructor(checkedAt = new Date().toISOString()) {
+  public constructor(
+    checkedAt = new Date().toISOString(),
+    protocolVersion: string = SUPPORTED_PROTOCOL_VERSION,
+  ) {
     this.#checkedAt = checkedAt;
+    this.#protocolVersion = protocolVersion;
   }
 
   public markReady(): void {
@@ -49,7 +54,7 @@ export class RuntimeHealthState {
     return {
       status: this.#status,
       runtimeVersion: runtimeIdentity.version,
-      protocolVersion: SUPPORTED_PROTOCOL_VERSION,
+      protocolVersion: this.#protocolVersion,
       checkedAt: this.#checkedAt,
       checks: runtimeHealthCheckNames.map((name) => ({ name, status: "PASS" })),
     };

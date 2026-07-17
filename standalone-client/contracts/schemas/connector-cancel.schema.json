@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/connector-cancel.schema.json",
+  "title": "AGMA Standalone Request Cancellation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["targetRequestId", "reason"],
+  "properties": {
+    "targetRequestId": { "type": "string", "format": "uuid" },
+    "reason": {
+      "enum": ["USER_REQUEST", "CLIENT_SHUTDOWN", "CONTEXT_CHANGED", "TIMEOUT"]
+    }
+  }
+}

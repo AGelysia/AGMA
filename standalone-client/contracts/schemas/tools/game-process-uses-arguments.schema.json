@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/game-process-uses-arguments.schema.json",
+  "title": "AGMA Client Process Uses Arguments",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["resourceId", "generationId", "limit"],
+  "properties": {
+    "resourceId": { "$ref": "../resource-ref.schema.json#/$defs/namespacedId" },
+    "generationId": {
+      "$ref": "client-tool-common.schema.json#/$defs/generationId"
+    },
+    "limit": { "type": "integer", "minimum": 1, "maximum": 16 }
+  }
+}

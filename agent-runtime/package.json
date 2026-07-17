@@ -10,9 +10,11 @@
   },
   "exports": "./dist/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && npm run build:standalone",
+    "build:standalone": "node scripts/build-standalone.mjs",
     "dev": "npm run build --silent && npm start",
     "start": "node dist/bootstrap/index.js",
+    "start:standalone": "node dist-standalone/bootstrap/index.js",
     "validate:provider": "node dist/validation/live-provider-check.js",
     "version": "node scripts/version.mjs",
     "test": "vitest run",
@@ -27,6 +29,7 @@
     "ajv-formats": "3.0.1",
     "fastify": "5.10.0",
     "mdast-util-from-markdown": "2.0.2",
+    "parse5": "8.0.1",
     "yaml": "2.9.0",
     "zod": "4.1.12"
   },
@@ -34,6 +37,7 @@
     "@eslint/js": "9.39.1",
     "@types/node": "22.19.1",
     "@types/ws": "8.18.1",
+    "esbuild": "0.28.1",
     "eslint": "9.39.1",
     "eslint-config-prettier": "10.1.8",
     "globals": "16.5.0",

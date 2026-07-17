@@ -1,11 +1,8 @@
-import { createRequire } from "node:module";
-
 import { z } from "zod";
 
-export const SUPPORTED_PROTOCOL_VERSION = "1.0" as const;
+import packageJson from "../package.json" with { type: "json" };
 
-const require = createRequire(import.meta.url);
-const packageJson: unknown = require("../package.json");
+export const SUPPORTED_PROTOCOL_VERSION = "1.0" as const;
 
 const packageIdentitySchema = z.object({
   name: z.literal("agma-runtime"),

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/game-resource-search-arguments.schema.json",
+  "title": "AGMA Client Resource Search Arguments",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["query", "limit"],
+  "properties": {
+    "query": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "limit": { "type": "integer", "minimum": 1, "maximum": 20 }
+  }
+}

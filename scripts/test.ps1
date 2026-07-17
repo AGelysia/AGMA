@@ -28,6 +28,16 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "Paper build failed with exit code $LASTEXITCODE" }
     & $Gradle @GradleArgs :client-mod:build
     if ($LASTEXITCODE -ne 0) { throw "Client build failed with exit code $LASTEXITCODE" }
+    & $Gradle @GradleArgs :standalone-client:core:build
+    if ($LASTEXITCODE -ne 0) { throw "Standalone client core build failed with exit code $LASTEXITCODE" }
+    & $Gradle @GradleArgs :standalone-client:runtime-supervisor-core:build
+    if ($LASTEXITCODE -ne 0) { throw "Standalone runtime supervisor build failed with exit code $LASTEXITCODE" }
+    & $Gradle @GradleArgs :standalone-client:fabric-common:build
+    if ($LASTEXITCODE -ne 0) { throw "Standalone Fabric common build failed with exit code $LASTEXITCODE" }
+    & $Gradle @GradleArgs :standalone-client:fabric-mc12111:build
+    if ($LASTEXITCODE -ne 0) { throw "Standalone Minecraft 1.21.11 build failed with exit code $LASTEXITCODE" }
+    & $Gradle @GradleArgs :standalone-client:fabric-mc1182:build
+    if ($LASTEXITCODE -ne 0) { throw "Standalone Minecraft 1.18.2 build failed with exit code $LASTEXITCODE" }
 } finally {
     Pop-Location
 }

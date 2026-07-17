@@ -1,0 +1,182 @@
+{
+  "processMalformed": {
+    "processId": "not-namespaced"
+  },
+  "guideMalformed": {
+    "schemaVersion": "guide-answer-v1",
+    "unexpected": true
+  },
+  "resourceWrongTrust": {
+    "kind": "item",
+    "id": "minecraft:stone",
+    "displayName": "Stone",
+    "modId": "minecraft",
+    "modName": "Minecraft",
+    "modVersion": "1.21.11",
+    "amount": 1,
+    "unit": "item",
+    "source": {
+      "layer": "client_registry",
+      "providerId": "minecraft_registry",
+      "trust": "L0A",
+      "completeness": "complete",
+      "generationId": "generation-001"
+    }
+  },
+  "evidenceHttp": {
+    "claimId": "claim.invalid",
+    "statement": "Invalid standalone fixture claim.",
+    "sourceUrl": "http://example.com/invalid",
+    "sourceTitle": "Invalid",
+    "publisher": "Invalid",
+    "retrievedAt": "2026-07-17T00:00:00Z",
+    "evidenceSpanSha256": "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+    "applicability": {
+      "minecraftVersion": "1.21.11",
+      "modVersions": {},
+      "modpackVersion": null,
+      "match": "unknown"
+    },
+    "sourceQuality": 0.5,
+    "conflicts": [],
+    "warnings": []
+  },
+  "connectorSelectedTooEarly": {
+    "schemaVersion": "1.0",
+    "connectorKind": "standalone_client",
+    "type": "connector.hello",
+    "messageId": "44444444-4444-4444-8444-444444444444",
+    "requestId": null,
+    "timestamp": "2026-07-17T00:00:00Z",
+    "nonce": "EEEEEEEEEEEEEEEEEEEEEA",
+    "component": "standalone_client",
+    "componentVersion": "0.2.0",
+    "scopeId": "11111111-1111-4111-8111-111111111111",
+    "supportedProtocolVersions": ["client-1.0"],
+    "selectedProtocolVersion": "client-1.0",
+    "capabilities": [],
+    "authentication": {
+      "scheme": "hmac-sha256",
+      "keyId": "session-key",
+      "challenge": "AAAAAAAAAAAAAAAAAAAAAA",
+      "proof": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    }
+  },
+  "viewerIncoherent": {
+    "schemaVersion": "1.0",
+    "scenario": "no_viewer",
+    "minecraftVersion": "1.21.11",
+    "installedViewers": ["jei"],
+    "adapterStates": [
+      {
+        "viewer": "jei",
+        "version": "27.17.0.50",
+        "artifactKind": "reviewed",
+        "status": "ready"
+      },
+      {
+        "viewer": "jei",
+        "version": "27.17.0.50",
+        "artifactKind": "reviewed",
+        "status": "ready"
+      }
+    ],
+    "selectedSource": "emi",
+    "catalog": {
+      "generationId": "Invalid-viewer-fixture",
+      "resources": [],
+      "processes": []
+    },
+    "expected": {
+      "startup": "ready",
+      "fallbackAvailable": true,
+      "duplicateProcesses": false
+    }
+  },
+  "profileNetworkEnabled": {
+    "configVersion": 3,
+    "profile": "client",
+    "identity": {
+      "installationId": "11111111-1111-4111-8111-111111111111",
+      "scope": "installation"
+    },
+    "transport": {
+      "host": "127.0.0.1",
+      "port": 38127,
+      "connectorToken": {
+        "source": "environment",
+        "reference": "AGMA_CLIENT_CONNECTOR_TOKEN"
+      },
+      "authenticationDomain": "agma-connector-handshake-v1"
+    },
+    "model": {
+      "provider": "openai",
+      "baseUrl": "https://api.openai.com/v1",
+      "apiKey": {
+        "source": "environment",
+        "reference": "AGMA_TEST_PROVIDER_KEY"
+      },
+      "model": "fixture-model",
+      "timeoutSeconds": 60,
+      "inputMicroUsdPerMillionTokens": 0,
+      "outputMicroUsdPerMillionTokens": 0
+    },
+    "storage": {
+      "sqlitePath": "data/client.sqlite"
+    },
+    "logging": {
+      "directory": "logs",
+      "level": "info"
+    },
+    "limits": {
+      "maxConcurrentRequests": 1,
+      "maxQueuedRequests": 8,
+      "maxToolRounds": 4,
+      "maxContextMessages": 30,
+      "maxContextCharacters": 32768,
+      "requestCooldownSeconds": 2,
+      "dailyRequests": 100,
+      "monthlyBudgetMicroUsd": 1000000,
+      "providerRoundReservationMicroUsd": 10000
+    },
+    "privacy": {
+      "storeConversations": false,
+      "retentionDays": 0,
+      "logMessageContent": false,
+      "logToolCalls": false
+    },
+    "toolPolicy": {
+      "allowed": ["game.resource.search"],
+      "denied": [
+        "paper.command",
+        "server.payload",
+        "world.write",
+        "arbitrary.web.fetch"
+      ],
+      "inventoryDefaultEnabled": false
+    },
+    "networkPolicy": {
+      "webSearchDefaultEnabled": true,
+      "remoteCustomUrlRequiresHttps": true
+    },
+    "storagePolicy": {
+      "scope": "installation",
+      "separateFromPaper": true
+    }
+  },
+  "applicationResponseWithoutCorrelation": {
+    "schemaVersion": "1.0",
+    "connectorKind": "standalone_client",
+    "protocolVersion": "client-1.0",
+    "messageId": "99999999-9999-4999-8999-999999999999",
+    "requestId": null,
+    "scopeId": "11111111-1111-4111-8111-111111111111",
+    "type": "client.complete",
+    "timestamp": "2026-07-17T00:00:07Z",
+    "nonce": "JJJJJJJJJJJJJJJJJJJJJA",
+    "payload": {
+      "sessionId": null,
+      "text": "This response is intentionally uncorrelated."
+    }
+  }
+}

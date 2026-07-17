@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/connector-request.schema.json",
+  "title": "AGMA Standalone Text Request",
+  "type": "object",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": { "inventoryAuthorization": {} },
+        "required": ["inventoryAuthorization"]
+      },
+      "then": {
+        "properties": { "localContext": {} },
+        "required": ["localContext"]
+      }
+    }
+  ],
+  "required": ["sessionId", "message"],
+  "properties": {
+    "sessionId": {
+      "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }]
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "localContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minecraftVersion", "catalogGenerationId", "target"],
+      "properties": {
+        "minecraftVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[0-9A-Za-z][0-9A-Za-z._+-]*$"
+        },
+        "catalogGenerationId": {
+          "$ref": "resource-ref.schema.json#/$defs/generationId"
+        },
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id"],
+          "properties": {
+            "id": { "$ref": "resource-ref.schema.json#/$defs/namespacedId" },
+            "displayName": { "type": "string", "minLength": 1, "maxLength": 256 },
+            "modId": { "$ref": "resource-ref.schema.json#/$defs/symbolicId" },
+            "modVersion": { "type": "string", "minLength": 1, "maxLength": 128 }
+          }
+        }
+      }
+    },
+    "webAuthorization": {
+      "enum": ["off", "once", "persistent"]
+    },
+    "webContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minecraftVersion"],
+      "properties": {
+        "minecraftVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[0-9A-Za-z][0-9A-Za-z._+-]*$"
+        },
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": { "$ref": "resource-ref.schema.json#/$defs/namespacedId" },
+            "displayName": { "type": "string", "minLength": 1, "maxLength": 256 },
+            "modId": { "$ref": "resource-ref.schema.json#/$defs/symbolicId" },
+            "modVersion": { "type": "string", "minLength": 1, "maxLength": 128 }
+          },
+          "minProperties": 1
+        },
+        "modPack": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "version"],
+          "properties": {
+            "name": { "type": "string", "minLength": 1, "maxLength": 256 },
+            "version": {
+              "oneOf": [
+                { "type": "string", "minLength": 1, "maxLength": 128 },
+                { "type": "null" }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "inventoryAuthorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authorizationId", "generationId", "resourceIds"],
+      "properties": {
+        "authorizationId": { "type": "string", "format": "uuid" },
+        "generationId": {
+          "$ref": "resource-ref.schema.json#/$defs/generationId"
+        },
+        "resourceIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": { "$ref": "resource-ref.schema.json#/$defs/namespacedId" }
+        }
+      }
+    }
+  }
+}

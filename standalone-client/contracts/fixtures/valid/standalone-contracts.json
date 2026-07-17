@@ -1,0 +1,446 @@
+{
+  "publicTestToken": "standalone-c0-public-test-token",
+  "resource": {
+    "kind": "item",
+    "id": "minecraft:iron_pickaxe",
+    "componentsFingerprint": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "displayName": "Iron Pickaxe",
+    "translationKey": "item.minecraft.iron_pickaxe",
+    "modId": "minecraft",
+    "modName": "Minecraft",
+    "modVersion": "1.21.11",
+    "amount": 1,
+    "unit": "item",
+    "source": {
+      "layer": "client_registry",
+      "providerId": "minecraft_registry",
+      "trust": "L0B",
+      "completeness": "complete",
+      "generationId": "generation-001"
+    }
+  },
+  "process": {
+    "processId": "jei:minecraft.crafting.iron_pickaxe",
+    "categoryId": "minecraft:crafting",
+    "displayName": "Craft Iron Pickaxe",
+    "inputRelation": "and",
+    "workstations": [
+      {
+        "kind": "item",
+        "id": "minecraft:crafting_table",
+        "displayName": "Crafting Table",
+        "translationKey": "block.minecraft.crafting_table",
+        "modId": "minecraft",
+        "modName": "Minecraft",
+        "modVersion": "1.21.11",
+        "amount": 1,
+        "unit": "item",
+        "source": {
+          "layer": "client_registry",
+          "providerId": "minecraft_registry",
+          "trust": "L0B",
+          "completeness": "complete",
+          "generationId": "generation-001"
+        }
+      }
+    ],
+    "inputs": [
+      {
+        "groupId": "iron",
+        "relation": "or",
+        "alternatives": [
+          {
+            "kind": "item",
+            "id": "minecraft:iron_ingot",
+            "displayName": "Iron Ingot",
+            "translationKey": "item.minecraft.iron_ingot",
+            "modId": "minecraft",
+            "modName": "Minecraft",
+            "modVersion": "1.21.11",
+            "amount": 3,
+            "unit": "item",
+            "source": {
+              "layer": "client_registry",
+              "providerId": "minecraft_registry",
+              "trust": "L0B",
+              "completeness": "complete",
+              "generationId": "generation-001"
+            }
+          }
+        ]
+      },
+      {
+        "groupId": "handle",
+        "relation": "or",
+        "alternatives": [
+          {
+            "kind": "item",
+            "id": "minecraft:stick",
+            "displayName": "Stick",
+            "translationKey": "item.minecraft.stick",
+            "modId": "minecraft",
+            "modName": "Minecraft",
+            "modVersion": "1.21.11",
+            "amount": 2,
+            "unit": "item",
+            "source": {
+              "layer": "client_registry",
+              "providerId": "minecraft_registry",
+              "trust": "L0B",
+              "completeness": "complete",
+              "generationId": "generation-001"
+            }
+          }
+        ]
+      }
+    ],
+    "catalysts": [],
+    "outputs": [
+      {
+        "resource": {
+          "kind": "item",
+          "id": "minecraft:iron_pickaxe",
+          "componentsFingerprint": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+          "displayName": "Iron Pickaxe",
+          "translationKey": "item.minecraft.iron_pickaxe",
+          "modId": "minecraft",
+          "modName": "Minecraft",
+          "modVersion": "1.21.11",
+          "amount": 1,
+          "unit": "item",
+          "source": {
+            "layer": "client_registry",
+            "providerId": "minecraft_registry",
+            "trust": "L0B",
+            "completeness": "complete",
+            "generationId": "generation-001"
+          }
+        },
+        "probability": 1,
+        "primary": true
+      }
+    ],
+    "durationTicks": null,
+    "energy": null,
+    "conditions": [],
+    "stages": [
+      {
+        "index": 0,
+        "description": "Combine both input groups at a crafting table.",
+        "inputGroupIds": ["iron", "handle"]
+      }
+    ],
+    "source": {
+      "layer": "jei",
+      "providerId": "jei",
+      "trust": "L1",
+      "completeness": "complete",
+      "generationId": "generation-001"
+    },
+    "plannable": true,
+    "warnings": []
+  },
+  "evidence": {
+    "claimId": "claim.fixture.boss_source",
+    "statement": "The fixture boss is the documented source for the fixture component.",
+    "sourceUrl": "https://example.com/agma-fixture/boss-source",
+    "sourceTitle": "AGMA Fixture Boss Source",
+    "publisher": "AGMA Fixture Publisher",
+    "retrievedAt": "2026-07-17T00:00:00Z",
+    "evidenceSpanSha256": "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+    "applicability": {
+      "minecraftVersion": "1.21.11",
+      "modVersions": {
+        "agma_fixture": "1.0.0"
+      },
+      "modpackVersion": null,
+      "match": "match"
+    },
+    "sourceQuality": 0.8,
+    "conflicts": [],
+    "warnings": ["This is controlled C0 contract data, not a gameplay claim."]
+  },
+  "guide": {
+    "schemaVersion": "guide-answer-v1",
+    "target": {
+      "kind": "item",
+      "id": "agma_fixture:boss_blade",
+      "displayName": "Fixture Boss Blade",
+      "translationKey": "item.agma_fixture.boss_blade",
+      "modId": "agma_fixture",
+      "modName": "AGMA Fixture Mod",
+      "modVersion": "1.0.0",
+      "amount": 1,
+      "unit": "item",
+      "source": {
+        "layer": "client_registry",
+        "providerId": "minecraft_registry",
+        "trust": "L0B",
+        "completeness": "complete",
+        "generationId": "generation-001"
+      }
+    },
+    "targetResolution": "exact",
+    "materials": [],
+    "processes": [],
+    "bossAndDrops": [
+      {
+        "statement": "The documented component source is a boss encounter.",
+        "claimIds": ["claim.fixture.boss_source"]
+      }
+    ],
+    "preparation": [
+      {
+        "statement": "Read the cited fixture source before the encounter.",
+        "claimIds": ["claim.fixture.boss_source"]
+      }
+    ],
+    "unknowns": [
+      {
+        "disposition": "client_not_visible",
+        "detail": "A remote server may hide progression conditions from this client."
+      }
+    ],
+    "evidence": [
+      {
+        "claimId": "claim.fixture.boss_source",
+        "statement": "The fixture boss is the documented source for the fixture component.",
+        "sourceUrl": "https://example.com/agma-fixture/boss-source",
+        "sourceTitle": "AGMA Fixture Boss Source",
+        "publisher": "AGMA Fixture Publisher",
+        "retrievedAt": "2026-07-17T00:00:00Z",
+        "evidenceSpanSha256": "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+        "applicability": {
+          "minecraftVersion": "1.21.11",
+          "modVersions": {
+            "agma_fixture": "1.0.0"
+          },
+          "modpackVersion": null,
+          "match": "match"
+        },
+        "sourceQuality": 0.8,
+        "conflicts": [],
+        "warnings": [
+          "This is controlled C0 contract data, not a gameplay claim."
+        ]
+      }
+    ],
+    "snapshot": {
+      "generationId": "generation-001",
+      "packFingerprint": "1111111111111111111111111111111111111111111111111111111111111111",
+      "queriedAt": "2026-07-17T00:00:00Z",
+      "visibility": "client_visible_partial"
+    }
+  },
+  "notFoundGuide": {
+    "schemaVersion": "guide-answer-v1",
+    "target": null,
+    "targetResolution": "not_found",
+    "materials": [],
+    "processes": [],
+    "bossAndDrops": [],
+    "preparation": [],
+    "unknowns": [
+      {
+        "disposition": "unverified",
+        "detail": "No matching client-visible resource exists in this fixture generation."
+      }
+    ],
+    "evidence": [],
+    "snapshot": {
+      "generationId": "NoWorld-11111111-1111-4111-8111-111111111111",
+      "packFingerprint": "2222222222222222222222222222222222222222222222222222222222222222",
+      "queriedAt": "2026-07-17T00:00:00Z",
+      "visibility": "no_world"
+    }
+  },
+  "connectorRequest": {
+    "schemaVersion": "1.0",
+    "connectorKind": "standalone_client",
+    "type": "connector.hello",
+    "messageId": "22222222-2222-4222-8222-222222222222",
+    "requestId": null,
+    "timestamp": "2026-07-17T00:00:00Z",
+    "nonce": "CCCCCCCCCCCCCCCCCCCCCA",
+    "component": "standalone_client",
+    "componentVersion": "0.2.0",
+    "scopeId": "11111111-1111-4111-8111-111111111111",
+    "supportedProtocolVersions": ["client-1.0"],
+    "selectedProtocolVersion": null,
+    "capabilities": [{ "id": "game.resource.search", "version": 1 }],
+    "authentication": {
+      "scheme": "hmac-sha256",
+      "keyId": "session-key",
+      "challenge": "AAAAAAAAAAAAAAAAAAAAAA",
+      "proof": "ImZGYJjo5pUJgEpulSHWYgsP2Y4P4G146fPNrvohtYU"
+    }
+  },
+  "connectorResponse": {
+    "schemaVersion": "1.0",
+    "connectorKind": "standalone_client",
+    "type": "connector.hello",
+    "messageId": "33333333-3333-4333-8333-333333333333",
+    "requestId": "22222222-2222-4222-8222-222222222222",
+    "timestamp": "2026-07-17T00:00:01Z",
+    "nonce": "DDDDDDDDDDDDDDDDDDDDDA",
+    "component": "runtime",
+    "componentVersion": "0.2.0",
+    "scopeId": "11111111-1111-4111-8111-111111111111",
+    "supportedProtocolVersions": ["client-1.0"],
+    "selectedProtocolVersion": "client-1.0",
+    "capabilities": [{ "id": "game.resource.search", "version": 1 }],
+    "authentication": {
+      "scheme": "hmac-sha256",
+      "keyId": "session-key",
+      "challenge": "AAAAAAAAAAAAAAAAAAAAAA",
+      "proof": "308hg8Yp2df6eeIoA2HJxp5W0r3sgxU2hARGtU7SsHY"
+    }
+  },
+  "applicationRequest": {
+    "schemaVersion": "1.0",
+    "connectorKind": "standalone_client",
+    "protocolVersion": "client-1.0",
+    "messageId": "44444444-4444-4444-8444-444444444444",
+    "requestId": null,
+    "scopeId": "11111111-1111-4111-8111-111111111111",
+    "type": "client.request",
+    "timestamp": "2026-07-17T00:00:02Z",
+    "nonce": "EEEEEEEEEEEEEEEEEEEEEA",
+    "payload": {
+      "sessionId": null,
+      "message": "Explain the difference between survival and creative mode."
+    }
+  },
+  "applicationComplete": {
+    "schemaVersion": "1.0",
+    "connectorKind": "standalone_client",
+    "protocolVersion": "client-1.0",
+    "messageId": "55555555-5555-4555-8555-555555555555",
+    "requestId": "44444444-4444-4444-8444-444444444444",
+    "scopeId": "11111111-1111-4111-8111-111111111111",
+    "type": "client.complete",
+    "timestamp": "2026-07-17T00:00:03Z",
+    "nonce": "FFFFFFFFFFFFFFFFFFFFFA",
+    "payload": {
+      "sessionId": null,
+      "text": "Survival uses health and resources; creative provides unrestricted building tools.",
+      "costMicroUsd": 19,
+      "costKind": "reported",
+      "sources": []
+    }
+  },
+  "applicationCancel": {
+    "schemaVersion": "1.0",
+    "connectorKind": "standalone_client",
+    "protocolVersion": "client-1.0",
+    "messageId": "66666666-6666-4666-8666-666666666666",
+    "requestId": null,
+    "scopeId": "11111111-1111-4111-8111-111111111111",
+    "type": "client.cancel",
+    "timestamp": "2026-07-17T00:00:04Z",
+    "nonce": "GGGGGGGGGGGGGGGGGGGGGA",
+    "payload": {
+      "targetRequestId": "44444444-4444-4444-8444-444444444444",
+      "reason": "USER_REQUEST"
+    }
+  },
+  "applicationStatusRequest": {
+    "schemaVersion": "1.0",
+    "connectorKind": "standalone_client",
+    "protocolVersion": "client-1.0",
+    "messageId": "77777777-7777-4777-8777-777777777777",
+    "requestId": null,
+    "scopeId": "11111111-1111-4111-8111-111111111111",
+    "type": "client.status.request",
+    "timestamp": "2026-07-17T00:00:05Z",
+    "nonce": "HHHHHHHHHHHHHHHHHHHHHA",
+    "payload": {}
+  },
+  "applicationStatus": {
+    "schemaVersion": "1.0",
+    "connectorKind": "standalone_client",
+    "protocolVersion": "client-1.0",
+    "messageId": "88888888-8888-4888-8888-888888888888",
+    "requestId": "77777777-7777-4777-8777-777777777777",
+    "scopeId": "11111111-1111-4111-8111-111111111111",
+    "type": "client.status",
+    "timestamp": "2026-07-17T00:00:06Z",
+    "nonce": "IIIIIIIIIIIIIIIIIIIIIA",
+    "payload": {
+      "state": "READY",
+      "activeRequests": 0,
+      "queuedRequests": 0
+    }
+  },
+  "profile": {
+    "configVersion": 3,
+    "profile": "client",
+    "identity": {
+      "installationId": "11111111-1111-4111-8111-111111111111",
+      "scope": "installation"
+    },
+    "transport": {
+      "host": "127.0.0.1",
+      "port": 38127,
+      "connectorToken": {
+        "source": "environment",
+        "reference": "AGMA_CLIENT_CONNECTOR_TOKEN"
+      },
+      "authenticationDomain": "agma-connector-handshake-v1"
+    },
+    "model": {
+      "provider": "openai",
+      "baseUrl": "https://api.openai.com/v1",
+      "apiKey": {
+        "source": "environment",
+        "reference": "AGMA_TEST_PROVIDER_KEY"
+      },
+      "model": "fixture-model",
+      "timeoutSeconds": 60,
+      "inputMicroUsdPerMillionTokens": 0,
+      "outputMicroUsdPerMillionTokens": 0
+    },
+    "storage": {
+      "sqlitePath": "data/client.sqlite"
+    },
+    "logging": {
+      "directory": "logs",
+      "level": "info"
+    },
+    "limits": {
+      "maxConcurrentRequests": 1,
+      "maxQueuedRequests": 8,
+      "maxToolRounds": 4,
+      "maxContextMessages": 30,
+      "maxContextCharacters": 32768,
+      "requestCooldownSeconds": 2,
+      "dailyRequests": 100,
+      "monthlyBudgetMicroUsd": 1000000,
+      "providerRoundReservationMicroUsd": 10000
+    },
+    "privacy": {
+      "storeConversations": false,
+      "retentionDays": 0,
+      "logMessageContent": false,
+      "logToolCalls": false
+    },
+    "toolPolicy": {
+      "allowed": [],
+      "denied": [
+        "paper.command",
+        "server.payload",
+        "world.write",
+        "arbitrary.web.fetch"
+      ],
+      "inventoryDefaultEnabled": false
+    },
+    "networkPolicy": {
+      "webSearchDefaultEnabled": false,
+      "remoteCustomUrlRequiresHttps": true
+    },
+    "storagePolicy": {
+      "scope": "installation",
+      "separateFromPaper": true
+    }
+  }
+}

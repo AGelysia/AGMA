@@ -21,6 +21,7 @@ final class VerifyTestResults {
           "test/main-module.test.ts",
           "test/openai-chat-completions-provider.test.ts",
           "test/openai-responses-provider.test.ts",
+          "test/standalone-protocol-contract.test.ts",
           "test/graphical-client-runtime.test.ts",
           "test/provider-factory.test.ts",
           "test/usage-accounting.test.ts");
@@ -33,6 +34,23 @@ final class VerifyTestResults {
       Set.of(
           "dev.minecraftagent.client.litematica.LitematicaAdapterTest",
           "dev.minecraftagent.protocol.SharedProtocolContractTest");
+  private static final Set<String> STANDALONE_CORE_REQUIRED =
+      Set.of(
+          "dev.minecraftagent.protocol.SharedProtocolContractTest",
+          "dev.minecraftagent.standalone.core.contract.C0AssetTest",
+          "dev.minecraftagent.standalone.core.contract.ContractModelTest");
+  private static final Set<String> SUPERVISOR_REQUIRED =
+      Set.of(
+          "dev.minecraftagent.standalone.supervisor.RuntimeSupervisorTest",
+          "dev.minecraftagent.standalone.supervisor.install.ManagedRuntimeInstallerTest",
+          "dev.minecraftagent.standalone.supervisor.install.NodeDistributionCatalogTest");
+  private static final Set<String> FABRIC_COMMON_REQUIRED =
+      Set.of(
+          "dev.minecraftagent.standalone.common.ClientProfileStoreTest",
+          "dev.minecraftagent.standalone.common.EmbeddedRuntimeDistributionTest",
+          "dev.minecraftagent.standalone.common.JavaHttpLocalConnectorTest");
+  private static final Set<String> FABRIC_VERSION_REQUIRED =
+      Set.of("dev.minecraftagent.standalone.fabric.StandaloneModMetadataTest");
 
   private record Suite(String name, int tests, int failures, int errors, int skipped) {}
 
@@ -42,8 +60,11 @@ final class VerifyTestResults {
   private VerifyTestResults() {}
 
   public static void main(String[] args) throws Exception {
-    if (args.length != 3) {
-      fail("usage: VerifyTestResults.java <runtime.xml> <paper-results> <client-results>");
+    if (args.length != 8) {
+      fail(
+          "usage: VerifyTestResults.java <runtime.xml> <paper-results> <client-results>"
+              + " <standalone-core-results> <supervisor-results> <fabric-common-results>"
+              + " <fabric-mc12111-results> <fabric-mc1182-results>");
     }
 
     verify(
@@ -55,6 +76,21 @@ final class VerifyTestResults {
     verify(
         new Lane("Client", 17, 210, CLIENT_REQUIRED),
         suitesFromDirectory(Path.of(args[2])));
+    verify(
+        new Lane("Standalone Core", 3, 19, STANDALONE_CORE_REQUIRED),
+        suitesFromDirectory(Path.of(args[3])));
+    verify(
+        new Lane("Standalone Supervisor", 3, 20, SUPERVISOR_REQUIRED),
+        suitesFromDirectory(Path.of(args[4])));
+    verify(
+        new Lane("Standalone Fabric Common", 10, 30, FABRIC_COMMON_REQUIRED),
+        suitesFromDirectory(Path.of(args[5])));
+    verify(
+        new Lane("Standalone Minecraft 1.21.11", 1, 1, FABRIC_VERSION_REQUIRED),
+        suitesFromDirectory(Path.of(args[6])));
+    verify(
+        new Lane("Standalone Minecraft 1.18.2", 1, 1, FABRIC_VERSION_REQUIRED),
+        suitesFromDirectory(Path.of(args[7])));
   }
 
   private static List<Suite> suitesFromDirectory(Path directory) throws Exception {

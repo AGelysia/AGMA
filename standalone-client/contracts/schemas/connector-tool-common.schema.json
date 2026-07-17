@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/connector-tool-common.schema.json",
+  "title": "AGMA Standalone Connector Tool Common Types",
+  "$defs": {
+    "toolId": {
+      "enum": [
+        "game.resource.search",
+        "game.process.lookup",
+        "game.process.uses",
+        "game.process.plan",
+        "game.inventory.snapshot"
+      ]
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 7
+    }
+  }
+}

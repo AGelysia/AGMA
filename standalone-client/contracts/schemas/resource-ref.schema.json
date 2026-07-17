@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/resource-ref.schema.json",
+  "title": "AGMA Standalone Resource Reference",
+  "$ref": "#/$defs/resourceRef",
+  "$defs": {
+    "symbolicId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9_.-]*$"
+    },
+    "namespacedId": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 256,
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+    },
+    "generationId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["layer", "providerId", "trust", "completeness", "generationId"],
+      "properties": {
+        "layer": {
+          "enum": [
+            "integrated_server",
+            "client_registry",
+            "client_recipe",
+            "jei",
+            "emi",
+            "local_resource_pack"
+          ]
+        },
+        "providerId": {
+          "$ref": "#/$defs/symbolicId"
+        },
+        "trust": {
+          "enum": ["L0A", "L0B", "L1", "L2"]
+        },
+        "completeness": {
+          "enum": ["complete", "partial", "opaque", "unavailable"]
+        },
+        "generationId": {
+          "$ref": "#/$defs/generationId"
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "layer": { "const": "integrated_server" } } },
+          "then": { "properties": { "trust": { "const": "L0A" } } }
+        },
+        {
+          "if": { "properties": { "layer": { "const": "client_registry" } } },
+          "then": { "properties": { "trust": { "const": "L0B" } } }
+        },
+        {
+          "if": {
+            "properties": {
+              "layer": { "enum": ["client_recipe", "jei", "emi"] }
+            }
+          },
+          "then": { "properties": { "trust": { "const": "L1" } } }
+        },
+        {
+          "if": { "properties": { "layer": { "const": "local_resource_pack" } } },
+          "then": { "properties": { "trust": { "const": "L2" } } }
+        }
+      ]
+    },
+    "resourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "id",
+        "displayName",
+        "modId",
+        "modName",
+        "modVersion",
+        "amount",
+        "unit",
+        "source"
+      ],
+      "properties": {
+        "kind": {
+          "enum": ["item", "fluid", "energy", "chemical", "entity", "custom"]
+        },
+        "id": {
+          "$ref": "#/$defs/namespacedId"
+        },
+        "componentsFingerprint": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "translationKey": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "modId": {
+          "$ref": "#/$defs/symbolicId"
+        },
+        "modName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "modVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "amount": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000000000000
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        }
+      }
+    }
+  }
+}

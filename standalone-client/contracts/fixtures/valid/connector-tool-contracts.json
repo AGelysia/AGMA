@@ -1,0 +1,215 @@
+{
+  "resourceSearchArguments": {
+    "query": "iron pickaxe",
+    "limit": 5
+  },
+  "resourceSearchResult": {
+    "generationId": "generation-001",
+    "visibility": "no_world",
+    "completeness": "unavailable",
+    "candidates": [],
+    "ambiguous": false,
+    "truncated": false,
+    "warnings": ["Enter a world before searching the dynamic catalog."]
+  },
+  "processLookupArguments": {
+    "resourceId": "minecraft:iron_pickaxe",
+    "generationId": "generation-001",
+    "limit": 8
+  },
+  "processLookupResult": {
+    "generationId": "generation-001",
+    "status": "unavailable",
+    "processes": [],
+    "truncated": false,
+    "warnings": ["No client-visible process source is ready."]
+  },
+  "processUsesArguments": {
+    "resourceId": "minecraft:iron_ingot",
+    "generationId": "generation-001",
+    "limit": 8
+  },
+  "processUsesResult": {
+    "generationId": "generation-001",
+    "status": "unavailable",
+    "processes": [],
+    "truncated": false,
+    "warnings": ["No client-visible process source is ready."]
+  },
+  "processPlanArguments": {
+    "resourceId": "minecraft:iron_pickaxe",
+    "amount": 1,
+    "generationId": "generation-001",
+    "maxDepth": 12,
+    "maxNodes": 2000,
+    "topK": 3
+  },
+  "processPlanResult": {
+    "generationId": "generation-001",
+    "status": "partial",
+    "target": { "resourceId": "minecraft:iron_pickaxe", "amount": 1 },
+    "routes": [
+      {
+        "rank": 1,
+        "complete": false,
+        "rankingReasons": [
+          "partial_route",
+          "fewer_unresolved_resources",
+          "fewer_process_steps",
+          "stable_process_identity_tiebreak"
+        ],
+        "steps": [],
+        "materials": [{ "resourceId": "minecraft:iron_ingot", "amount": 3 }],
+        "inventoryUsed": [],
+        "unresolved": [],
+        "workstations": ["minecraft:crafting_table"],
+        "issues": []
+      }
+    ],
+    "unresolved": [],
+    "cycles": [],
+    "exploredNodes": 0,
+    "inventoryApplied": false,
+    "warnings": ["No deterministic route is available in this generation."]
+  },
+  "inventorySnapshotArguments": {
+    "authorizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "generationId": "generation-001",
+    "resourceIds": ["minecraft:iron_pickaxe"]
+  },
+  "inventorySnapshotResult": {
+    "generationId": "generation-001",
+    "authorizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "entries": [],
+    "truncated": false,
+    "warnings": []
+  },
+  "webEvidenceRequest": {
+    "schemaVersion": "1.0",
+    "connectorKind": "standalone_client",
+    "protocolVersion": "client-1.0",
+    "messageId": "12121212-1212-4212-8212-121212121212",
+    "requestId": null,
+    "scopeId": "11111111-1111-4111-8111-111111111111",
+    "type": "client.request",
+    "timestamp": "2026-07-17T00:00:00Z",
+    "nonce": "OOOOOOOOOOOOOOOOOOOOOA",
+    "payload": {
+      "sessionId": null,
+      "message": "Where does the Boss Core drop?",
+      "localContext": {
+        "minecraftVersion": "1.21.11",
+        "catalogGenerationId": "generation-001",
+        "target": {
+          "id": "examplemod:boss_core",
+          "displayName": "Boss Core",
+          "modId": "examplemod",
+          "modVersion": "4.2.0"
+        }
+      },
+      "webAuthorization": "once",
+      "webContext": {
+        "minecraftVersion": "1.21.11",
+        "target": {
+          "id": "examplemod:boss_core",
+          "displayName": "Boss Core",
+          "modId": "examplemod",
+          "modVersion": "4.2.0"
+        },
+        "modPack": { "name": "Example Pack", "version": "9.1" }
+      },
+      "inventoryAuthorization": {
+        "authorizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "generationId": "generation-001",
+        "resourceIds": ["minecraft:iron_ingot"]
+      }
+    }
+  },
+  "toolCall": {
+    "schemaVersion": "1.0",
+    "connectorKind": "standalone_client",
+    "protocolVersion": "client-1.0",
+    "messageId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    "requestId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    "scopeId": "11111111-1111-4111-8111-111111111111",
+    "type": "client.tool.call",
+    "timestamp": "2026-07-17T00:00:00Z",
+    "nonce": "KKKKKKKKKKKKKKKKKKKKKA",
+    "payload": {
+      "requestId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+      "toolCallId": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      "subjectId": "11111111-1111-4111-8111-111111111111",
+      "tool": "game.resource.search",
+      "sequence": 0,
+      "arguments": { "query": "iron pickaxe", "limit": 5 }
+    }
+  },
+  "toolResult": {
+    "schemaVersion": "1.0",
+    "connectorKind": "standalone_client",
+    "protocolVersion": "client-1.0",
+    "messageId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    "requestId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    "scopeId": "11111111-1111-4111-8111-111111111111",
+    "type": "client.tool.result",
+    "timestamp": "2026-07-17T00:00:01Z",
+    "nonce": "LLLLLLLLLLLLLLLLLLLLLA",
+    "payload": {
+      "requestId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+      "toolCallId": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      "subjectId": "11111111-1111-4111-8111-111111111111",
+      "tool": "game.resource.search",
+      "sequence": 0,
+      "result": {
+        "generationId": "generation-001",
+        "visibility": "no_world",
+        "completeness": "unavailable",
+        "candidates": [],
+        "ambiguous": false,
+        "truncated": false,
+        "warnings": []
+      }
+    }
+  },
+  "toolError": {
+    "schemaVersion": "1.0",
+    "connectorKind": "standalone_client",
+    "protocolVersion": "client-1.0",
+    "messageId": "ffffffff-ffff-4fff-8fff-ffffffffffff",
+    "requestId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    "scopeId": "11111111-1111-4111-8111-111111111111",
+    "type": "client.tool.error",
+    "timestamp": "2026-07-17T00:00:02Z",
+    "nonce": "MMMMMMMMMMMMMMMMMMMMMA",
+    "payload": {
+      "requestId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+      "toolCallId": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      "subjectId": "11111111-1111-4111-8111-111111111111",
+      "tool": "game.resource.search",
+      "sequence": 0,
+      "status": "failed",
+      "code": "CATALOG_NOT_READY",
+      "message": "The local catalog is not ready.",
+      "retryable": true
+    }
+  },
+  "toolCancel": {
+    "schemaVersion": "1.0",
+    "connectorKind": "standalone_client",
+    "protocolVersion": "client-1.0",
+    "messageId": "99999999-9999-4999-8999-999999999999",
+    "requestId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    "scopeId": "11111111-1111-4111-8111-111111111111",
+    "type": "client.tool.cancel",
+    "timestamp": "2026-07-17T00:00:03Z",
+    "nonce": "NNNNNNNNNNNNNNNNNNNNNA",
+    "payload": {
+      "requestId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+      "toolCallId": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      "subjectId": "11111111-1111-4111-8111-111111111111",
+      "tool": "game.resource.search",
+      "sequence": 0,
+      "reason": "REQUEST_CANCELLED"
+    }
+  }
+}

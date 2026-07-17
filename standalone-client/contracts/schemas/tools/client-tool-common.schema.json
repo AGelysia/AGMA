@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/client-tool-common.schema.json",
+  "title": "AGMA Standalone Client Tool Common Types",
+  "$defs": {
+    "generationId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "warning": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "resourceAmount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resourceId", "amount"],
+      "properties": {
+        "resourceId": {
+          "$ref": "../resource-ref.schema.json#/$defs/namespacedId"
+        },
+        "amount": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000000
+        }
+      }
+    }
+  }
+}

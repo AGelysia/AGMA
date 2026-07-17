@@ -16,6 +16,17 @@ rejected rather than partially accepted or silently downgraded.
 
 Run the complete contract suite from the repository root with `./scripts/test.sh`.
 
+## Standalone C0 Contracts
+
+`../standalone-client/contracts/` contains the reviewed C0 contracts for the future standalone
+product: resource provenance, AND/OR process records, evidence claims, cited guide answers, the
+client Runtime profile, viewer fixtures, and a separate connector hello. They use the same strict
+Node and JVM validators but remain outside this protocol directory and all AGMA 0.1.0 artifacts.
+
+The standalone connector is a parallel future wire family. Its isolated design contracts do not
+change `paper.hello`, the Paper application envelope, the `minecraftagent:client` companion channel,
+or their HMAC transcripts. C1 must keep that separation when it implements the connector.
+
 ## Runtime and Paper Channel
 
 Runtime and Paper use an authenticated WebSocket restricted to loopback. Each application message

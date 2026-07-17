@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/connector-status.schema.json",
+  "title": "AGMA Standalone Runtime Status",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["state", "activeRequests", "queuedRequests"],
+  "properties": {
+    "state": { "enum": ["READY", "STOPPING"] },
+    "activeRequests": { "type": "integer", "minimum": 0, "maximum": 8 },
+    "queuedRequests": { "type": "integer", "minimum": 0, "maximum": 128 }
+  }
+}

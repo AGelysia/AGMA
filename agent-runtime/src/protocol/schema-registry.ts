@@ -1,13 +1,14 @@
 import { readdir, readFile } from "node:fs/promises";
-import { createRequire } from "node:module";
 import { basename, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { Ajv2020, type ErrorObject, type ValidateFunction } from "ajv/dist/2020.js";
+import * as formatsModule from "ajv-formats";
 import type { FormatsPlugin } from "ajv-formats";
 
-const require = createRequire(import.meta.url);
-const addFormats = require("ajv-formats") as FormatsPlugin;
+const addFormats = ("default" in formatsModule
+  ? formatsModule.default
+  : formatsModule) as unknown as FormatsPlugin;
 
 type JsonSchema = Record<string, unknown>;
 

@@ -1,7 +1,7 @@
 import { performance } from "node:perf_hooks";
 
 import { RuntimeStartupError, type RuntimeStartupErrorCode } from "../bootstrap/startup-error.js";
-import type { RuntimeConfig } from "../config/runtime-config.js";
+import type { ModelProviderId } from "../providers/model-provider.js";
 
 export const modelProviderFailureCodes = [
   "PROVIDER_UNSUPPORTED",
@@ -14,10 +14,19 @@ export const modelProviderFailureCodes = [
 export type ModelProviderFailureCode = (typeof modelProviderFailureCodes)[number];
 
 export interface ModelProviderHealthRequest {
-  readonly provider: RuntimeConfig["model"]["provider"];
+  readonly provider: ModelProviderId;
   readonly model: string;
   readonly apiKey: string;
   readonly signal: AbortSignal;
+}
+
+export interface ModelProviderHealthConfig {
+  readonly model: {
+    readonly provider: ModelProviderId;
+    readonly model: string;
+    readonly apiKey: string;
+    readonly timeoutSeconds: number;
+  };
 }
 
 export type ModelProviderHealthResult =
@@ -59,7 +68,7 @@ function providerFailure(code: ModelProviderFailureCode): RuntimeStartupError {
 }
 
 export async function checkModelProvider(
-  config: RuntimeConfig,
+  config: ModelProviderHealthConfig,
   healthCheck: ModelProviderHealthCheck,
   timeoutMilliseconds = config.model.timeoutSeconds * 1000,
   cancellationSignal?: AbortSignal,

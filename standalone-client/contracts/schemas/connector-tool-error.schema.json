@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/connector-tool-error.schema.json",
+  "title": "AGMA Client To Runtime Tool Error",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "requestId",
+    "toolCallId",
+    "subjectId",
+    "tool",
+    "sequence",
+    "status",
+    "code",
+    "message",
+    "retryable"
+  ],
+  "properties": {
+    "requestId": { "type": "string", "format": "uuid" },
+    "toolCallId": { "type": "string", "format": "uuid" },
+    "subjectId": { "type": "string", "format": "uuid" },
+    "tool": { "$ref": "connector-tool-common.schema.json#/$defs/toolId" },
+    "sequence": { "$ref": "connector-tool-common.schema.json#/$defs/sequence" },
+    "status": { "enum": ["failed", "rejected"] },
+    "code": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Z][A-Z0-9_]*$"
+    },
+    "message": { "type": "string", "minLength": 1, "maxLength": 1024 },
+    "retryable": { "type": "boolean" }
+  }
+}

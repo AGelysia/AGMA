@@ -4,6 +4,7 @@ import { isMainModule } from "../bootstrap/main-module.js";
 import { RuntimeStartupError, type RuntimeStartupErrorCode } from "../bootstrap/startup-error.js";
 import {
   loadRuntimeConfig,
+  runtimeServiceConfig,
   type LoadRuntimeConfigOptions,
   type RuntimeConfig,
 } from "../config/runtime-config.js";
@@ -280,7 +281,10 @@ export async function runLiveProviderCheck(
       if (loaded.warnings.some((warning) => warning.code !== "MODEL_CUSTOM_BASE_URL")) {
         throw new ValidationFailure("CONFIG_WARNING_UNSAFE");
       }
-      config = loaded.config;
+      config =
+        loaded.resolved === undefined
+          ? (loaded.config as RuntimeConfig)
+          : runtimeServiceConfig(loaded.resolved);
     }
     if (config.privacy.logMessageContent || config.privacy.logToolCalls) {
       throw new ValidationFailure("CONFIG_PRIVACY_UNSAFE");

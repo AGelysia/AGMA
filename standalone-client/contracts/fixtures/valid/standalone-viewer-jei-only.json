@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "1.0",
+  "scenario": "jei_only",
+  "minecraftVersion": "1.21.11",
+  "installedViewers": ["jei"],
+  "adapterStates": [
+    {
+      "viewer": "jei",
+      "version": "27.17.0.50",
+      "artifactKind": "reviewed",
+      "status": "ready"
+    },
+    {
+      "viewer": "emi",
+      "version": null,
+      "artifactKind": "none",
+      "status": "not_installed"
+    }
+  ],
+  "selectedSource": "jei",
+  "catalog": {
+    "generationId": "Fixture-jei-only",
+    "resources": [],
+    "processes": [
+      {
+        "processId": "jei:minecraft.crafting.stick",
+        "categoryId": "minecraft:crafting",
+        "displayName": "Craft Sticks",
+        "inputRelation": "and",
+        "workstations": [],
+        "inputs": [
+          {
+            "groupId": "planks",
+            "relation": "or",
+            "alternatives": [
+              {
+                "kind": "item",
+                "id": "minecraft:oak_planks",
+                "displayName": "Oak Planks",
+                "modId": "minecraft",
+                "modName": "Minecraft",
+                "modVersion": "1.21.11",
+                "amount": 2,
+                "unit": "item",
+                "source": {
+                  "layer": "client_registry",
+                  "providerId": "minecraft_registry",
+                  "trust": "L0B",
+                  "completeness": "complete",
+                  "generationId": "Fixture-jei-only"
+                }
+              }
+            ]
+          }
+        ],
+        "catalysts": [],
+        "outputs": [
+          {
+            "resource": {
+              "kind": "item",
+              "id": "minecraft:stick",
+              "displayName": "Stick",
+              "modId": "minecraft",
+              "modName": "Minecraft",
+              "modVersion": "1.21.11",
+              "amount": 4,
+              "unit": "item",
+              "source": {
+                "layer": "client_registry",
+                "providerId": "minecraft_registry",
+                "trust": "L0B",
+                "completeness": "complete",
+                "generationId": "Fixture-jei-only"
+              }
+            },
+            "probability": 1,
+            "primary": true
+          }
+        ],
+        "durationTicks": null,
+        "energy": null,
+        "conditions": [],
+        "stages": [
+          {
+            "index": 0,
+            "description": "Craft the selected plank alternative.",
+            "inputGroupIds": ["planks"]
+          }
+        ],
+        "source": {
+          "layer": "jei",
+          "providerId": "jei",
+          "trust": "L1",
+          "completeness": "complete",
+          "generationId": "Fixture-jei-only"
+        },
+        "plannable": true,
+        "warnings": []
+      }
+    ]
+  },
+  "expected": {
+    "startup": "ready",
+    "fallbackAvailable": true,
+    "duplicateProcesses": false
+  }
+}

@@ -96,10 +96,24 @@ MINECRAFT_AGENT_VITEST_JUNIT="$TEST_RESULTS/runtime.xml" \
   "$ROOT/scripts/package.sh"
 cp -R "$ROOT/paper-plugin/build/test-results/test" "$TEST_RESULTS/paper"
 cp -R "$ROOT/client-mod/build/test-results/test" "$TEST_RESULTS/client"
+cp -R "$ROOT/standalone-client/core/build/test-results/test" "$TEST_RESULTS/standalone-core"
+cp -R "$ROOT/standalone-client/runtime-supervisor-core/build/test-results/test" \
+  "$TEST_RESULTS/standalone-supervisor"
+cp -R "$ROOT/standalone-client/fabric-common/build/test-results/test" \
+  "$TEST_RESULTS/standalone-fabric-common"
+cp -R "$ROOT/standalone-client/fabric-mc12111/build/test-results/test" \
+  "$TEST_RESULTS/standalone-mc12111"
+cp -R "$ROOT/standalone-client/fabric-mc1182/build/test-results/test" \
+  "$TEST_RESULTS/standalone-mc1182"
 java "$ROOT/scripts/VerifyTestResults.java" \
   "$TEST_RESULTS/runtime.xml" \
   "$TEST_RESULTS/paper" \
   "$TEST_RESULTS/client" \
+  "$TEST_RESULTS/standalone-core" \
+  "$TEST_RESULTS/standalone-supervisor" \
+  "$TEST_RESULTS/standalone-fabric-common" \
+  "$TEST_RESULTS/standalone-mc12111" \
+  "$TEST_RESULTS/standalone-mc1182" \
   | tee "$TEST_RESULTS/inventory.txt"
 cp "$ROOT/release/SHA256SUMS" "$WORK/release.SHA256SUMS"
 find "$ROOT/release" -maxdepth 1 -type f ! -name SHA256SUMS -print0 \

@@ -1,8 +1,8 @@
 # AGMA
 
-AGMA (AG Minecraft Agent) is an AI assistant for Minecraft servers. It combines a Paper plugin,
-a local Runtime that calls the selected model provider, and an optional Fabric client mod for rich
-in-game presentation.
+AGMA (AG Minecraft Agent) provides both the 0.1.0 Paper deployment and a separate 0.2.0 pure Fabric
+standalone client. The standalone client works in singleplayer and on ordinary multiplayer servers
+without an AGMA server.
 
 AGMA 0.1.0 targets Minecraft 1.21.11 only. It can use OpenAI, Anthropic Claude, DeepSeek, Gemini, or
 a reviewed OpenAI-compatible cloud or local endpoint. Model replies are private to the requesting
@@ -22,8 +22,11 @@ Use one server package and, when wanted, the matching client package from the Gi
 The integrated JAR supports glibc Linux x86_64 only. The separated package supports any platform
 on which Java 21, Paper 1.21.11, and Node.js 22.16-22.x are available.
 
-The client JAR is a companion to a multiplayer AGMA server. AGMA 0.1.0 does not implement a
-singleplayer/offline Runtime bridge, so the client cannot call a model provider by itself.
+The `AGMA-Client-0.1.0` JAR remains a server companion. It is distinct from the four
+`AGMA-Client-Standalone-0.2.0` JARs, which embed a pinned local Runtime for Minecraft 1.18.2 and
+1.21.11 on Linux x86_64 and Windows x86_64. See
+[standalone-client/README.md](standalone-client/README.md) for standalone installation, privacy,
+cost, viewer, and data-completeness details.
 
 See [release-artifacts.md](docs/release-artifacts.md) for package contents and checksum verification.
 
@@ -74,6 +77,8 @@ Detailed provider profiles and the separated deployment procedure are in
 ## Client Install
 
 The client mod is optional. Without it, players still receive private text replies.
+
+This section describes the 0.1.0 server companion, not the standalone client.
 
 For the supported client configuration, install:
 
@@ -163,6 +168,8 @@ Repository layout:
 - `paper-plugin/`: authoritative Paper boundary and managed Runtime supervisor
 - `agent-runtime/`: provider adapters, sessions, storage, and model/tool loop
 - `client-mod/`: optional Fabric presentation layer
+- `standalone-client/`: released 0.2.0 pure-client source, contracts, dual-version Fabric shells,
+  local planner, Runtime supervisor, fixtures, and packaging
 - `protocol/`: locally loaded JSON Schema contracts and fixtures
 - `capability-packs/`: declarative, permission-gated capability examples
 - `deploy/`: Paper and systemd configuration examples

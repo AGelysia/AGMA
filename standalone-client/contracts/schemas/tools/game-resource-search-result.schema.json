@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/game-resource-search-result.schema.json",
+  "title": "AGMA Client Resource Search Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "generationId",
+    "visibility",
+    "completeness",
+    "candidates",
+    "ambiguous",
+    "truncated",
+    "warnings"
+  ],
+  "properties": {
+    "generationId": {
+      "$ref": "client-tool-common.schema.json#/$defs/generationId"
+    },
+    "visibility": {
+      "enum": ["main_menu", "no_world", "singleplayer", "multiplayer"]
+    },
+    "completeness": { "enum": ["complete", "partial", "unavailable"] },
+    "candidates": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rank", "score", "matchedBy", "resource"],
+        "properties": {
+          "rank": { "type": "integer", "minimum": 1, "maximum": 20 },
+          "score": { "type": "number", "minimum": 0, "maximum": 1 },
+          "matchedBy": {
+            "enum": [
+              "exact_id",
+              "exact_name",
+              "translation_key",
+              "prefix",
+              "fuzzy"
+            ]
+          },
+          "resource": { "$ref": "../resource-ref.schema.json" }
+        }
+      }
+    },
+    "ambiguous": { "type": "boolean" },
+    "truncated": { "type": "boolean" },
+    "warnings": {
+      "type": "array",
+      "maxItems": 32,
+      "items": { "$ref": "client-tool-common.schema.json#/$defs/warning" }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "ambiguous": { "const": true } },
+        "required": ["ambiguous"]
+      },
+      "then": {
+        "properties": { "candidates": { "type": "array", "minItems": 2 } }
+      }
+    }
+  ]
+}

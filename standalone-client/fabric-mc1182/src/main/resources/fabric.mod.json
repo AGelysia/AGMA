@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "agma_standalone",
+  "version": "${version}",
+  "name": "AGMA Standalone Client",
+  "description": "Pure client AGMA shell with an authenticated local Runtime boundary",
+  "authors": [
+    "AGMA contributors"
+  ],
+  "contact": {},
+  "license": "Apache-2.0",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "dev.minecraftagent.standalone.fabric.StandaloneClientEntrypoint"
+    ],
+    "emi": [
+      "dev.minecraftagent.standalone.fabric.viewer.emi.EmiCatalogPlugin"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=${loaderVersion}",
+    "fabric-api": "${fabricApiVersion}",
+    "minecraft": "${minecraftVersion}",
+    "java": ">=17"
+  },
+  "suggests": {
+    "jei": "10.2.1.1010",
+    "emi": "0.7.3+1.18.2"
+  }
+}

@@ -1,6 +1,6 @@
 import type { DatabaseSync } from "node:sqlite";
 
-export const CURRENT_RUNTIME_SCHEMA_VERSION = 5;
+export const CURRENT_RUNTIME_SCHEMA_VERSION = 6;
 
 const MIGRATION_ONE = `
   CREATE TABLE sessions (
@@ -185,12 +185,24 @@ const MIGRATION_FIVE = `
   ) STRICT;
 `;
 
+const MIGRATION_SIX = `
+  CREATE TABLE web_search_usage_monthly (
+    scope_id TEXT NOT NULL CHECK(length(scope_id) BETWEEN 1 AND 64),
+    usage_month TEXT NOT NULL CHECK(length(usage_month) = 7),
+    charged_requests INTEGER NOT NULL CHECK(charged_requests >= 0),
+    spent_micro_usd INTEGER NOT NULL CHECK(spent_micro_usd >= 0),
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY(scope_id, usage_month)
+  ) STRICT, WITHOUT ROWID;
+`;
+
 const migrations = [
   { version: 1, name: "sessions-and-messages", sql: MIGRATION_ONE },
   { version: 2, name: "projects-and-events", sql: MIGRATION_TWO },
   { version: 3, name: "durable-usage-accounting", sql: MIGRATION_THREE },
   { version: 4, name: "provider-round-start-state", sql: MIGRATION_FOUR },
   { version: 5, name: "runtime-process-lock", sql: MIGRATION_FIVE },
+  { version: 6, name: "persistent-web-search-budget", sql: MIGRATION_SIX },
 ] as const;
 
 export function migrateRuntimeStorage(database: DatabaseSync, appliedAt: string): void {

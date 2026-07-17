@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/connector-complete.schema.json",
+  "title": "AGMA Standalone Text Completion",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sessionId", "text", "costMicroUsd", "costKind", "sources"],
+  "properties": {
+    "sessionId": {
+      "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }]
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 8192
+    },
+    "costMicroUsd": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "costKind": {
+      "enum": ["reported", "estimated", "mixed"]
+    },
+    "sources": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "claimId",
+          "title",
+          "url",
+          "publisher",
+          "retrievedAt",
+          "applicability",
+          "warnings"
+        ],
+        "properties": {
+          "claimId": {
+            "type": "string",
+            "pattern": "^claim\\.[0-9a-f]{24}$"
+          },
+          "title": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "url": { "type": "string", "format": "uri", "maxLength": 2048 },
+          "publisher": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "retrievedAt": { "type": "string", "format": "date-time" },
+          "applicability": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "minecraftVersion",
+              "modVersions",
+              "modpackVersion",
+              "match"
+            ],
+            "properties": {
+              "minecraftVersion": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "modVersions": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "maxProperties": 64
+              },
+              "modpackVersion": {
+                "oneOf": [
+                  { "type": "string", "minLength": 1, "maxLength": 128 },
+                  { "type": "null" }
+                ]
+              },
+              "match": { "enum": ["match", "mismatch", "unknown"] }
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "maxItems": 4,
+            "items": { "type": "string", "minLength": 1, "maxLength": 256 }
+          }
+        }
+      }
+    }
+  }
+}
