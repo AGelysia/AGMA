@@ -24,10 +24,10 @@ try {
 
 Push-Location $Root
 try {
-    & $Gradle @GradleArgs :paper-plugin:build
-    if ($LASTEXITCODE -ne 0) { throw "Paper build failed with exit code $LASTEXITCODE" }
-    & $Gradle @GradleArgs :client-mod:build
-    if ($LASTEXITCODE -ne 0) { throw "Client build failed with exit code $LASTEXITCODE" }
+    & $Gradle @GradleArgs :paper-plugin:assemble
+    if ($LASTEXITCODE -ne 0) { throw "Paper assemble failed with exit code $LASTEXITCODE" }
+    & $Gradle @GradleArgs :client-mod:assemble
+    if ($LASTEXITCODE -ne 0) { throw "Client assemble failed with exit code $LASTEXITCODE" }
     & $Gradle @GradleArgs :standalone-client:core:build
     if ($LASTEXITCODE -ne 0) { throw "Standalone client core build failed with exit code $LASTEXITCODE" }
     & $Gradle @GradleArgs :standalone-client:runtime-supervisor-core:build

@@ -24,7 +24,7 @@ fail() {
   || fail "usage: <client.jar> <minecraft-version> <platform> <client-version> <runtime-version> <node-version>"
 [[ "$EXECUTE_RUNTIME" == 0 || "$EXECUTE_RUNTIME" == 1 ]] \
   || fail "AGMA_STANDALONE_EXECUTE_RUNTIME must be 0 or 1"
-for program in awk find realpath rg sha256sum unzip wc zipinfo; do
+for program in awk find grep realpath sha256sum unzip wc zipinfo; do
   command -v "$program" >/dev/null 2>&1 \
     || fail "required verification program is unavailable: $program"
 done
@@ -84,7 +84,7 @@ if [[ "$EXECUTE_RUNTIME" == 1 && "$PLATFORM" == linux-x86_64 ]]; then
     >"$WORK/runtime-smoke.output" 2>&1; then
     fail "embedded standalone Runtime accepted invalid launch arguments"
   fi
-  rg -q 'CONFIG_PATH_INVALID' "$WORK/runtime-smoke.output" \
+  grep -q 'CONFIG_PATH_INVALID' "$WORK/runtime-smoke.output" \
     || fail "embedded standalone Runtime bundle did not execute fail-closed"
 fi
 
@@ -111,10 +111,10 @@ unzip -Z1 "${supervisor_jars[0]}" >"$WORK/supervisor.entries"
 for required in \
   dev/minecraftagent/standalone/common/EmbeddedRuntimeDistribution.class \
   dev/minecraftagent/standalone/common/SystemRuntimeProcessLauncher.class; do
-  [[ "$(rg -Fxc "$required" "$WORK/common.entries")" == 1 ]] \
+  [[ "$(grep -Fxc "$required" "$WORK/common.entries")" == 1 ]] \
     || fail "standalone client is missing $required"
 done
-[[ "$(rg -Fxc \
+[[ "$(grep -Fxc \
   'dev/minecraftagent/standalone/supervisor/install/ManagedRuntimeInstaller.class' \
   "$WORK/supervisor.entries")" == 1 ]] \
   || fail "standalone client is missing its verified Runtime installer"

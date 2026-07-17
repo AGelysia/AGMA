@@ -12,11 +12,11 @@ fail() {
 }
 
 [[ "$#" -le 1 ]] || fail "usage: [new-output-directory]"
-for program in cmp find git realpath rg sort; do
+for program in cmp find git grep realpath sort; do
   command -v "$program" >/dev/null 2>&1 \
     || fail "required release-check program is unavailable: $program"
 done
-if git -C "$ROOT" ls-files | rg -i -q '(^|/)01-standalone-client-development-plan\.md$'; then
+if git -C "$ROOT" ls-files | grep -Eiq '(^|/)01-standalone-client-development-plan\.md$'; then
   fail "the standalone development plan must remain outside the code repository"
 fi
 OUTPUT="$(realpath -m -- "$OUTPUT_INPUT")"

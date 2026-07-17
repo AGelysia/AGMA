@@ -3,14 +3,23 @@ package dev.minecraftagent.standalone.common;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.attribute.AclEntryPermission;
+import java.nio.file.attribute.AclEntryType;
+import java.nio.file.attribute.AclFileAttributeView;
+import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.EnumSet;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -42,13 +51,8 @@ final class ClientProfileStoreTest {
     }
     assertNotEquals(first, second);
 
-    if (Files.getFileStore(root).supportsFileAttributeView("posix")) {
-      assertEquals(
-          PosixFilePermissions.fromString("rwx------"), Files.getPosixFilePermissions(root));
-      assertEquals(
-          PosixFilePermissions.fromString("rw-------"),
-          Files.getPosixFilePermissions(store.profilePath()));
-    }
+    assertOwnerOnly(root, "rwx------");
+    assertOwnerOnly(store.profilePath(), "rw-------");
   }
 
   @Test
@@ -91,11 +95,7 @@ final class ClientProfileStoreTest {
   void rejectsASymbolicLinkProfileRoot() throws Exception {
     var target = Files.createDirectory(temporary.resolve("target"));
     var link = temporary.resolve("state");
-    try {
-      Files.createSymbolicLink(link, target);
-    } catch (UnsupportedOperationException exception) {
-      return;
-    }
+    createSymbolicLinkOrSkip(link, target);
     var store = new ClientProfileStore(link.toAbsolutePath().normalize());
     var failure =
         assertThrows(
@@ -109,11 +109,9 @@ final class ClientProfileStoreTest {
     var root = temporary.resolve("state").toAbsolutePath().normalize();
     var store = new ClientProfileStore(root);
     store.configure(setup("provider-secret-value-123456789"));
-    try {
-      Files.createLink(temporary.resolve("linked-secret"), root.resolve("secrets/model-api-key"));
-    } catch (UnsupportedOperationException exception) {
-      return;
-    }
+    var secret = root.resolve("secrets/model-api-key");
+    assumeTrue(supportsLinkCount(secret), "File link counts are unavailable");
+    createHardLinkOrSkip(temporary.resolve("linked-secret"), secret);
     var failure =
         assertThrows(
             ClientConfigurationException.class,
@@ -138,6 +136,47 @@ final class ClientProfileStoreTest {
     assertFalse(Files.exists(root.resolve("data")));
     assertFalse(Files.exists(root.resolve("logs")));
     assertTrue(Files.isRegularFile(managed.resolve("keep")));
+  }
+
+  private static boolean supportsLinkCount(Path path) {
+    try {
+      return Files.getAttribute(path, "unix:nlink", LinkOption.NOFOLLOW_LINKS) instanceof Number;
+    } catch (UnsupportedOperationException | IOException | SecurityException failure) {
+      return false;
+    }
+  }
+
+  private static void assertOwnerOnly(Path path, String posixPermissions) throws IOException {
+    if (Files.getFileStore(path).supportsFileAttributeView(PosixFileAttributeView.class)) {
+      assertEquals(
+          PosixFilePermissions.fromString(posixPermissions), Files.getPosixFilePermissions(path));
+      return;
+    }
+    var view =
+        Files.getFileAttributeView(path, AclFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+    assertNotNull(view);
+    var entries = view.getAcl();
+    assertEquals(1, entries.size());
+    var entry = entries.get(0);
+    assertEquals(AclEntryType.ALLOW, entry.type());
+    assertEquals(view.getOwner(), entry.principal());
+    assertTrue(entry.permissions().containsAll(EnumSet.allOf(AclEntryPermission.class)));
+  }
+
+  private static void createSymbolicLinkOrSkip(Path link, Path target) {
+    try {
+      Files.createSymbolicLink(link, target);
+    } catch (UnsupportedOperationException | IOException | SecurityException failure) {
+      assumeTrue(false, "Symbolic links are unavailable: " + failure.getMessage());
+    }
+  }
+
+  private static void createHardLinkOrSkip(Path link, Path target) {
+    try {
+      Files.createLink(link, target);
+    } catch (UnsupportedOperationException | IOException | SecurityException failure) {
+      assumeTrue(false, "Hard links are unavailable: " + failure.getMessage());
+    }
   }
 
   private static ClientSetup setup(String key) {

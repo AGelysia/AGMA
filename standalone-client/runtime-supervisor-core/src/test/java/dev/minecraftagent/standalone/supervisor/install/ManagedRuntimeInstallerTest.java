@@ -3,8 +3,10 @@ package dev.minecraftagent.standalone.supervisor.install;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -12,12 +14,18 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.attribute.AclEntryPermission;
+import java.nio.file.attribute.AclEntryType;
+import java.nio.file.attribute.AclFileAttributeView;
+import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -359,10 +367,7 @@ final class ManagedRuntimeInstallerTest {
   }
 
   @Test
-  void cleanupRejectsSymlinksAndWidePermissionsWithoutTouchingTheirTargets() throws Exception {
-    if (!Files.getFileStore(temporaryDirectory).supportsFileAttributeView("posix")) {
-      return;
-    }
+  void cleanupRejectsSymlinksWithoutTouchingTheirTargets() throws Exception {
     var installer = new ManagedRuntimeInstaller();
     var root = temporaryDirectory.resolve("managed-cleanup-unsafe").toAbsolutePath().normalize();
     var archive = archive(RuntimePlatform.LINUX_X86_64, "0.2.0", Map.of(), null);
@@ -371,13 +376,22 @@ final class ManagedRuntimeInstallerTest {
     var target = Files.createDirectory(temporaryDirectory.resolve("outside-staging"));
     var marker = Files.writeString(target.resolve("marker"), "keep");
     var staging = root.resolve(".staging");
-    Files.createSymbolicLink(
+    createSymbolicLinkOrSkip(
         staging.resolve("install-11111111-1111-4111-8111-111111111111"), target);
 
     assertFailure("INSTALL_ROOT_UNSAFE", () -> installer.cleanupStaleStaging(root));
     assertEquals("keep", Files.readString(marker));
+  }
 
-    Files.delete(staging.resolve("install-11111111-1111-4111-8111-111111111111"));
+  @Test
+  void cleanupRejectsWidePosixPermissions() throws Exception {
+    assumeTrue(Files.getFileStore(temporaryDirectory).supportsFileAttributeView("posix"));
+    var installer = new ManagedRuntimeInstaller();
+    var root = temporaryDirectory.resolve("managed-cleanup-wide").toAbsolutePath().normalize();
+    var archive = archive(RuntimePlatform.LINUX_X86_64, "0.2.0", Map.of(), null);
+    var artifact = artifact(RuntimePlatform.LINUX_X86_64, "0.2.0", archive);
+    installer.install(root, artifact.platform(), artifact, source(archive));
+    var staging = root.resolve(".staging");
     var security = PrivatePathPolicy.prepare(root);
     var wide =
         security.createOrVerifyDirectory(
@@ -388,13 +402,13 @@ final class ManagedRuntimeInstallerTest {
   }
 
   @Test
-  void installedPosixTreeIsPrivateWhenTheFileSystemSupportsPosix() throws Exception {
+  void installedTreeIsPrivateForTheHostFileSystem() throws Exception {
     var archive = archive(RuntimePlatform.LINUX_X86_64, "0.2.0", Map.of(), null);
     var artifact = artifact(RuntimePlatform.LINUX_X86_64, "0.2.0", archive);
     var root = temporaryDirectory.resolve("managed").toAbsolutePath().normalize();
     var installed =
         new ManagedRuntimeInstaller().install(root, artifact.platform(), artifact, source(archive));
-    if (Files.getFileStore(root).supportsFileAttributeView("posix")) {
+    if (Files.getFileStore(root).supportsFileAttributeView(PosixFileAttributeView.class)) {
       assertEquals(
           Set.of(
               PosixFilePermission.OWNER_READ,
@@ -410,19 +424,23 @@ final class ManagedRuntimeInstallerTest {
       assertEquals(
           Set.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE),
           Files.getPosixFilePermissions(installed.entrypoint()));
+      return;
     }
+    assertOwnerOnlyAcl(installed.installationRoot());
+    assertOwnerOnlyAcl(installed.executable());
+    assertOwnerOnlyAcl(installed.entrypoint());
   }
 
   @Test
   void rejectsSymlinkInstallationRootWithoutMutatingItsTarget() throws Exception {
-    if (!Files.getFileStore(temporaryDirectory).supportsFileAttributeView("posix")) {
-      return;
-    }
     var target = Files.createDirectory(temporaryDirectory.resolve("target"));
+    var posix = Files.getFileStore(target).supportsFileAttributeView("posix");
     var originalPermissions = PosixFilePermissions.fromString("rwxr-x---");
-    Files.setPosixFilePermissions(target, originalPermissions);
+    if (posix) {
+      Files.setPosixFilePermissions(target, originalPermissions);
+    }
     var root = temporaryDirectory.resolve("managed-link").toAbsolutePath().normalize();
-    Files.createSymbolicLink(root, target);
+    createSymbolicLinkOrSkip(root, target);
     var archive = archive(RuntimePlatform.LINUX_X86_64, "0.2.0", Map.of(), null);
     var artifact = artifact(RuntimePlatform.LINUX_X86_64, "0.2.0", archive);
 
@@ -432,8 +450,30 @@ final class ManagedRuntimeInstallerTest {
             new ManagedRuntimeInstaller()
                 .install(root, artifact.platform(), artifact, source(archive)));
 
-    assertEquals(originalPermissions, Files.getPosixFilePermissions(target));
+    if (posix) {
+      assertEquals(originalPermissions, Files.getPosixFilePermissions(target));
+    }
     assertTrue(isEmpty(target));
+  }
+
+  private static void createSymbolicLinkOrSkip(Path link, Path target) {
+    try {
+      Files.createSymbolicLink(link, target);
+    } catch (UnsupportedOperationException | IOException | SecurityException failure) {
+      assumeTrue(false, "Symbolic links are unavailable: " + failure.getMessage());
+    }
+  }
+
+  private static void assertOwnerOnlyAcl(Path path) throws IOException {
+    var view =
+        Files.getFileAttributeView(path, AclFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+    assertNotNull(view);
+    var entries = view.getAcl();
+    assertEquals(1, entries.size());
+    var entry = entries.get(0);
+    assertEquals(AclEntryType.ALLOW, entry.type());
+    assertEquals(view.getOwner(), entry.principal());
+    assertTrue(entry.permissions().containsAll(EnumSet.allOf(AclEntryPermission.class)));
   }
 
   private InstalledRuntime install(

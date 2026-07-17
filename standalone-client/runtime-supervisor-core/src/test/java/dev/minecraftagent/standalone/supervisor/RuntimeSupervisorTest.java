@@ -218,11 +218,15 @@ class RuntimeSupervisorTest {
   }
 
   private static RuntimeLaunchSpec spec() {
+    var stateRoot =
+        Path.of(System.getProperty("java.io.tmpdir"), "agma-supervisor-test")
+            .toAbsolutePath()
+            .normalize();
     return new RuntimeLaunchSpec(
         UUID.fromString("11111111-1111-4111-8111-111111111111"),
-        Path.of("/tmp/agma-test").normalize(),
-        Path.of("/usr/bin/node").normalize(),
-        List.of("dist/bootstrap/index.js", "--config", "/tmp/agma-test/config.yml"),
+        stateRoot,
+        stateRoot.resolve("node"),
+        List.of("dist/bootstrap/index.js", "--config", stateRoot.resolve("config.yml").toString()),
         Map.of("AGMA_CLIENT_CONNECTOR_TOKEN", "connector-secret"));
   }
 
