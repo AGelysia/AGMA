@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tool-call.schema.json",
+  "title": "AGMA Tool Call Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "toolCallId",
+    "sessionId",
+    "playerUuid",
+    "module",
+    "tool",
+    "arguments",
+    "sequence"
+  ],
+  "properties": {
+    "toolCallId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "sessionId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "playerUuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "module": {
+      "enum": ["general", "recipe", "guide", "locate", "build", "project"]
+    },
+    "tool": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$"
+    },
+    "arguments": {
+      "type": "object",
+      "maxProperties": 64
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 7
+    }
+  }
+}

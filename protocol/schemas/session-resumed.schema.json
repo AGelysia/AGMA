@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/session-resumed.schema.json",
+  "title": "AGMA Session Resumed Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["playerUuid", "sessionId"],
+  "properties": {
+    "playerUuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "sessionId": {
+      "type": "string",
+      "format": "uuid"
+    }
+  }
+}

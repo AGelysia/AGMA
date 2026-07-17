@@ -1,0 +1,26 @@
+{
+  "protocolVersion": "1.0",
+  "messageId": "75757575-7575-4575-8575-757575757575",
+  "requestId": "75757575-7575-4575-8575-757575757575",
+  "serverId": "survival-main",
+  "type": "agent.request",
+  "timestamp": "2026-07-13T08:00:03Z",
+  "nonce": "ghijklmnopqrstuvwxyzaQ",
+  "payload": {
+    "sessionId": "71717171-7171-4171-8171-717171717171",
+    "playerUuid": "44444444-4444-4444-8444-444444444444",
+    "module": "recipe",
+    "message": "Show the recipe for a redstone comparator.",
+    "clientCapabilities": {
+      "connected": false,
+      "clientProtocolVersion": null,
+      "features": {
+        "overlay": 0,
+        "itemIcons": 0,
+        "recipeView": 0,
+        "litematicaPreview": 0,
+        "litematicaMaterialList": 0
+      }
+    }
+  }
+}

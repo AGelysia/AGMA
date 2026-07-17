@@ -1,0 +1,15 @@
+{
+  "protocolVersion": "1.0",
+  "messageId": "55555555-5555-4555-8555-555555555555",
+  "requestId": "22222222-2222-4222-8222-222222222222",
+  "serverId": "survival-main",
+  "type": "agent.complete",
+  "timestamp": "2026-07-11T08:00:01Z",
+  "nonce": "bcdefghijklmnopqrstuvw",
+  "payload": {
+    "sessionId": null,
+    "playerUuid": "44444444-4444-4444-8444-444444444444",
+    "fallbackText": "Place four planks in a 2x2 crafting grid.",
+    "structuredViews": []
+  }
+}

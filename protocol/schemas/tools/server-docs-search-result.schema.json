@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/server-docs-search-result.schema.json",
+  "title": "Server Documentation Search Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["query", "matches", "truncated"],
+  "properties": {
+    "query": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "matches": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "documentId",
+          "citation",
+          "kind",
+          "title",
+          "heading",
+          "excerpt"
+        ],
+        "properties": {
+          "documentId": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "citation": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "kind": {
+            "enum": ["server_rules", "local_docs"]
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "heading": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "excerpt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        }
+      }
+    },
+    "truncated": {
+      "type": "boolean"
+    }
+  }
+}

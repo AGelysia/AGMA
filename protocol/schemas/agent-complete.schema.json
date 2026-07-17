@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/agent-complete.schema.json",
+  "title": "AGMA Completion Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sessionId", "playerUuid", "fallbackText", "structuredViews"],
+  "properties": {
+    "sessionId": {
+      "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }]
+    },
+    "playerUuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "fallbackText": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 8192
+    },
+    "structuredViews": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "$ref": "structured-view.schema.json"
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "viewSchemaVersion": "1.0",
+  "viewId": "77777777-7777-4777-8777-777777777777",
+  "requestId": "22222222-2222-4222-8222-222222222222",
+  "viewType": "text",
+  "revision": 1,
+  "title": "Agent response",
+  "fallbackText": "Use four planks in a two-by-two square.",
+  "pinnable": true,
+  "content": {
+    "text": "Use four planks in a two-by-two square."
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "viewSchemaVersion": "1.0",
+  "viewId": "a0000000-0000-4000-8000-000000000009",
+  "requestId": "a0000000-0000-4000-8000-000000000010",
+  "viewType": "proposal",
+  "revision": 1,
+  "title": "Invalid proposal",
+  "fallbackText": "Invalid proposal fixture",
+  "pinnable": true,
+  "content": {}
+}

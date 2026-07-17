@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "2.0",
+  "query": { "mode": "lookup", "itemId": "minecraft:stone" },
+  "selectedRecipe": 0,
+  "totalMatches": 1,
+  "truncated": false,
+  "recipes": [
+    {
+      "recipeId": "example:stone",
+      "recipeType": "stonecutting",
+      "source": { "kind": "plugin_provider", "providerId": null },
+      "result": {
+        "itemId": "minecraft:stone",
+        "count": 1,
+        "components": {}
+      },
+      "layout": {
+        "kind": "single_input",
+        "ingredient": {
+          "choiceType": "material",
+          "alternatives": [
+            {
+              "itemId": "minecraft:cobblestone",
+              "count": 1,
+              "components": {}
+            }
+          ]
+        }
+      },
+      "remainingItems": []
+    }
+  ]
+}

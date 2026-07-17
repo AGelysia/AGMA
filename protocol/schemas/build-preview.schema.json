@@ -1,0 +1,220 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/build-preview.schema.json",
+  "title": "AGMA Build Preview Transfer",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "previewId",
+    "projectId",
+    "revision",
+    "operation",
+    "dimension",
+    "bounds",
+    "origin",
+    "transform",
+    "baseRegionHash",
+    "changeSetHash",
+    "contentHash",
+    "paletteHash",
+    "contentFormat",
+    "encoding",
+    "compressedBytes",
+    "uncompressedBytes",
+    "blockCount",
+    "difference",
+    "palette",
+    "chunkCount",
+    "chunks"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "previewId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "projectId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "operation": {
+      "enum": ["create", "modify"]
+    },
+    "dimension": {
+      "$ref": "#/$defs/namespacedId"
+    },
+    "bounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min", "max"],
+      "properties": {
+        "min": { "$ref": "#/$defs/blockPosition" },
+        "max": { "$ref": "#/$defs/blockPosition" }
+      }
+    },
+    "origin": {
+      "$ref": "#/$defs/blockPosition"
+    },
+    "transform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rotation", "mirror"],
+      "properties": {
+        "rotation": {
+          "enum": [0, 90, 180, 270]
+        },
+        "mirror": {
+          "enum": ["NONE", "LEFT_RIGHT", "FRONT_BACK"]
+        }
+      }
+    },
+    "baseRegionHash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "changeSetHash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "contentHash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "paletteHash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "contentFormat": {
+      "const": "minecraft-agent.palette-v1"
+    },
+    "encoding": {
+      "enum": ["identity+base64", "gzip+base64"]
+    },
+    "compressedBytes": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 16777216
+    },
+    "uncompressedBytes": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 67108864
+    },
+    "blockCount": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 250000
+    },
+    "difference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["added", "replaced", "removed"],
+      "properties": {
+        "added": { "type": "integer", "minimum": 0, "maximum": 250000 },
+        "replaced": { "type": "integer", "minimum": 0, "maximum": 250000 },
+        "removed": { "type": "integer", "minimum": 0, "maximum": 250000 }
+      }
+    },
+    "palette": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 4096,
+      "items": {
+        "$ref": "#/$defs/paletteEntry"
+      }
+    },
+    "chunkCount": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 256
+    },
+    "chunks": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "items": {
+        "$ref": "#/$defs/chunk"
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "namespacedId": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 256,
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+    },
+    "blockPosition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "z"],
+      "properties": {
+        "x": { "type": "integer", "minimum": -30000000, "maximum": 30000000 },
+        "y": { "type": "integer", "minimum": -2048, "maximum": 2048 },
+        "z": { "type": "integer", "minimum": -30000000, "maximum": 30000000 }
+      }
+    },
+    "paletteEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "blockId", "properties"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4095
+        },
+        "blockId": {
+          "$ref": "#/$defs/namespacedId"
+        },
+        "properties": {
+          "type": "object",
+          "maxProperties": 32,
+          "propertyNames": {
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9_.-]+$"
+          }
+        }
+      }
+    },
+    "chunk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["index", "byteLength", "sha256", "data"],
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "byteLength": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1048576
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "data": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 1398104,
+          "pattern": "^[A-Za-z0-9+/]*={0,2}$"
+        }
+      }
+    }
+  }
+}

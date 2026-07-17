@@ -1,0 +1,38 @@
+{
+  "id": "example.console_info",
+  "version": 1,
+  "status": "draft",
+  "description": "Schema-valid console source rejected later by Paper policy.",
+  "requirements": {
+    "plugins": []
+  },
+  "execution": {
+    "type": "command",
+    "source": "console",
+    "commandRoot": "info",
+    "template": "/info {topic}"
+  },
+  "arguments": {
+    "topic": {
+      "type": "string",
+      "description": "Information topic.",
+      "required": true,
+      "minLength": 1,
+      "maxLength": 64
+    }
+  },
+  "effects": {
+    "category": "READ",
+    "scope": "request",
+    "maximumBlocks": null
+  },
+  "permissions": {
+    "minimum": "OWNER"
+  },
+  "confirmation": {
+    "required": false
+  },
+  "reversibility": {
+    "type": "none"
+  }
+}

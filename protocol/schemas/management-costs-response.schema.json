@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/management-costs-response.schema.json",
+  "title": "AGMA Management Costs Response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["currentDay", "currentMonth", "budget"],
+  "properties": {
+    "currentDay": {
+      "allOf": [
+        { "$ref": "#/$defs/usageWindow" },
+        {
+          "type": "object",
+          "properties": {
+            "period": { "$ref": "#/$defs/dayPeriod" }
+          }
+        }
+      ]
+    },
+    "currentMonth": {
+      "allOf": [
+        { "$ref": "#/$defs/usageWindow" },
+        {
+          "type": "object",
+          "properties": {
+            "period": { "$ref": "#/$defs/monthPeriod" }
+          }
+        }
+      ]
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "month",
+        "limitMicroUsd",
+        "settledMicroUsd",
+        "activeReservationsMicroUsd",
+        "remainingMicroUsd",
+        "exhausted"
+      ],
+      "properties": {
+        "month": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])$"
+        },
+        "limitMicroUsd": { "$ref": "#/$defs/nonnegativeInteger" },
+        "settledMicroUsd": { "$ref": "#/$defs/nonnegativeInteger" },
+        "activeReservationsMicroUsd": { "$ref": "#/$defs/nonnegativeInteger" },
+        "remainingMicroUsd": { "$ref": "#/$defs/nonnegativeInteger" },
+        "exhausted": { "type": "boolean" }
+      }
+    }
+  },
+  "$defs": {
+    "nonnegativeInteger": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "dayPeriod": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$"
+    },
+    "monthPeriod": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])$"
+    },
+    "usageWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "period",
+        "admittedRequests",
+        "providerCalls",
+        "reportedProviderCalls",
+        "estimatedProviderCalls",
+        "inputTokens",
+        "outputTokens",
+        "costMicroUsd"
+      ],
+      "properties": {
+        "period": { "type": "string" },
+        "admittedRequests": { "$ref": "#/$defs/nonnegativeInteger" },
+        "providerCalls": { "$ref": "#/$defs/nonnegativeInteger" },
+        "reportedProviderCalls": { "$ref": "#/$defs/nonnegativeInteger" },
+        "estimatedProviderCalls": { "$ref": "#/$defs/nonnegativeInteger" },
+        "inputTokens": { "$ref": "#/$defs/nonnegativeInteger" },
+        "outputTokens": { "$ref": "#/$defs/nonnegativeInteger" },
+        "costMicroUsd": { "$ref": "#/$defs/nonnegativeInteger" }
+      }
+    }
+  }
+}

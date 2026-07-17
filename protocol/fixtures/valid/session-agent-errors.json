@@ -1,0 +1,20 @@
+{
+  "notFound": {
+    "playerUuid": "44444444-4444-4444-8444-444444444444",
+    "code": "SESSION_NOT_FOUND",
+    "fallbackText": "No resumable conversation was found.",
+    "retryable": false
+  },
+  "storageDisabled": {
+    "playerUuid": "44444444-4444-4444-8444-444444444444",
+    "code": "CONVERSATION_STORAGE_DISABLED",
+    "fallbackText": "Conversation storage is disabled on this server.",
+    "retryable": false
+  },
+  "budgetExceeded": {
+    "playerUuid": "44444444-4444-4444-8444-444444444444",
+    "code": "BUDGET_EXCEEDED",
+    "fallbackText": "The monthly AI budget is exhausted.",
+    "retryable": false
+  }
+}

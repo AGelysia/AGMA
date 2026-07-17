@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/proposal.schema.json",
+  "title": "AGMA Proposal Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proposalId",
+    "sessionId",
+    "playerUuid",
+    "tool",
+    "arguments",
+    "argumentHash",
+    "risk",
+    "summary",
+    "expiresAt"
+  ],
+  "properties": {
+    "proposalId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "sessionId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "playerUuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tool": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$"
+    },
+    "arguments": {
+      "type": "object",
+      "maxProperties": 64
+    },
+    "argumentHash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "baseRegionHash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "changeSetHash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "risk": {
+      "enum": ["WRITE_TEMPORARY", "WRITE_WORLD", "WRITE_PLAYER", "SERVER_ADMIN"]
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+    },
+    "expiresAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "dependentRequired": {
+    "baseRegionHash": ["changeSetHash"],
+    "changeSetHash": ["baseRegionHash"]
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "protocolVersion": "1.0",
+  "messageId": "73737373-7373-4373-8373-737373737373",
+  "requestId": "73737373-7373-4373-8373-737373737373",
+  "serverId": "survival-main",
+  "type": "session.resume",
+  "timestamp": "2026-07-13T08:00:01Z",
+  "nonce": "efghijklmnopqrstuvwxyw",
+  "payload": {
+    "playerUuid": "44444444-4444-4444-8444-444444444444",
+    "sessionId": null
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "proposalId": "66666666-6666-4666-8666-666666666666",
+  "playerUuid": "44444444-4444-4444-8444-444444444444",
+  "tool": "build.change_set.apply",
+  "argumentHash": "2bc75411e3e6212640efe86fe96e999aadac80000241b24b6ef5c3e9e2b215ff",
+  "status": "CANCELLED",
+  "reason": "EXPIRED",
+  "cancelledAt": "2026-07-11T08:00:05Z"
+}

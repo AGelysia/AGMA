@@ -1,0 +1,485 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/common.schema.json",
+  "title": "AGMA Core Tool Shared Values",
+  "type": "object",
+  "additionalProperties": false,
+  "maxProperties": 0,
+  "$defs": {
+    "namespacedId": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 256,
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+    },
+    "safeComponents": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customName": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "lore": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "damage": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "maxDamage": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "customModelData": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "enchantmentGlint": {
+          "type": "boolean"
+        }
+      }
+    },
+    "itemStack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["itemId", "count", "components"],
+      "properties": {
+        "itemId": {
+          "$ref": "#/$defs/namespacedId"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 999999
+        },
+        "components": {
+          "$ref": "#/$defs/safeComponents"
+        }
+      }
+    },
+    "ingredientChoice": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["choiceType", "alternatives"],
+          "properties": {
+            "choiceType": {
+              "enum": ["material", "exact", "item_type"]
+            },
+            "alternatives": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 64,
+              "items": {
+                "$ref": "#/$defs/itemStack"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["choiceType", "tagId", "alternatives"],
+          "properties": {
+            "choiceType": {
+              "const": "tag"
+            },
+            "tagId": {
+              "$ref": "#/$defs/namespacedId"
+            },
+            "alternatives": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 64,
+              "items": {
+                "$ref": "#/$defs/itemStack"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["choiceType", "reason", "alternatives"],
+          "properties": {
+            "choiceType": {
+              "const": "unsupported"
+            },
+            "reason": {
+              "enum": ["UNSUPPORTED_INGREDIENT_CHOICE"]
+            },
+            "alternatives": {
+              "type": "array",
+              "maxItems": 0
+            }
+          }
+        }
+      ]
+    },
+    "ingredientSlot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slot", "x", "y", "ingredient"],
+      "properties": {
+        "slot": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8
+        },
+        "x": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "y": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "ingredient": {
+          "$ref": "#/$defs/ingredientChoice"
+        }
+      }
+    },
+    "gridLayout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "width", "height", "ingredients"],
+      "properties": {
+        "kind": {
+          "const": "grid"
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "ingredients": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 9,
+          "items": {
+            "$ref": "#/$defs/ingredientSlot"
+          }
+        }
+      }
+    },
+    "singleInputLayout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "ingredient"],
+      "properties": {
+        "kind": {
+          "const": "single_input"
+        },
+        "ingredient": {
+          "$ref": "#/$defs/ingredientChoice"
+        }
+      }
+    },
+    "smithingLayout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "template", "base", "addition"],
+      "properties": {
+        "kind": {
+          "const": "smithing"
+        },
+        "template": {
+          "$ref": "#/$defs/ingredientChoice"
+        },
+        "base": {
+          "$ref": "#/$defs/ingredientChoice"
+        },
+        "addition": {
+          "$ref": "#/$defs/ingredientChoice"
+        }
+      }
+    },
+    "transmuteLayout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "input", "material"],
+      "properties": {
+        "kind": {
+          "const": "transmute"
+        },
+        "input": {
+          "$ref": "#/$defs/ingredientChoice"
+        },
+        "material": {
+          "$ref": "#/$defs/ingredientChoice"
+        }
+      }
+    },
+    "unsupportedLayout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "reason"],
+      "properties": {
+        "kind": {
+          "const": "unsupported"
+        },
+        "reason": {
+          "enum": ["UNSUPPORTED_RECIPE_LAYOUT"]
+        }
+      }
+    },
+    "remainingItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slot", "item"],
+      "properties": {
+        "slot": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8
+        },
+        "item": {
+          "$ref": "#/$defs/itemStack"
+        }
+      }
+    },
+    "recipeSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "providerId"],
+      "properties": {
+        "kind": {
+          "enum": ["server_registry", "plugin_provider"]
+        },
+        "providerId": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/namespacedId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "processing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["timeTicks", "experience"],
+      "properties": {
+        "timeTicks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 120000
+        },
+        "experience": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        }
+      }
+    },
+    "recipe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recipeId",
+        "recipeType",
+        "source",
+        "result",
+        "layout",
+        "remainingItems"
+      ],
+      "properties": {
+        "recipeId": {
+          "$ref": "#/$defs/namespacedId"
+        },
+        "recipeType": {
+          "enum": [
+            "shaped",
+            "shapeless",
+            "smelting",
+            "blasting",
+            "smoking",
+            "campfire_cooking",
+            "stonecutting",
+            "smithing_transform",
+            "smithing_trim",
+            "transmute",
+            "complex",
+            "custom"
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/recipeSource"
+        },
+        "result": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/itemStack"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "layout": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/gridLayout"
+            },
+            {
+              "$ref": "#/$defs/singleInputLayout"
+            },
+            {
+              "$ref": "#/$defs/smithingLayout"
+            },
+            {
+              "$ref": "#/$defs/transmuteLayout"
+            },
+            {
+              "$ref": "#/$defs/unsupportedLayout"
+            }
+          ]
+        },
+        "remainingItems": {
+          "type": "array",
+          "maxItems": 9,
+          "items": {
+            "$ref": "#/$defs/remainingItem"
+          }
+        },
+        "processing": {
+          "$ref": "#/$defs/processing"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "recipeType": {
+                "enum": ["shaped", "shapeless"]
+              }
+            },
+            "required": ["recipeType"]
+          },
+          "then": {
+            "properties": {
+              "layout": {
+                "$ref": "#/$defs/gridLayout"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "recipeType": {
+                "enum": [
+                  "smelting",
+                  "blasting",
+                  "smoking",
+                  "campfire_cooking",
+                  "stonecutting"
+                ]
+              }
+            },
+            "required": ["recipeType"]
+          },
+          "then": {
+            "properties": {
+              "layout": {
+                "$ref": "#/$defs/singleInputLayout"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "recipeType": {
+                "enum": ["smithing_transform", "smithing_trim"]
+              }
+            },
+            "required": ["recipeType"]
+          },
+          "then": {
+            "properties": {
+              "layout": {
+                "$ref": "#/$defs/smithingLayout"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "recipeType": {
+                "const": "transmute"
+              }
+            },
+            "required": ["recipeType"]
+          },
+          "then": {
+            "properties": {
+              "layout": {
+                "$ref": "#/$defs/transmuteLayout"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "recipeType": {
+                "enum": ["complex", "custom"]
+              }
+            },
+            "required": ["recipeType"]
+          },
+          "then": {
+            "properties": {
+              "layout": {
+                "$ref": "#/$defs/unsupportedLayout"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "recipeType": {
+                "enum": ["smelting", "blasting", "smoking", "campfire_cooking"]
+              }
+            },
+            "required": ["recipeType"]
+          },
+          "then": {
+            "required": ["processing"],
+            "properties": {
+              "processing": {}
+            }
+          },
+          "else": {
+            "not": {
+              "required": ["processing"]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

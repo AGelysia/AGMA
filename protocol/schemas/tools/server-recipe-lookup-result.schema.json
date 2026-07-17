@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/server-recipe-lookup-result.schema.json",
+  "title": "server.recipe.lookup Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["query", "recipes", "totalMatches", "truncated"],
+  "properties": {
+    "query": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "itemId"],
+      "properties": {
+        "mode": {
+          "const": "lookup"
+        },
+        "itemId": {
+          "$ref": "common.schema.json#/$defs/namespacedId"
+        }
+      }
+    },
+    "recipes": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "$ref": "common.schema.json#/$defs/recipe"
+      }
+    },
+    "totalMatches": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "truncated": {
+      "type": "boolean"
+    }
+  }
+}

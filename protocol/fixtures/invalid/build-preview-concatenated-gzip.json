@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.0",
+  "previewId": "c0000000-0000-4000-8000-000000000009",
+  "projectId": "c0000000-0000-4000-8000-000000000010",
+  "revision": 1,
+  "operation": "create",
+  "dimension": "minecraft:overworld",
+  "bounds": { "min": { "x": 0, "y": 64, "z": 0 }, "max": { "x": 0, "y": 64, "z": 0 } },
+  "origin": { "x": 0, "y": 64, "z": 0 },
+  "transform": { "rotation": 0, "mirror": "NONE" },
+  "baseRegionHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "changeSetHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "contentHash": "0ddd6eae0176cdf1ce854a5b122b7d79e6a749cb1a2a36388e3dbb4ad7d92d53",
+  "paletteHash": "20dcced40879b906acda099d368bbd1720cc78b551ccb73902fcd798e9adfb33",
+  "contentFormat": "minecraft-agent.palette-v1",
+  "encoding": "gzip+base64",
+  "compressedBytes": 142,
+  "uncompressedBytes": 110,
+  "blockCount": 1,
+  "difference": { "added": 1, "replaced": 0, "removed": 0 },
+  "palette": [{ "id": 0, "blockId": "minecraft:stone", "properties": {} }],
+  "chunkCount": 1,
+  "chunks": [{
+    "index": 0,
+    "byteLength": 142,
+    "sha256": "697ca135457827d4385b0929c5f781eb06ab113041581c12fa33ec4311b63311",
+    "data": "H4sIAAAAAAAAA6tWSsrJT84uVrKKrlYqLkksSVWyMtBRqgCTlUpWZiY6SlVKVga1sTpKZalFxZn5eUpWhrUA/QwNDDcAAAAfiwgAAAAAAAADq1ZKyslPzi5WsoquViouSSxJVbIy0FGqAJOVSlZmJjpKVUpWBrWxOkplqUXFmfl5SlaGtQD9DA0MNwAAAA=="
+  }]
+}

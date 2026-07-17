@@ -1,0 +1,37 @@
+{
+  "id": "example.adjacent_placeholder",
+  "version": 1,
+  "description": "Invalid adjacent placeholder fixture.",
+  "requirements": {
+    "plugins": []
+  },
+  "execution": {
+    "type": "command",
+    "source": "player",
+    "commandRoot": "info",
+    "template": "/info prefix{topic}"
+  },
+  "arguments": {
+    "topic": {
+      "type": "string",
+      "description": "Information topic.",
+      "required": true,
+      "minLength": 1,
+      "maxLength": 64
+    }
+  },
+  "effects": {
+    "category": "READ",
+    "scope": "request",
+    "maximumBlocks": null
+  },
+  "permissions": {
+    "minimum": "ANY"
+  },
+  "confirmation": {
+    "required": false
+  },
+  "reversibility": {
+    "type": "none"
+  }
+}

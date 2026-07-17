@@ -1,0 +1,13 @@
+{
+  "viewSchemaVersion": "1.0",
+  "viewId": "a0000000-0000-4000-8000-000000000003",
+  "requestId": "a0000000-0000-4000-8000-000000000004",
+  "viewType": "item_list",
+  "revision": 1,
+  "title": "Invalid item list",
+  "fallbackText": "Invalid item list fixture",
+  "pinnable": true,
+  "content": {
+    "items": [{}]
+  }
+}

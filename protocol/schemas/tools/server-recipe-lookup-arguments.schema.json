@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/server-recipe-lookup-arguments.schema.json",
+  "title": "server.recipe.lookup Arguments",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["itemId"],
+  "properties": {
+    "itemId": {
+      "$ref": "common.schema.json#/$defs/namespacedId"
+    }
+  }
+}

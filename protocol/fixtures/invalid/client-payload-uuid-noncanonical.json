@@ -1,0 +1,22 @@
+{
+  "abbreviated": {
+    "clientPayloadVersion": "1.0",
+    "messageId": "1-1-1-1-1",
+    "type": "client.error",
+    "payload": {
+      "generation": 1,
+      "transferId": null,
+      "code": "CLIENT_FRAME_INVALID"
+    }
+  },
+  "uppercase": {
+    "clientPayloadVersion": "1.0",
+    "messageId": "D1000000-0000-4000-8000-000000000020",
+    "type": "client.error",
+    "payload": {
+      "generation": 1,
+      "transferId": null,
+      "code": "CLIENT_FRAME_INVALID"
+    }
+  }
+}

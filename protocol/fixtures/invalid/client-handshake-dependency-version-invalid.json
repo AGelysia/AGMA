@@ -1,0 +1,52 @@
+{
+  "control": {
+    "clientProtocolVersion": "1.1",
+    "modVersion": "0.1.0",
+    "capabilities": {
+      "overlay": 1,
+      "itemIcons": 1,
+      "recipeView": 1,
+      "litematicaPreview": 0,
+      "litematicaMaterialList": 0
+    },
+    "dependencies": {
+      "litematica": "0.26.12\u0001",
+      "malilib": null
+    },
+    "diagnostics": {
+      "litematicaAdapter": {
+        "status": "MISSING_DEPENDENCY",
+        "minecraftVersion": "1.21.11",
+        "fabricLoaderVersion": "0.19.3",
+        "litematicaVersion": "0.26.12\u0001",
+        "malilibVersion": null,
+        "adapterId": null
+      }
+    }
+  },
+  "nonAscii": {
+    "clientProtocolVersion": "1.1",
+    "modVersion": "0.1.0",
+    "capabilities": {
+      "overlay": 1,
+      "itemIcons": 1,
+      "recipeView": 1,
+      "litematicaPreview": 0,
+      "litematicaMaterialList": 0
+    },
+    "dependencies": {
+      "litematica": "0.26.12-\u7248",
+      "malilib": null
+    },
+    "diagnostics": {
+      "litematicaAdapter": {
+        "status": "MISSING_DEPENDENCY",
+        "minecraftVersion": "1.21.11",
+        "fabricLoaderVersion": "0.19.3",
+        "litematicaVersion": "0.26.12-\u7248",
+        "malilibVersion": null,
+        "adapterId": null
+      }
+    }
+  }
+}

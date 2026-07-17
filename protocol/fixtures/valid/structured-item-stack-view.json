@@ -1,0 +1,15 @@
+{
+  "viewSchemaVersion": "1.0",
+  "viewId": "a0000000-0000-4000-8000-000000000011",
+  "requestId": "a0000000-0000-4000-8000-000000000012",
+  "viewType": "item_stack",
+  "revision": 1,
+  "title": "Stone",
+  "fallbackText": "Stone x64",
+  "pinnable": true,
+  "content": {
+    "itemId": "minecraft:stone",
+    "count": 64,
+    "components": {}
+  }
+}

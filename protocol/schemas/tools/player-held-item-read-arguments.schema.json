@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/player-held-item-read-arguments.schema.json",
+  "title": "player.held_item.read Arguments",
+  "type": "object",
+  "additionalProperties": false,
+  "maxProperties": 0
+}

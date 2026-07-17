@@ -1,0 +1,37 @@
+{
+  "id": "example.echo",
+  "version": 1,
+  "description": "Semantic range fixture.",
+  "requirements": {
+    "plugins": []
+  },
+  "execution": {
+    "type": "command",
+    "source": "player",
+    "commandRoot": "echo",
+    "template": "/echo {message}"
+  },
+  "arguments": {
+    "message": {
+      "type": "string",
+      "description": "Message to echo.",
+      "required": true,
+      "minLength": 10,
+      "maxLength": 5
+    }
+  },
+  "effects": {
+    "category": "READ",
+    "scope": "request",
+    "maximumBlocks": null
+  },
+  "permissions": {
+    "minimum": "ANY"
+  },
+  "confirmation": {
+    "required": false
+  },
+  "reversibility": {
+    "type": "none"
+  }
+}

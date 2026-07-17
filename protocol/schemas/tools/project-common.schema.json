@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/project-common.schema.json",
+  "title": "Runtime Project Shared Values",
+  "type": "object",
+  "additionalProperties": false,
+  "maxProperties": 0,
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048
+    },
+    "textList": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "summary", "goals", "constraints"],
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "summary": { "$ref": "#/$defs/summary" },
+        "goals": { "$ref": "#/$defs/textList" },
+        "constraints": { "$ref": "#/$defs/textList" }
+      }
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "projectId",
+        "name",
+        "summary",
+        "goals",
+        "constraints",
+        "status",
+        "revision",
+        "createdAt",
+        "updatedAt"
+      ],
+      "properties": {
+        "projectId": { "$ref": "#/$defs/uuid" },
+        "name": { "$ref": "#/$defs/name" },
+        "summary": { "$ref": "#/$defs/summary" },
+        "goals": { "$ref": "#/$defs/textList" },
+        "constraints": { "$ref": "#/$defs/textList" },
+        "status": { "enum": ["ACTIVE", "ARCHIVED"] },
+        "revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "projectSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectId", "name", "status", "revision", "updatedAt"],
+      "properties": {
+        "projectId": { "$ref": "#/$defs/uuid" },
+        "name": { "$ref": "#/$defs/name" },
+        "status": { "enum": ["ACTIVE", "ARCHIVED"] },
+        "revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

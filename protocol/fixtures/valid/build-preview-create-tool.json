@@ -1,0 +1,34 @@
+{
+  "arguments": {
+    "projectId": "99999999-9999-4999-8999-999999999999",
+    "revision": 1,
+    "operation": "create",
+    "dimension": "minecraft:overworld",
+    "bounds": {
+      "min": { "x": 0, "y": 64, "z": 0 },
+      "max": { "x": 2, "y": 66, "z": 2 }
+    },
+    "origin": { "x": 0, "y": 64, "z": 0 },
+    "pattern": "hollow",
+    "blockState": "minecraft:stone",
+    "rotation": 0,
+    "mirror": "NONE"
+  },
+  "result": {
+    "previewId": "88888888-8888-4888-8888-888888888888",
+    "projectId": "99999999-9999-4999-8999-999999999999",
+    "revision": 1,
+    "dimension": "minecraft:overworld",
+    "bounds": {
+      "min": { "x": 0, "y": 64, "z": 0 },
+      "max": { "x": 2, "y": 66, "z": 2 }
+    },
+    "baseRegionHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "changeSetHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "targetBlockCount": 26,
+    "changeCount": 26,
+    "difference": { "added": 26, "replaced": 0, "removed": 0 },
+    "previewStatus": "server_validated",
+    "worldWriteEnabled": false
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "id": "example.server_version",
+  "version": 1,
+  "description": "Plugin ranges use the closed numeric comparator grammar.",
+  "requirements": {
+    "plugins": [
+      {
+        "name": "ExamplePlugin",
+        "version": "latest || *"
+      }
+    ]
+  },
+  "execution": {
+    "type": "command",
+    "source": "player",
+    "commandRoot": "version",
+    "template": "/version"
+  },
+  "arguments": {},
+  "effects": {
+    "category": "READ",
+    "scope": "request",
+    "maximumBlocks": null
+  },
+  "permissions": {
+    "minimum": "ANY"
+  },
+  "confirmation": {
+    "required": false
+  },
+  "reversibility": {
+    "type": "none"
+  }
+}

@@ -1,0 +1,22 @@
+# Safe, non-public starting point for an AGMA server.
+# Replace server-ip with one explicit cloud interface only after restricting
+# both the cloud security group and host firewall to the physical testers.
+server-ip=127.0.0.1
+server-port=25565
+online-mode=true
+white-list=true
+enforce-whitelist=true
+enable-rcon=false
+enable-query=false
+broadcast-rcon-to-ops=false
+max-players=4
+view-distance=6
+simulation-distance=4
+spawn-protection=0
+gamemode=creative
+force-gamemode=true
+difficulty=peaceful
+level-type=minecraft:flat
+generate-structures=false
+sync-chunk-writes=false
+motd=AGMA

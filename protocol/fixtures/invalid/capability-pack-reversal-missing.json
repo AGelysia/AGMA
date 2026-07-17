@@ -1,0 +1,41 @@
+{
+  "capabilities": [
+    {
+      "id": "worldedit.replace",
+      "version": 1,
+      "description": "Replace blocks without the declared reversal target.",
+      "requirements": {
+        "plugins": [{ "name": "WorldEdit", "version": ">=7.3 <8" }]
+      },
+      "execution": {
+        "type": "command",
+        "source": "player",
+        "commandRoot": "replace",
+        "template": "/replace {from} {to}"
+      },
+      "arguments": {
+        "from": {
+          "type": "minecraft:block-pattern",
+          "description": "Block pattern to replace.",
+          "required": true
+        },
+        "to": {
+          "type": "minecraft:block-pattern",
+          "description": "Replacement block pattern.",
+          "required": true
+        }
+      },
+      "effects": {
+        "category": "WRITE_WORLD",
+        "scope": "frozen_selection",
+        "maximumBlocks": 5000
+      },
+      "permissions": { "minimum": "OP" },
+      "confirmation": { "required": true },
+      "reversibility": {
+        "type": "capability",
+        "capability": "worldedit.undo"
+      }
+    }
+  ]
+}

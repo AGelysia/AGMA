@@ -1,0 +1,9 @@
+{
+  "query": {
+    "mode": "lookup",
+    "itemId": "minecraft:crafting_table"
+  },
+  "recipes": ["Put four planks in a two by two grid."],
+  "totalMatches": 1,
+  "truncated": false
+}

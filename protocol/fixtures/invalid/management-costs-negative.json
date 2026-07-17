@@ -1,0 +1,30 @@
+{
+  "currentDay": {
+    "period": "2026-07-14",
+    "admittedRequests": 1,
+    "providerCalls": 1,
+    "reportedProviderCalls": 1,
+    "estimatedProviderCalls": 0,
+    "inputTokens": -1,
+    "outputTokens": 10,
+    "costMicroUsd": 20
+  },
+  "currentMonth": {
+    "period": "2026-07",
+    "admittedRequests": 1,
+    "providerCalls": 1,
+    "reportedProviderCalls": 1,
+    "estimatedProviderCalls": 0,
+    "inputTokens": 10,
+    "outputTokens": 10,
+    "costMicroUsd": 20
+  },
+  "budget": {
+    "month": "2026-07",
+    "limitMicroUsd": 1000000,
+    "settledMicroUsd": 20,
+    "activeReservationsMicroUsd": 0,
+    "remainingMicroUsd": 999980,
+    "exhausted": false
+  }
+}

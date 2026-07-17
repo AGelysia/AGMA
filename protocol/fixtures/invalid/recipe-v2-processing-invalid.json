@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "2.0",
+  "query": { "mode": "lookup", "itemId": "minecraft:stone" },
+  "selectedRecipe": 0,
+  "totalMatches": 1,
+  "truncated": false,
+  "recipes": [
+    {
+      "recipeId": "minecraft:stone",
+      "recipeType": "shaped",
+      "source": { "kind": "server_registry", "providerId": null },
+      "result": {
+        "itemId": "minecraft:stone",
+        "count": 1,
+        "components": {}
+      },
+      "layout": {
+        "kind": "grid",
+        "width": 1,
+        "height": 1,
+        "ingredients": [
+          {
+            "slot": 0,
+            "x": 0,
+            "y": 0,
+            "ingredient": {
+              "choiceType": "material",
+              "alternatives": [
+                {
+                  "itemId": "minecraft:cobblestone",
+                  "count": 1,
+                  "components": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "remainingItems": [],
+      "processing": { "timeTicks": 1, "experience": 0 }
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "client": {
+    "clientProtocolVersion": "1.1",
+    "modVersion": "0.1.0",
+    "capabilities": {
+      "overlay": 1,
+      "itemIcons": 1,
+      "recipeView": 2,
+      "litematicaPreview": 0,
+      "litematicaMaterialList": 0
+    },
+    "dependencies": { "litematica": null, "malilib": null },
+    "diagnostics": {
+      "litematicaAdapter": {
+        "status": "NOT_INSTALLED",
+        "minecraftVersion": "1.21.11",
+        "fabricLoaderVersion": "0.19.3",
+        "litematicaVersion": null,
+        "malilibVersion": null,
+        "adapterId": null
+      }
+    }
+  },
+  "view": {
+    "viewSchemaVersion": "1.0",
+    "viewId": "33333333-3333-4333-8333-333333333333",
+    "requestId": "44444444-4444-4444-8444-444444444444",
+    "viewType": "recipe",
+    "revision": 1,
+    "title": "Stone recipe",
+    "fallbackText": "The server returned one stone recipe.",
+    "pinnable": true,
+    "content": {
+      "schemaVersion": "2.0",
+      "query": { "mode": "lookup", "itemId": "minecraft:stone" },
+      "selectedRecipe": 0,
+      "totalMatches": 1,
+      "truncated": false,
+      "recipes": [
+        {
+          "recipeId": "minecraft:stone_from_smelting",
+          "recipeType": "smelting",
+          "source": { "kind": "server_registry", "providerId": null },
+          "result": {
+            "itemId": "minecraft:stone",
+            "count": 1,
+            "components": {}
+          },
+          "layout": {
+            "kind": "single_input",
+            "ingredient": {
+              "choiceType": "material",
+              "alternatives": [
+                {
+                  "itemId": "minecraft:cobblestone",
+                  "count": 1,
+                  "components": {}
+                }
+              ]
+            }
+          },
+          "remainingItems": [],
+          "processing": { "timeTicks": 200, "experience": 0.1 }
+        }
+      ]
+    }
+  }
+}

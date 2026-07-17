@@ -1,0 +1,298 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/capability.schema.json",
+  "title": "AGMA Capability Pack Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "version",
+    "description",
+    "requirements",
+    "execution",
+    "arguments",
+    "effects",
+    "permissions",
+    "confirmation",
+    "reversibility"
+  ],
+  "properties": {
+    "id": {
+      "$ref": "#/$defs/capabilityId"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "status": {
+      "enum": ["example", "draft"]
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024
+    },
+    "requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plugins"],
+      "properties": {
+        "plugins": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "version"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[A-Za-z0-9_.-]+$"
+              },
+              "version": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[ -~]+$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "source", "commandRoot", "template"],
+      "properties": {
+        "type": {
+          "const": "command"
+        },
+        "source": {
+          "enum": ["player", "console"]
+        },
+        "commandRoot": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z0-9:_-]+$"
+        },
+        "template": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 1024,
+          "pattern": "^/[ -~]+$"
+        }
+      }
+    },
+    "arguments": {
+      "type": "object",
+      "maxProperties": 64,
+      "propertyNames": {
+        "pattern": "^[a-z][a-zA-Z0-9_]{0,63}$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/argument"
+      }
+    },
+    "effects": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["category", "scope", "maximumBlocks"],
+      "properties": {
+        "category": {
+          "enum": [
+            "READ",
+            "WRITE_TEMPORARY",
+            "WRITE_WORLD",
+            "WRITE_PLAYER",
+            "SERVER_ADMIN"
+          ]
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-z][a-z0-9_.-]*$"
+        },
+        "maximumBlocks": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1, "maximum": 250000 },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "permissions": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["minimum"],
+          "properties": {
+            "minimum": {
+              "enum": ["ANY", "OP", "OWNER"]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["minimum", "node"],
+          "properties": {
+            "minimum": {
+              "const": "PERMISSION"
+            },
+            "node": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 128,
+              "pattern": "^[a-z0-9_.-]+$"
+            }
+          }
+        }
+      ]
+    },
+    "confirmation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required"],
+      "properties": {
+        "required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "reversibility": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type"],
+          "properties": {
+            "type": { "const": "none" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "capability"],
+          "properties": {
+            "type": { "const": "capability" },
+            "capability": { "$ref": "#/$defs/capabilityId" }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "capabilityId": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$"
+    },
+    "argument": {
+      "oneOf": [
+        { "$ref": "#/$defs/stringArgument" },
+        { "$ref": "#/$defs/integerArgument" },
+        { "$ref": "#/$defs/numberArgument" },
+        { "$ref": "#/$defs/booleanArgument" },
+        { "$ref": "#/$defs/enumArgument" },
+        { "$ref": "#/$defs/minecraftArgument" }
+      ]
+    },
+    "stringArgument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "description", "required", "minLength", "maxLength"],
+      "properties": {
+        "type": { "const": "string" },
+        "description": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "required": { "type": "boolean" },
+        "minLength": { "type": "integer", "minimum": 0, "maximum": 1024 },
+        "maxLength": { "type": "integer", "minimum": 1, "maximum": 1024 }
+      }
+    },
+    "integerArgument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "description", "required", "minimum", "maximum"],
+      "properties": {
+        "type": { "const": "integer" },
+        "description": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "required": { "type": "boolean" },
+        "minimum": {
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "maximum": {
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        }
+      }
+    },
+    "numberArgument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "description", "required", "minimum", "maximum"],
+      "properties": {
+        "type": { "const": "number" },
+        "description": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "required": { "type": "boolean" },
+        "minimum": { "type": "number" },
+        "maximum": { "type": "number" }
+      }
+    },
+    "booleanArgument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "description", "required"],
+      "properties": {
+        "type": { "const": "boolean" },
+        "description": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "required": { "type": "boolean" }
+      }
+    },
+    "enumArgument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "description", "required", "values"],
+      "properties": {
+        "type": { "const": "enum" },
+        "description": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "required": { "type": "boolean" },
+        "values": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 128,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 128 }
+        }
+      }
+    },
+    "minecraftArgument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "description", "required"],
+      "properties": {
+        "type": {
+          "enum": [
+            "minecraft:block-pattern",
+            "minecraft:item",
+            "minecraft:player",
+            "minecraft:dimension",
+            "minecraft:coordinates"
+          ]
+        },
+        "description": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "required": { "type": "boolean" }
+      }
+    }
+  }
+}

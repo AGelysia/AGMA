@@ -1,0 +1,27 @@
+# Editors and operating systems
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Local secrets and runtime state
+.env
+!.env.example
+**/config.local.yml
+**/data/
+**/logs/
+run/
+
+# Java and Gradle
+.gradle/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Node.js
+agent-runtime/node_modules/
+agent-runtime/coverage/
+agent-runtime/dist/
+
+# Release output
+dist/
+release/

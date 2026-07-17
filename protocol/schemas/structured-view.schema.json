@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/structured-view.schema.json",
+  "title": "AGMA Structured View",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "viewSchemaVersion",
+    "viewId",
+    "requestId",
+    "viewType",
+    "revision",
+    "title",
+    "fallbackText",
+    "pinnable",
+    "content"
+  ],
+  "properties": {
+    "viewSchemaVersion": {
+      "const": "1.0"
+    },
+    "viewId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "requestId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "viewType": {
+      "enum": [
+        "text",
+        "item_stack",
+        "item_list",
+        "recipe",
+        "build_preview",
+        "proposal",
+        "selection_list"
+      ]
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "fallbackText": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 8192
+    },
+    "pinnable": {
+      "type": "boolean"
+    },
+    "content": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "viewType": { "const": "text" } },
+        "required": ["viewType"]
+      },
+      "then": {
+        "properties": { "content": { "$ref": "#/$defs/textContent" } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "viewType": { "const": "item_stack" } },
+        "required": ["viewType"]
+      },
+      "then": {
+        "properties": {
+          "content": { "$ref": "recipe-view.schema.json#/$defs/itemStack" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "viewType": { "const": "item_list" } },
+        "required": ["viewType"]
+      },
+      "then": {
+        "properties": { "content": { "$ref": "#/$defs/itemListContent" } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "viewType": { "const": "recipe" } },
+        "required": ["viewType"]
+      },
+      "then": {
+        "properties": {
+          "content": {
+            "oneOf": [
+              { "$ref": "recipe-view.schema.json" },
+              { "$ref": "recipe-view-v2.schema.json" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "viewType": { "const": "build_preview" } },
+        "required": ["viewType"]
+      },
+      "then": {
+        "properties": { "content": { "$ref": "build-preview.schema.json" } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "viewType": { "const": "proposal" } },
+        "required": ["viewType"]
+      },
+      "then": {
+        "properties": { "content": { "$ref": "proposal.schema.json" } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "viewType": { "const": "selection_list" } },
+        "required": ["viewType"]
+      },
+      "then": {
+        "properties": { "content": { "$ref": "#/$defs/selectionListContent" } }
+      }
+    }
+  ],
+  "$defs": {
+    "textContent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text"],
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32768
+        }
+      }
+    },
+    "itemListContent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 128,
+          "items": {
+            "$ref": "recipe-view.schema.json#/$defs/itemStack"
+          }
+        }
+      }
+    },
+    "selectionListContent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prompt", "options"],
+      "properties": {
+        "prompt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "options": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "label"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[A-Za-z0-9._-]+$"
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 512
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

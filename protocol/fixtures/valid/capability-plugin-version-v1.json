@@ -1,0 +1,39 @@
+{
+  "manifest": {
+    "id": "example.worldedit_version",
+    "version": 1,
+    "status": "example",
+    "description": "Cross-language plugin version comparison vector.",
+    "requirements": {
+      "plugins": [
+        { "name": "WorldEdit", "version": ">7.2 >=7.3 <=7.99.4 <8 =7.3" }
+      ]
+    },
+    "execution": {
+      "type": "command",
+      "source": "player",
+      "commandRoot": "version",
+      "template": "/version"
+    },
+    "arguments": {},
+    "effects": {
+      "category": "READ",
+      "scope": "request",
+      "maximumBlocks": null
+    },
+    "permissions": { "minimum": "ANY" },
+    "confirmation": { "required": false },
+    "reversibility": { "type": "none" }
+  },
+  "cases": [
+    { "installedVersion": "7.3", "expected": "match" },
+    { "installedVersion": "7.3.0", "expected": "match" },
+    { "installedVersion": "7.99.4", "expected": "mismatch" },
+    { "installedVersion": "7.2.99", "expected": "mismatch" },
+    { "installedVersion": "8", "expected": "mismatch" },
+    { "installedVersion": "8.0.1", "expected": "mismatch" },
+    { "installedVersion": "7.3-SNAPSHOT", "expected": "invalid" },
+    { "installedVersion": "07.3", "expected": "invalid" },
+    { "installedVersion": "7.3.0.1", "expected": "invalid" }
+  ]
+}

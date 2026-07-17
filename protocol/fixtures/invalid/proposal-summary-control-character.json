@@ -1,0 +1,16 @@
+{
+  "proposalId": "66666666-6666-4666-8666-666666666666",
+  "sessionId": "33333333-3333-4333-8333-333333333333",
+  "playerUuid": "44444444-4444-4444-8444-444444444444",
+  "tool": "build.change_set.apply",
+  "arguments": {
+    "projectId": "99999999-9999-4999-8999-999999999999",
+    "revision": 1
+  },
+  "argumentHash": "2bc75411e3e6212640efe86fe96e999aadac80000241b24b6ef5c3e9e2b215ff",
+  "baseRegionHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "changeSetHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "risk": "WRITE_WORLD",
+  "summary": "Apply revision 1.\nRun a second line.",
+  "expiresAt": "2030-01-01T00:00:00Z"
+}

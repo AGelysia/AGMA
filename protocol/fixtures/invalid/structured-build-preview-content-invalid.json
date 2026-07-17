@@ -1,0 +1,11 @@
+{
+  "viewSchemaVersion": "1.0",
+  "viewId": "a0000000-0000-4000-8000-000000000007",
+  "requestId": "a0000000-0000-4000-8000-000000000008",
+  "viewType": "build_preview",
+  "revision": 1,
+  "title": "Invalid build preview",
+  "fallbackText": "Invalid build preview fixture",
+  "pinnable": true,
+  "content": {}
+}

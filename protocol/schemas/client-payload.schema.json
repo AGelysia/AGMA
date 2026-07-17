@@ -1,0 +1,220 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/client-payload.schema.json",
+  "title": "AGMA Client Custom Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["clientPayloadVersion", "messageId", "type", "payload"],
+  "properties": {
+    "clientPayloadVersion": { "const": "1.0" },
+    "messageId": { "$ref": "#/$defs/uuid" },
+    "type": {
+      "enum": [
+        "client.hello",
+        "server.hello",
+        "view.begin",
+        "view.chunk",
+        "view.clear",
+        "ui.control",
+        "client.ack",
+        "client.error"
+      ]
+    },
+    "payload": { "type": "object" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "type": { "const": "client.hello" } } },
+      "then": {
+        "properties": { "payload": { "$ref": "client-handshake.schema.json" } }
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "server.hello" } } },
+      "then": { "properties": { "payload": { "$ref": "#/$defs/serverHello" } } }
+    },
+    {
+      "if": { "properties": { "type": { "const": "view.begin" } } },
+      "then": { "properties": { "payload": { "$ref": "#/$defs/viewBegin" } } }
+    },
+    {
+      "if": { "properties": { "type": { "const": "view.chunk" } } },
+      "then": { "properties": { "payload": { "$ref": "#/$defs/viewChunk" } } }
+    },
+    {
+      "if": { "properties": { "type": { "const": "view.clear" } } },
+      "then": { "properties": { "payload": { "$ref": "#/$defs/viewClear" } } }
+    },
+    {
+      "if": { "properties": { "type": { "const": "ui.control" } } },
+      "then": { "properties": { "payload": { "$ref": "#/$defs/uiControl" } } }
+    },
+    {
+      "if": { "properties": { "type": { "const": "client.ack" } } },
+      "then": { "properties": { "payload": { "$ref": "#/$defs/clientAck" } } }
+    },
+    {
+      "if": { "properties": { "type": { "const": "client.error" } } },
+      "then": { "properties": { "payload": { "$ref": "#/$defs/clientError" } } }
+    }
+  ],
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "stableCode": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 64,
+      "pattern": "^[A-Z][A-Z0-9_]+$"
+    },
+    "serverHello": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["generation", "accepted", "viewSchemaVersion"],
+      "properties": {
+        "generation": { "$ref": "#/$defs/generation" },
+        "accepted": { "type": "boolean" },
+        "viewSchemaVersion": {
+          "oneOf": [{ "const": "1.0" }, { "type": "null" }]
+        }
+      },
+      "if": { "properties": { "accepted": { "const": true } } },
+      "then": {
+        "properties": { "viewSchemaVersion": { "const": "1.0" } }
+      },
+      "else": {
+        "properties": { "viewSchemaVersion": { "type": "null" } }
+      }
+    },
+    "viewBegin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generation",
+        "transferId",
+        "viewId",
+        "requestId",
+        "revision",
+        "mode",
+        "encoding",
+        "compressedBytes",
+        "uncompressedBytes",
+        "chunkCount",
+        "contentSha256"
+      ],
+      "properties": {
+        "generation": { "$ref": "#/$defs/generation" },
+        "transferId": { "$ref": "#/$defs/uuid" },
+        "viewId": { "$ref": "#/$defs/uuid" },
+        "requestId": { "$ref": "#/$defs/uuid" },
+        "revision": { "type": "integer", "minimum": 1, "maximum": 2147483647 },
+        "mode": { "enum": ["show", "update"] },
+        "encoding": { "enum": ["identity", "gzip"] },
+        "compressedBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1048576
+        },
+        "uncompressedBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1048576
+        },
+        "chunkCount": { "type": "integer", "minimum": 1, "maximum": 64 },
+        "contentSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "viewChunk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generation",
+        "transferId",
+        "index",
+        "byteLength",
+        "sha256",
+        "data"
+      ],
+      "properties": {
+        "generation": { "$ref": "#/$defs/generation" },
+        "transferId": { "$ref": "#/$defs/uuid" },
+        "index": { "type": "integer", "minimum": 0, "maximum": 63 },
+        "byteLength": { "type": "integer", "minimum": 1, "maximum": 24576 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "data": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 32768,
+          "pattern": "^[A-Za-z0-9+/]*={0,2}$"
+        }
+      }
+    },
+    "viewClear": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["generation", "viewId"],
+      "properties": {
+        "generation": { "$ref": "#/$defs/generation" },
+        "viewId": {
+          "oneOf": [{ "$ref": "#/$defs/uuid" }, { "type": "null" }]
+        }
+      }
+    },
+    "uiControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["generation", "action", "viewId"],
+      "properties": {
+        "generation": { "$ref": "#/$defs/generation" },
+        "action": {
+          "enum": [
+            "pin",
+            "unpin",
+            "clear",
+            "litematica.preview.load",
+            "litematica.preview.remove",
+            "litematica.material_list.open"
+          ]
+        },
+        "viewId": {
+          "oneOf": [{ "$ref": "#/$defs/uuid" }, { "type": "null" }]
+        }
+      }
+    },
+    "clientAck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["generation", "transferId", "status", "code"],
+      "properties": {
+        "generation": { "$ref": "#/$defs/generation" },
+        "transferId": { "$ref": "#/$defs/uuid" },
+        "status": { "enum": ["DISPLAYED", "REJECTED"] },
+        "code": { "$ref": "#/$defs/stableCode" }
+      }
+    },
+    "clientError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["generation", "transferId", "code"],
+      "properties": {
+        "generation": { "$ref": "#/$defs/generation" },
+        "transferId": {
+          "oneOf": [{ "$ref": "#/$defs/uuid" }, { "type": "null" }]
+        },
+        "code": { "$ref": "#/$defs/stableCode" }
+      }
+    }
+  }
+}

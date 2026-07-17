@@ -1,0 +1,12 @@
+{
+  "component": "runtime",
+  "componentVersion": "0.1.0",
+  "supportedProtocolVersions": ["1.0"],
+  "selectedProtocolVersion": null,
+  "authentication": {
+    "scheme": "hmac-sha256",
+    "keyId": "survival-main",
+    "challenge": "abcdefghijklmnopqrstuv",
+    "proof": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+  }
+}

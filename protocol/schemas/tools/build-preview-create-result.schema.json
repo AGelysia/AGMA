@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/build-preview-create-result.schema.json",
+  "title": "build.preview.create Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "previewId",
+    "projectId",
+    "revision",
+    "dimension",
+    "bounds",
+    "baseRegionHash",
+    "changeSetHash",
+    "targetBlockCount",
+    "changeCount",
+    "difference",
+    "previewStatus",
+    "worldWriteEnabled"
+  ],
+  "properties": {
+    "previewId": { "type": "string", "format": "uuid" },
+    "projectId": { "type": "string", "format": "uuid" },
+    "revision": { "type": "integer", "minimum": 1, "maximum": 2147483647 },
+    "dimension": { "$ref": "common.schema.json#/$defs/namespacedId" },
+    "bounds": { "$ref": "build-preview-create-arguments.schema.json#/$defs/bounds" },
+    "baseRegionHash": { "$ref": "#/$defs/sha256" },
+    "changeSetHash": { "$ref": "#/$defs/sha256" },
+    "targetBlockCount": { "type": "integer", "minimum": 0, "maximum": 4096 },
+    "changeCount": { "type": "integer", "minimum": 0, "maximum": 4096 },
+    "difference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["added", "replaced", "removed"],
+      "properties": {
+        "added": { "type": "integer", "minimum": 0, "maximum": 4096 },
+        "replaced": { "type": "integer", "minimum": 0, "maximum": 4096 },
+        "removed": { "type": "integer", "minimum": 0, "maximum": 4096 }
+      }
+    },
+    "previewStatus": { "const": "server_validated" },
+    "worldWriteEnabled": { "const": false }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

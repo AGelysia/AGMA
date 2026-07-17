@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/handshake.schema.json",
+  "title": "AGMA Runtime-Paper Handshake Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "component",
+    "componentVersion",
+    "supportedProtocolVersions",
+    "selectedProtocolVersion",
+    "authentication"
+  ],
+  "properties": {
+    "component": {
+      "enum": ["runtime", "paper"]
+    },
+    "componentVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$"
+    },
+    "supportedProtocolVersions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "const": "1.0"
+      }
+    },
+    "selectedProtocolVersion": {
+      "oneOf": [{ "const": "1.0" }, { "type": "null" }]
+    },
+    "authentication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scheme", "keyId", "challenge", "proof"],
+      "properties": {
+        "scheme": {
+          "const": "hmac-sha256"
+        },
+        "keyId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z0-9._-]+$"
+        },
+        "challenge": {
+          "type": "string",
+          "minLength": 22,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "proof": {
+          "type": "string",
+          "minLength": 43,
+          "maxLength": 43,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        }
+      }
+    }
+  }
+}

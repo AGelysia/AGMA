@@ -1,0 +1,51 @@
+{
+  "request": {
+    "protocolVersion": "1.0",
+    "messageId": "91000000-0000-4000-8000-000000000001",
+    "requestId": "91000000-0000-4000-8000-000000000001",
+    "serverId": "survival-main",
+    "type": "management.costs.request",
+    "timestamp": "2026-07-14T12:00:00Z",
+    "nonce": "MDEyMzQ1Njc4OWFiY2RlZg",
+    "payload": {}
+  },
+  "response": {
+    "protocolVersion": "1.0",
+    "messageId": "91000000-0000-4000-8000-000000000002",
+    "requestId": "91000000-0000-4000-8000-000000000001",
+    "serverId": "survival-main",
+    "type": "management.costs.response",
+    "timestamp": "2026-07-14T12:00:01Z",
+    "nonce": "ZmVkY2JhOTg3NjU0MzIxMA",
+    "payload": {
+      "currentDay": {
+        "period": "2026-07-14",
+        "admittedRequests": 3,
+        "providerCalls": 5,
+        "reportedProviderCalls": 4,
+        "estimatedProviderCalls": 1,
+        "inputTokens": 1200,
+        "outputTokens": 300,
+        "costMicroUsd": 1800
+      },
+      "currentMonth": {
+        "period": "2026-07",
+        "admittedRequests": 30,
+        "providerCalls": 42,
+        "reportedProviderCalls": 40,
+        "estimatedProviderCalls": 2,
+        "inputTokens": 12000,
+        "outputTokens": 3000,
+        "costMicroUsd": 18000
+      },
+      "budget": {
+        "month": "2026-07",
+        "limitMicroUsd": 50000000,
+        "settledMicroUsd": 18000,
+        "activeReservationsMicroUsd": 2000,
+        "remainingMicroUsd": 49980000,
+        "exhausted": false
+      }
+    }
+  }
+}

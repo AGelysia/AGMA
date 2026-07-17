@@ -1,0 +1,7 @@
+{
+  "playerUuid": "44444444-4444-4444-8444-444444444444",
+  "code": "MODEL_UNAVAILABLE",
+  "fallbackText": "The AI service is unavailable. Try again.",
+  "retryable": true,
+  "detail": "upstream response body must not cross the boundary"
+}

@@ -1,0 +1,31 @@
+{
+  "hashContract": {
+    "algorithm": "SHA-256",
+    "domainUtf8": "minecraft-agent/proposal-arguments/v1",
+    "separatorHex": "00",
+    "canonicalization": "RFC8785",
+    "canonicalUtf8ByteLength": 124,
+    "canonicalArguments": "{\"large\":1e+30,\"nested\":{\"enabled\":true,\"items\":[\"minecraft:stone\",null]},\"rounded\":333333333.3333333,\"small\":1e-7,\"zero\":0}",
+    "argumentHash": "b19a9e68bf61c9f4ab5486cf7c506638c1b07c8518faeb6671adb70121ac2c70"
+  },
+  "proposal": {
+    "proposalId": "66666666-6666-4666-8666-666666666667",
+    "sessionId": "33333333-3333-4333-8333-333333333333",
+    "playerUuid": "44444444-4444-4444-8444-444444444444",
+    "tool": "test.numeric_arguments.write",
+    "arguments": {
+      "zero": -0.0,
+      "small": 1e-7,
+      "rounded": 333333333.33333329,
+      "nested": {
+        "items": ["minecraft:stone", null],
+        "enabled": true
+      },
+      "large": 1e30
+    },
+    "argumentHash": "b19a9e68bf61c9f4ab5486cf7c506638c1b07c8518faeb6671adb70121ac2c70",
+    "risk": "WRITE_TEMPORARY",
+    "summary": "Exercise the proposal argument hash contract.",
+    "expiresAt": "2030-01-01T00:00:00Z"
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/build-preview-create-arguments.schema.json",
+  "title": "build.preview.create Arguments",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "projectId",
+    "revision",
+    "operation",
+    "dimension",
+    "bounds",
+    "origin",
+    "pattern",
+    "blockState",
+    "rotation",
+    "mirror"
+  ],
+  "properties": {
+    "projectId": { "type": "string", "format": "uuid" },
+    "revision": { "type": "integer", "minimum": 1, "maximum": 2147483647 },
+    "operation": { "enum": ["create", "modify"] },
+    "dimension": { "$ref": "common.schema.json#/$defs/namespacedId" },
+    "bounds": { "$ref": "#/$defs/bounds" },
+    "origin": { "$ref": "#/$defs/position" },
+    "pattern": { "enum": ["solid", "hollow", "walls", "floor", "clear"] },
+    "blockState": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 512,
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+(?:\\[[a-z0-9_]+=[A-Za-z0-9_.-]+(?:,[a-z0-9_]+=[A-Za-z0-9_.-]+)*\\])?$"
+        },
+        { "type": "null" }
+      ]
+    },
+    "rotation": { "enum": [0, 90, 180, 270] },
+    "mirror": { "enum": ["NONE", "LEFT_RIGHT", "FRONT_BACK"] }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "pattern": { "const": "clear" } },
+        "required": ["pattern"]
+      },
+      "then": { "properties": { "blockState": { "type": "null" } } },
+      "else": { "properties": { "blockState": { "type": "string" } } }
+    }
+  ],
+  "$defs": {
+    "position": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "z"],
+      "properties": {
+        "x": { "type": "integer", "minimum": -30000000, "maximum": 30000000 },
+        "y": { "type": "integer", "minimum": -2048, "maximum": 2048 },
+        "z": { "type": "integer", "minimum": -30000000, "maximum": 30000000 }
+      }
+    },
+    "bounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min", "max"],
+      "properties": {
+        "min": { "$ref": "#/$defs/position" },
+        "max": { "$ref": "#/$defs/position" }
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/project-read-result.schema.json",
+  "title": "Project Read Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["project"],
+  "properties": {
+    "project": {
+      "oneOf": [
+        { "$ref": "project-common.schema.json#/$defs/project" },
+        { "type": "null" }
+      ]
+    }
+  }
+}

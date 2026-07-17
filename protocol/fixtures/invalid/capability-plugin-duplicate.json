@@ -1,0 +1,38 @@
+{
+  "id": "example.server_version",
+  "version": 1,
+  "description": "Plugin requirements are unique by case-insensitive name.",
+  "requirements": {
+    "plugins": [
+      {
+        "name": "ExamplePlugin",
+        "version": ">=1 <2"
+      },
+      {
+        "name": "exampleplugin",
+        "version": ">=1 <2"
+      }
+    ]
+  },
+  "execution": {
+    "type": "command",
+    "source": "player",
+    "commandRoot": "version",
+    "template": "/version"
+  },
+  "arguments": {},
+  "effects": {
+    "category": "READ",
+    "scope": "request",
+    "maximumBlocks": null
+  },
+  "permissions": {
+    "minimum": "ANY"
+  },
+  "confirmation": {
+    "required": false
+  },
+  "reversibility": {
+    "type": "none"
+  }
+}

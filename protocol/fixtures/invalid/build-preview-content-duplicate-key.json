@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.0",
+  "previewId": "c0000000-0000-4000-8000-000000000007",
+  "projectId": "c0000000-0000-4000-8000-000000000008",
+  "revision": 1,
+  "operation": "modify",
+  "dimension": "minecraft:overworld",
+  "bounds": { "min": { "x": 0, "y": 64, "z": 0 }, "max": { "x": 0, "y": 64, "z": 0 } },
+  "origin": { "x": 0, "y": 64, "z": 0 },
+  "transform": { "rotation": 0, "mirror": "NONE" },
+  "baseRegionHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "changeSetHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "contentHash": "a0bfecbc70bcd035467956b07c7645b9acc5c8b8cd25ba929cb3b1b9bfd962ea",
+  "paletteHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "contentFormat": "minecraft-agent.palette-v1",
+  "encoding": "identity+base64",
+  "compressedBytes": 37,
+  "uncompressedBytes": 37,
+  "blockCount": 0,
+  "difference": { "added": 0, "replaced": 0, "removed": 0 },
+  "palette": [],
+  "chunkCount": 1,
+  "chunks": [{
+    "index": 0,
+    "byteLength": 37,
+    "sha256": "a0bfecbc70bcd035467956b07c7645b9acc5c8b8cd25ba929cb3b1b9bfd962ea",
+    "data": "eyJibG9ja3MiOltdLCJibG9ja3MiOltdLCJ2ZXJzaW9uIjoxfQ=="
+  }]
+}

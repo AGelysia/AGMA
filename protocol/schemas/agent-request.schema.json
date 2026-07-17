@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/agent-request.schema.json",
+  "title": "AGMA Request Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sessionId",
+    "playerUuid",
+    "module",
+    "message",
+    "clientCapabilities"
+  ],
+  "properties": {
+    "sessionId": {
+      "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }]
+    },
+    "playerUuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "module": {
+      "enum": ["general", "recipe", "guide", "locate", "build", "project"]
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "clientCapabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["connected", "clientProtocolVersion", "features"],
+      "properties": {
+        "connected": {
+          "type": "boolean"
+        },
+        "clientProtocolVersion": {
+          "oneOf": [{ "enum": ["1.0", "1.1"] }, { "type": "null" }]
+        },
+        "features": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "overlay",
+            "itemIcons",
+            "recipeView",
+            "litematicaPreview",
+            "litematicaMaterialList"
+          ],
+          "properties": {
+            "overlay": { "type": "integer", "minimum": 0, "maximum": 1 },
+            "itemIcons": { "type": "integer", "minimum": 0, "maximum": 1 },
+            "recipeView": { "type": "integer", "minimum": 0, "maximum": 2 },
+            "litematicaPreview": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "litematicaMaterialList": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "connected": { "const": false } },
+            "required": ["connected"]
+          },
+          "then": {
+            "properties": {
+              "clientProtocolVersion": { "type": "null" },
+              "features": {
+                "type": "object",
+                "properties": {
+                  "overlay": { "const": 0 },
+                  "itemIcons": { "const": 0 },
+                  "recipeView": { "const": 0 },
+                  "litematicaPreview": { "const": 0 },
+                  "litematicaMaterialList": { "const": 0 }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "connected": { "const": true } },
+            "required": ["connected"]
+          },
+          "then": {
+            "properties": {
+              "clientProtocolVersion": { "enum": ["1.0", "1.1"] }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

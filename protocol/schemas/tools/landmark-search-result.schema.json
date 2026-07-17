@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/landmark-search-result.schema.json",
+  "title": "landmark.search Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["query", "landmarks", "totalMatches", "truncated"],
+  "properties": {
+    "query": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "landmarks": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "$ref": "#/$defs/landmark"
+      }
+    },
+    "totalMatches": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 128
+    },
+    "truncated": {
+      "type": "boolean"
+    }
+  },
+  "$defs": {
+    "safeLabel": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "landmark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "aliases",
+        "tags",
+        "dimension",
+        "x",
+        "y",
+        "z",
+        "distance"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+        },
+        "name": {
+          "$ref": "#/$defs/safeLabel"
+        },
+        "aliases": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/safeLabel"
+          }
+        },
+        "tags": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "dimension": {
+          "$ref": "common.schema.json#/$defs/namespacedId"
+        },
+        "x": {
+          "type": "number",
+          "minimum": -30000000,
+          "maximum": 30000000
+        },
+        "y": {
+          "type": "number",
+          "minimum": -2048,
+          "maximum": 2048
+        },
+        "z": {
+          "type": "number",
+          "minimum": -30000000,
+          "maximum": 30000000
+        },
+        "distance": {
+          "oneOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

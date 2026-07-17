@@ -1,0 +1,25 @@
+{
+  "clientProtocolVersion": "1.1",
+  "modVersion": "0.1.0",
+  "capabilities": {
+    "overlay": 1,
+    "itemIcons": 1,
+    "recipeView": 2,
+    "litematicaPreview": 1,
+    "litematicaMaterialList": 1
+  },
+  "dependencies": {
+    "litematica": "0.26.11",
+    "malilib": "0.27.16"
+  },
+  "diagnostics": {
+    "litematicaAdapter": {
+      "status": "UNSUPPORTED_VERSION",
+      "minecraftVersion": "1.21.11",
+      "fabricLoaderVersion": "0.19.3",
+      "litematicaVersion": "0.26.11",
+      "malilibVersion": "0.27.16",
+      "adapterId": null
+    }
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "1.0",
+  "query": {
+    "mode": "lookup",
+    "itemId": "minecraft:stone"
+  },
+  "selectedRecipe": 0,
+  "recipes": [
+    {
+      "recipeId": "minecraft:stone_from_stonecutting",
+      "recipeType": "stonecutting",
+      "source": {
+        "kind": "server_registry",
+        "providerId": null
+      },
+      "result": {
+        "itemId": "minecraft:stone",
+        "count": 1,
+        "components": {}
+      },
+      "layout": {
+        "width": 1,
+        "height": 1,
+        "ingredients": [
+          {
+            "slot": 0,
+            "x": 0,
+            "y": 0,
+            "ingredient": {
+              "choiceType": "material",
+              "alternatives": [
+                {
+                  "itemId": "minecraft:cobblestone",
+                  "count": 1,
+                  "components": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "remainingItems": []
+    },
+    {
+      "recipeId": "minecraft:stone_from_stonecutting",
+      "recipeType": "stonecutting",
+      "source": {
+        "kind": "server_registry",
+        "providerId": null
+      },
+      "result": {
+        "itemId": "minecraft:stone",
+        "count": 1,
+        "components": {}
+      },
+      "layout": {
+        "width": 1,
+        "height": 1,
+        "ingredients": [
+          {
+            "slot": 0,
+            "x": 0,
+            "y": 0,
+            "ingredient": {
+              "choiceType": "material",
+              "alternatives": [
+                {
+                  "itemId": "minecraft:cobblestone",
+                  "count": 1,
+                  "components": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "remainingItems": []
+    }
+  ]
+}

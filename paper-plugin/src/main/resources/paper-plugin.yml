@@ -1,0 +1,62 @@
+name: AGMA
+prefix: AGMA
+version: '${version}'
+main: dev.minecraftagent.paper.MinecraftAgentPlugin
+description: AGMA - a secure Minecraft agent for Paper
+api-version: '1.21'
+authors:
+  - AGMA contributors
+permissions:
+  minecraftagent.admin.setup:
+    description: Allows an administrator to inspect and retry AGMA setup
+    default: op
+  minecraftagent.use:
+    description: Allows a player to ask AGMA private questions
+    default: true
+  minecraftagent.module:
+    description: Allows a player to route one request through an explicit Agent module
+    default: true
+  minecraftagent.ui:
+    description: Allows a player to control the local AGMA client UI
+    default: true
+  minecraftagent.command.agent:
+    description: Aggregate for read-only AGMA management queries
+    default: op
+    children:
+      minecraftagent.admin.status: true
+      minecraftagent.admin.doctor: true
+      minecraftagent.admin.capabilities: true
+      minecraftagent.admin.costs: true
+  minecraftagent.admin.status:
+    description: Allows access to AGMA operational status
+    default: op
+  minecraftagent.admin.doctor:
+    description: Allows access to redacted AGMA diagnostics
+    default: op
+  minecraftagent.admin.reload:
+    description: Names the Console or configured Owner reload operation
+    default: false
+  minecraftagent.admin.capabilities:
+    description: Allows access to the redacted Capability catalog
+    default: op
+  minecraftagent.admin.costs:
+    description: Allows access to aggregate AGMA usage and costs
+    default: op
+  minecraftagent.proposal.respond:
+    description: Allows a player to confirm or reject their own AGMA proposals
+    default: true
+  minecraftagent.write.temporary:
+    description: Allows temporary typed proposal tools when one is installed
+    default: false
+  minecraftagent.write.world:
+    description: Allows authorized operators to confirm typed world writes
+    default: op
+  minecraftagent.write.player:
+    description: Allows authorized operators to confirm typed player writes
+    default: op
+  minecraftagent.server.admin:
+    description: Allows configured owners to confirm typed server administration
+    default: false
+  minecraftagent.admin.toggle:
+    description: Allows authorized administrators to toggle AGMA
+    default: op

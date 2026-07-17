@@ -1,0 +1,38 @@
+[versions]
+fabric-api = "0.141.4+1.21.11"
+fabric-loader = "0.19.3"
+google-java-format = "1.35.0"
+gson = "2.11.0"
+java-websocket = "1.6.0"
+json-canonicalization = "1.1"
+json-schema-validator = "1.5.9"
+junit = "6.0.3"
+loom = "1.17.13"
+minecraft = "1.21.11"
+mockito = "5.18.0"
+mockbukkit = "4.110.0"
+byte-buddy = "1.18.8"
+paper = "1.21.11-R0.1-SNAPSHOT"
+spotless = "8.8.0"
+
+[libraries]
+fabric-api = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api" }
+fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader" }
+byte-buddy = { module = "net.bytebuddy:byte-buddy", version.ref = "byte-buddy" }
+byte-buddy-agent = { module = "net.bytebuddy:byte-buddy-agent", version.ref = "byte-buddy" }
+json-schema-validator = { module = "com.networknt:json-schema-validator", version.ref = "json-schema-validator" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
+mockito = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+mockbukkit = { module = "org.mockbukkit.mockbukkit:mockbukkit-v1.21", version.ref = "mockbukkit" }
+paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+java-websocket = { module = "org.java-websocket:Java-WebSocket", version.ref = "java-websocket" }
+json-canonicalization = { module = "io.github.erdtman:java-json-canonicalization", version.ref = "json-canonicalization" }
+snakeyaml = { module = "org.yaml:snakeyaml", version = "2.2" }
+
+[plugins]
+fabric-loom = { id = "net.fabricmc.fabric-loom-remap", version.ref = "loom" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

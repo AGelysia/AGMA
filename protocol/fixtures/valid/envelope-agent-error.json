@@ -1,0 +1,15 @@
+{
+  "protocolVersion": "1.0",
+  "messageId": "66666666-6666-4666-8666-666666666666",
+  "requestId": "22222222-2222-4222-8222-222222222222",
+  "serverId": "survival-main",
+  "type": "agent.error",
+  "timestamp": "2026-07-11T08:00:01Z",
+  "nonce": "cdefghijklmnopqrstuvww",
+  "payload": {
+    "playerUuid": "44444444-4444-4444-8444-444444444444",
+    "code": "MODEL_TIMEOUT",
+    "fallbackText": "The AI request timed out. Try again.",
+    "retryable": true
+  }
+}

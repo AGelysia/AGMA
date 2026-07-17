@@ -1,0 +1,40 @@
+{
+  "client": {
+    "clientProtocolVersion": "1.1",
+    "modVersion": "0.1.0",
+    "capabilities": {
+      "overlay": 1,
+      "itemIcons": 0,
+      "recipeView": 0,
+      "litematicaPreview": 0,
+      "litematicaMaterialList": 0
+    },
+    "dependencies": {
+      "litematica": null,
+      "malilib": null
+    },
+    "diagnostics": {
+      "litematicaAdapter": {
+        "status": "NOT_INSTALLED",
+        "minecraftVersion": "1.21.11",
+        "fabricLoaderVersion": "0.19.3",
+        "litematicaVersion": null,
+        "malilibVersion": null,
+        "adapterId": null
+      }
+    }
+  },
+  "view": {
+    "viewSchemaVersion": "1.0",
+    "viewId": "c0000000-0000-4000-8000-000000000001",
+    "requestId": "c0000000-0000-4000-8000-000000000002",
+    "viewType": "text",
+    "revision": 1,
+    "title": "Supported text",
+    "fallbackText": "Supported text fixture",
+    "pinnable": true,
+    "content": {
+      "text": "Supported"
+    }
+  }
+}

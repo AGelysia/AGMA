@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/server-info-read-result.schema.json",
+  "title": "server.info.read Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "serverName",
+    "minecraftVersion",
+    "serverVersion",
+    "onlinePlayers",
+    "maxPlayers",
+    "viewDistance",
+    "simulationDistance"
+  ],
+  "properties": {
+    "serverName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "minecraftVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "serverVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "onlinePlayers": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "maxPlayers": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "viewDistance": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 64
+    },
+    "simulationDistance": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 64
+    }
+  }
+}

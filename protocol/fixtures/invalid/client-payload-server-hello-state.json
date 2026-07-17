@@ -1,0 +1,22 @@
+{
+  "acceptedWithoutVersion": {
+    "clientPayloadVersion": "1.0",
+    "messageId": "d1000000-0000-4000-8000-000000000010",
+    "type": "server.hello",
+    "payload": {
+      "generation": 1,
+      "accepted": true,
+      "viewSchemaVersion": null
+    }
+  },
+  "rejectedWithVersion": {
+    "clientPayloadVersion": "1.0",
+    "messageId": "d1000000-0000-4000-8000-000000000011",
+    "type": "server.hello",
+    "payload": {
+      "generation": 2,
+      "accepted": false,
+      "viewSchemaVersion": "1.0"
+    }
+  }
+}

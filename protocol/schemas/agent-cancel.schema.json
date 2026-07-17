@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/agent-cancel.schema.json",
+  "title": "AGMA Cancellation Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["playerUuid", "reason"],
+  "properties": {
+    "playerUuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "reason": {
+      "enum": [
+        "PLAYER_DISCONNECTED",
+        "PAPER_TIMEOUT",
+        "AGENT_OFFLINE",
+        "RUNTIME_DISCONNECTED"
+      ]
+    }
+  }
+}

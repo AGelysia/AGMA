@@ -1,0 +1,38 @@
+{
+  "id": "example.console_info",
+  "version": 1,
+  "description": "A pack cannot override the local console-source default.",
+  "requirements": {
+    "plugins": []
+  },
+  "execution": {
+    "type": "command",
+    "source": "console",
+    "consolePolicy": "allow",
+    "commandRoot": "info",
+    "template": "/info {topic}"
+  },
+  "arguments": {
+    "topic": {
+      "type": "string",
+      "description": "Information topic.",
+      "required": true,
+      "minLength": 1,
+      "maxLength": 64
+    }
+  },
+  "effects": {
+    "category": "READ",
+    "scope": "request",
+    "maximumBlocks": null
+  },
+  "permissions": {
+    "minimum": "OWNER"
+  },
+  "confirmation": {
+    "required": false
+  },
+  "reversibility": {
+    "type": "none"
+  }
+}

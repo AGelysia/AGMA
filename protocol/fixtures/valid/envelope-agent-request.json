@@ -1,0 +1,26 @@
+{
+  "protocolVersion": "1.0",
+  "messageId": "22222222-2222-4222-8222-222222222222",
+  "requestId": "22222222-2222-4222-8222-222222222222",
+  "serverId": "survival-main",
+  "type": "agent.request",
+  "timestamp": "2026-07-11T08:00:00Z",
+  "nonce": "abcdefghijklmnopqrstug",
+  "payload": {
+    "sessionId": null,
+    "playerUuid": "44444444-4444-4444-8444-444444444444",
+    "module": "general",
+    "message": "How do I craft a crafting table?",
+    "clientCapabilities": {
+      "connected": false,
+      "clientProtocolVersion": null,
+      "features": {
+        "overlay": 0,
+        "itemIcons": 0,
+        "recipeView": 0,
+        "litematicaPreview": 0,
+        "litematicaMaterialList": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,100 @@
+configVersion: 2
+
+server:
+  id: survival-main
+
+transport:
+  host: 127.0.0.1
+  port: 38127
+  serverToken: ${MINECRAFT_AGENT_SERVER_TOKEN}
+
+model:
+  provider: openai
+  # Omit baseUrl to use https://api.openai.com/v1.
+  # baseUrl: ${OPENAI_BASE_URL}
+  apiKey: ${OPENAI_API_KEY}
+  model: configured-model-name
+  timeoutSeconds: 60
+  # Configure these integer rates from the selected model's price sheet.
+  inputMicroUsdPerMillionTokens: 1000000
+  outputMicroUsdPerMillionTokens: 4000000
+
+# Replace the model block above with exactly one alternative profile when needed.
+# Official profiles may omit baseUrl to use the documented default, or set the
+# shown whole-value environment reference for a reviewed protocol-compatible gateway.
+#
+# Anthropic Messages API (default: https://api.anthropic.com/v1)
+# model:
+#   provider: anthropic
+#   baseUrl: ${ANTHROPIC_BASE_URL}
+#   apiKey: ${ANTHROPIC_API_KEY}
+#   model: configured-claude-model-name
+#   timeoutSeconds: 60
+#   inputMicroUsdPerMillionTokens: 1000000
+#   outputMicroUsdPerMillionTokens: 4000000
+#
+# DeepSeek Chat Completions API (default: https://api.deepseek.com)
+# model:
+#   provider: deepseek
+#   baseUrl: ${DEEPSEEK_BASE_URL}
+#   apiKey: ${DEEPSEEK_API_KEY}
+#   model: configured-deepseek-model-name
+#   timeoutSeconds: 60
+#   # Use the higher cache-miss input rate, not the cache-hit or average rate.
+#   inputMicroUsdPerMillionTokens: 1000000
+#   outputMicroUsdPerMillionTokens: 4000000
+#
+# Gemini stateless generateContent API
+# (default: https://generativelanguage.googleapis.com/v1beta)
+# model:
+#   provider: gemini
+#   baseUrl: ${GEMINI_BASE_URL}
+#   apiKey: ${GEMINI_API_KEY}
+#   model: configured-gemini-model-name
+#   timeoutSeconds: 60
+#   inputMicroUsdPerMillionTokens: 1000000
+#   outputMicroUsdPerMillionTokens: 4000000
+#
+# Reviewed OpenAI-compatible Chat Completions endpoint. baseUrl is required.
+# model:
+#   provider: openai-compatible
+#   baseUrl: ${OPENAI_COMPATIBLE_BASE_URL}
+#   apiKey: ${OPENAI_COMPATIBLE_API_KEY}
+#   model: configured-compatible-model-name
+#   timeoutSeconds: 60
+#   inputMicroUsdPerMillionTokens: 1000000
+#   outputMicroUsdPerMillionTokens: 4000000
+
+storage:
+  sqlitePath: ./data/runtime.db
+
+logging:
+  directory: ./logs
+  level: info
+
+knowledge:
+  # Configure only existing, private directories relative to this file. Example:
+  # roots:
+  #   - directory: ./data/knowledge/server-rules
+  #     kind: server_rules
+  #   - directory: ./data/knowledge/local-docs
+  #     kind: local_docs
+  roots: []
+
+limits:
+  maxConcurrentRequests: 4
+  maxQueuedRequests: 32
+  maxToolRounds: 8
+  maxContextMessages: 30
+  maxContextCharacters: 32768
+  perPlayerCooldownSeconds: 3
+  dailyRequestsPerPlayer: 100
+  monthlyBudgetUsd: 50
+  # Conservative maximum expected charge for one provider round, in micro-USD.
+  providerRoundReservationMicroUsd: 50000
+
+privacy:
+  storeConversations: true
+  retentionDays: 7
+  logMessageContent: false
+  logToolCalls: true

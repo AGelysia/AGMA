@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/management-costs-request.schema.json",
+  "title": "AGMA Management Costs Request",
+  "type": "object",
+  "additionalProperties": false,
+  "maxProperties": 0
+}

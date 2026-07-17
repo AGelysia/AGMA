@@ -1,0 +1,237 @@
+{
+  "schemaVersion": "2.0",
+  "query": {
+    "mode": "lookup",
+    "itemId": "minecraft:test_output"
+  },
+  "selectedRecipe": 2,
+  "totalMatches": 9,
+  "truncated": true,
+  "recipes": [
+    {
+      "recipeId": "example:shaped_output",
+      "recipeType": "shaped",
+      "source": {
+        "kind": "server_registry",
+        "providerId": null
+      },
+      "result": {
+        "itemId": "minecraft:test_output",
+        "count": 1,
+        "components": {}
+      },
+      "layout": {
+        "kind": "grid",
+        "width": 2,
+        "height": 1,
+        "ingredients": [
+          {
+            "slot": 0,
+            "x": 0,
+            "y": 0,
+            "ingredient": {
+              "choiceType": "item_type",
+              "alternatives": [
+                {
+                  "itemId": "minecraft:water_bucket",
+                  "count": 1,
+                  "components": {}
+                }
+              ]
+            }
+          },
+          {
+            "slot": 1,
+            "x": 1,
+            "y": 0,
+            "ingredient": {
+              "choiceType": "exact",
+              "alternatives": [
+                {
+                  "itemId": "minecraft:wooden_sword",
+                  "count": 1,
+                  "components": {
+                    "damage": 2,
+                    "maxDamage": 59
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "remainingItems": [
+        {
+          "slot": 0,
+          "item": {
+            "itemId": "minecraft:bucket",
+            "count": 1,
+            "components": {}
+          }
+        }
+      ]
+    },
+    {
+      "recipeId": "example:smelting_output",
+      "recipeType": "smelting",
+      "source": {
+        "kind": "server_registry",
+        "providerId": null
+      },
+      "result": {
+        "itemId": "minecraft:test_output",
+        "count": 1,
+        "components": {}
+      },
+      "layout": {
+        "kind": "single_input",
+        "ingredient": {
+          "choiceType": "material",
+          "alternatives": [
+            {
+              "itemId": "minecraft:raw_iron",
+              "count": 1,
+              "components": {}
+            }
+          ]
+        }
+      },
+      "remainingItems": [],
+      "processing": {
+        "timeTicks": 0,
+        "experience": 0
+      }
+    },
+    {
+      "recipeId": "example:stonecutting_output",
+      "recipeType": "stonecutting",
+      "source": {
+        "kind": "plugin_provider",
+        "providerId": "example:recipes"
+      },
+      "result": {
+        "itemId": "minecraft:test_output",
+        "count": 2,
+        "components": {}
+      },
+      "layout": {
+        "kind": "single_input",
+        "ingredient": {
+          "choiceType": "tag",
+          "tagId": "minecraft:stone_crafting_materials",
+          "alternatives": [
+            {
+              "itemId": "minecraft:stone",
+              "count": 1,
+              "components": {}
+            },
+            {
+              "itemId": "minecraft:andesite",
+              "count": 1,
+              "components": {}
+            }
+          ]
+        }
+      },
+      "remainingItems": []
+    },
+    {
+      "recipeId": "example:smithing_output",
+      "recipeType": "smithing_transform",
+      "source": {
+        "kind": "server_registry",
+        "providerId": null
+      },
+      "result": {
+        "itemId": "minecraft:test_output",
+        "count": 1,
+        "components": {}
+      },
+      "layout": {
+        "kind": "smithing",
+        "template": {
+          "choiceType": "material",
+          "alternatives": [
+            {
+              "itemId": "minecraft:netherite_upgrade_smithing_template",
+              "count": 1,
+              "components": {}
+            }
+          ]
+        },
+        "base": {
+          "choiceType": "exact",
+          "alternatives": [
+            {
+              "itemId": "minecraft:diamond_sword",
+              "count": 1,
+              "components": {}
+            }
+          ]
+        },
+        "addition": {
+          "choiceType": "material",
+          "alternatives": [
+            {
+              "itemId": "minecraft:netherite_ingot",
+              "count": 1,
+              "components": {}
+            }
+          ]
+        }
+      },
+      "remainingItems": []
+    },
+    {
+      "recipeId": "example:transmute_output",
+      "recipeType": "transmute",
+      "source": {
+        "kind": "server_registry",
+        "providerId": null
+      },
+      "result": {
+        "itemId": "minecraft:test_output",
+        "count": 1,
+        "components": {}
+      },
+      "layout": {
+        "kind": "transmute",
+        "input": {
+          "choiceType": "material",
+          "alternatives": [
+            {
+              "itemId": "minecraft:iron_ingot",
+              "count": 1,
+              "components": {}
+            }
+          ]
+        },
+        "material": {
+          "choiceType": "material",
+          "alternatives": [
+            {
+              "itemId": "minecraft:gold_nugget",
+              "count": 1,
+              "components": {}
+            }
+          ]
+        }
+      },
+      "remainingItems": []
+    },
+    {
+      "recipeId": "example:dynamic_output",
+      "recipeType": "complex",
+      "source": {
+        "kind": "server_registry",
+        "providerId": null
+      },
+      "result": null,
+      "layout": {
+        "kind": "unsupported",
+        "reason": "UNSUPPORTED_RECIPE_LAYOUT"
+      },
+      "remainingItems": []
+    }
+  ]
+}

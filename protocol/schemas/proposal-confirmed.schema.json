@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/proposal-confirmed.schema.json",
+  "title": "AGMA Proposal Confirmed Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proposalId",
+    "sessionId",
+    "playerUuid",
+    "tool",
+    "argumentHash",
+    "status",
+    "confirmedAt"
+  ],
+  "properties": {
+    "proposalId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "sessionId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "playerUuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tool": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$"
+    },
+    "argumentHash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "status": {
+      "const": "CONFIRMED"
+    },
+    "confirmedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}

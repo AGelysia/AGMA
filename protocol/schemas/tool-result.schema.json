@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tool-result.schema.json",
+  "title": "AGMA Tool Result Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "toolCallId",
+    "sessionId",
+    "playerUuid",
+    "tool",
+    "sequence",
+    "status",
+    "source",
+    "trust",
+    "result",
+    "error"
+  ],
+  "properties": {
+    "toolCallId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "sessionId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "playerUuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tool": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 7
+    },
+    "status": {
+      "enum": ["succeeded", "rejected", "failed"]
+    },
+    "source": {
+      "enum": [
+        "paper_api",
+        "paper_policy",
+        "server_registry",
+        "plugin_provider",
+        "server_docs",
+        "web_documentation",
+        "model_knowledge",
+        "capability",
+        "runtime_storage"
+      ]
+    },
+    "trust": {
+      "enum": ["authoritative", "verified", "untrusted"]
+    },
+    "result": {
+      "oneOf": [{ "type": "object", "maxProperties": 128 }, { "type": "null" }]
+    },
+    "error": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code", "message", "retryable"],
+          "properties": {
+            "code": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[A-Z][A-Z0-9_]*$"
+            },
+            "message": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        { "type": "null" }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "succeeded" } },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "result": { "type": "object" },
+          "error": { "type": "null" }
+        }
+      },
+      "else": {
+        "properties": {
+          "result": { "type": "null" },
+          "error": { "type": "object" }
+        }
+      }
+    }
+  ]
+}

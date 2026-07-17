@@ -1,0 +1,37 @@
+[Unit]
+Description=AGMA Paper server
+Wants=network-online.target
+Requires=agma-runtime.service
+After=network-online.target agma-runtime.service
+
+[Service]
+Type=simple
+User=minecraft
+Group=minecraft
+WorkingDirectory=/srv/minecraft
+EnvironmentFile=/etc/agma/paper.env
+ExecStartPre=/usr/bin/curl --fail --silent --show-error --output /dev/null --retry 90 --retry-delay 1 --retry-connrefused --retry-max-time 120 http://127.0.0.1:38127/health
+ExecStart=/usr/bin/java -Xms1G -Xmx4G -Dpaper.disableStartupVersionCheck=true -jar /srv/minecraft/paper-1.21.11-132.jar --nogui
+Restart=on-failure
+RestartSec=5s
+TimeoutStartSec=150s
+TimeoutStopSec=120s
+SuccessExitStatus=0 143
+UMask=0077
+LimitNOFILE=65536
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+LockPersonality=true
+RestrictSUIDSGID=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+AmbientCapabilities=
+ReadWritePaths=/srv/minecraft
+
+[Install]
+WantedBy=multi-user.target

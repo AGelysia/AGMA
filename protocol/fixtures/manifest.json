@@ -1,0 +1,2071 @@
+{
+  "manifestVersion": "1.0",
+  "schemaDraft": "https://json-schema.org/draft/2020-12/schema",
+  "protocolVersion": "1.0",
+  "formatAssertionsRequired": true,
+  "cases": [
+    {
+      "id": "envelope.agent-request.valid",
+      "category": "valid",
+      "file": "valid/envelope-agent-request.json",
+      "validations": [
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        },
+        {
+          "schema": "agent-request.schema.json",
+          "documentPointer": "/payload",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "envelope.agent-request.resumed-module-valid",
+      "category": "valid",
+      "file": "valid/envelope-agent-request-resumed-module.json",
+      "validations": [
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        },
+        {
+          "schema": "agent-request.schema.json",
+          "documentPointer": "/payload",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "envelope.session-resume.valid",
+      "category": "valid",
+      "file": "valid/envelope-session-resume.json",
+      "validations": [
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        },
+        {
+          "schema": "session-resume.schema.json",
+          "documentPointer": "/payload",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "envelope.session-resume.latest-valid",
+      "category": "valid",
+      "file": "valid/envelope-session-resume-latest.json",
+      "validations": [
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        },
+        {
+          "schema": "session-resume.schema.json",
+          "documentPointer": "/payload",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "envelope.session-resumed.valid",
+      "category": "valid",
+      "file": "valid/envelope-session-resumed.json",
+      "validations": [
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        },
+        {
+          "schema": "session-resumed.schema.json",
+          "documentPointer": "/payload",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "session.agent-errors.valid",
+      "category": "valid",
+      "file": "valid/session-agent-errors.json",
+      "validations": [
+        {
+          "schema": "agent-error.schema.json",
+          "documentPointer": "/notFound",
+          "expectedValid": true
+        },
+        {
+          "schema": "agent-error.schema.json",
+          "documentPointer": "/storageDisabled",
+          "expectedValid": true
+        },
+        {
+          "schema": "agent-error.schema.json",
+          "documentPointer": "/budgetExceeded",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "session-resume.session-id-invalid",
+      "category": "invalid_format",
+      "file": "invalid/session-resume-session-id-invalid.json",
+      "validations": [
+        {
+          "schema": "session-resume.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "session-resume.extra-field",
+      "category": "invalid_field",
+      "file": "invalid/session-resume-extra-field.json",
+      "validations": [
+        {
+          "schema": "session-resume.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "session-resumed.null-session-id",
+      "category": "invalid_type",
+      "file": "invalid/session-resumed-null-session-id.json",
+      "validations": [
+        {
+          "schema": "session-resumed.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "envelope.agent-complete.valid",
+      "category": "valid",
+      "file": "valid/envelope-agent-complete.json",
+      "validations": [
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        },
+        {
+          "schema": "agent-complete.schema.json",
+          "documentPointer": "/payload",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "envelope.agent-error.valid",
+      "category": "valid",
+      "file": "valid/envelope-agent-error.json",
+      "validations": [
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        },
+        {
+          "schema": "agent-error.schema.json",
+          "documentPointer": "/payload",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "envelope.agent-cancel.valid",
+      "category": "valid",
+      "file": "valid/envelope-agent-cancel.json",
+      "validations": [
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        },
+        {
+          "schema": "agent-cancel.schema.json",
+          "documentPointer": "/payload",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "handshake.valid",
+      "category": "valid",
+      "file": "valid/handshake.json",
+      "validations": [
+        {
+          "schema": "handshake.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "handshake.proof-v1-golden",
+      "category": "valid",
+      "file": "valid/handshake-proof-v1.json",
+      "validations": [
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "/paper",
+          "expectedValid": true
+        },
+        {
+          "schema": "handshake.schema.json",
+          "documentPointer": "/paper/payload",
+          "expectedValid": true
+        },
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "/runtime",
+          "expectedValid": true
+        },
+        {
+          "schema": "handshake.schema.json",
+          "documentPointer": "/runtime/payload",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "handshake-proof-v1",
+        "expectedValid": true
+      }
+    },
+    {
+      "id": "handshake.proof-v1-tampered",
+      "category": "authentication_error",
+      "file": "invalid/handshake-proof-tampered.json",
+      "validations": [
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "/paper",
+          "expectedValid": true
+        },
+        {
+          "schema": "handshake.schema.json",
+          "documentPointer": "/paper/payload",
+          "expectedValid": true
+        },
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "/runtime",
+          "expectedValid": true
+        },
+        {
+          "schema": "handshake.schema.json",
+          "documentPointer": "/runtime/payload",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "handshake-proof-v1",
+        "expectedValid": false,
+        "errorCode": "HANDSHAKE_PROOF_INVALID"
+      }
+    },
+    {
+      "id": "tool-call.valid",
+      "category": "valid",
+      "file": "valid/tool-call.json",
+      "validations": [
+        {
+          "schema": "tool-call.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/server-recipe-lookup-arguments.schema.json",
+          "documentPointer": "/arguments",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "envelope.tool-call.valid",
+      "category": "valid",
+      "file": "valid/envelope-tool-call.json",
+      "validations": [
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        },
+        {
+          "schema": "tool-call.schema.json",
+          "documentPointer": "/payload",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/server-recipe-lookup-arguments.schema.json",
+          "documentPointer": "/payload/arguments",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "tool-result.valid",
+      "category": "valid",
+      "file": "valid/tool-result.json",
+      "validations": [
+        {
+          "schema": "tool-result.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "envelope.tool-result.valid",
+      "category": "valid",
+      "file": "valid/envelope-tool-result.json",
+      "validations": [
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        },
+        {
+          "schema": "tool-result.schema.json",
+          "documentPointer": "/payload",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/server-recipe-lookup-result.schema.json",
+          "documentPointer": "/payload/result",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "tool-result.rejected-valid",
+      "category": "valid",
+      "file": "valid/tool-result-rejected.json",
+      "validations": [
+        {
+          "schema": "tool-result.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "core-tools.valid",
+      "category": "valid",
+      "file": "valid/core-tool-contracts.json",
+      "validations": [
+        {
+          "schema": "tools/player-context-read-arguments.schema.json",
+          "documentPointer": "/playerContext/arguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/player-context-read-result.schema.json",
+          "documentPointer": "/playerContext/result",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/player-held-item-read-arguments.schema.json",
+          "documentPointer": "/heldItem/arguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/player-held-item-read-result.schema.json",
+          "documentPointer": "/heldItem/result",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/server-info-read-arguments.schema.json",
+          "documentPointer": "/serverInfo/arguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/server-info-read-result.schema.json",
+          "documentPointer": "/serverInfo/result",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/server-plugins-list-arguments.schema.json",
+          "documentPointer": "/pluginsList/arguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/server-plugins-list-result.schema.json",
+          "documentPointer": "/pluginsList/result",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/server-recipe-lookup-arguments.schema.json",
+          "documentPointer": "/recipeLookup/arguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/server-recipe-lookup-result.schema.json",
+          "documentPointer": "/recipeLookup/result",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/server-recipe-uses-arguments.schema.json",
+          "documentPointer": "/recipeUses/arguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/server-recipe-uses-result.schema.json",
+          "documentPointer": "/recipeUses/result",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/server-recipe-lookup-result.schema.json",
+          "documentPointer": "/emptyRecipeLookupResult",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "tool-call.sequence-eight-invalid",
+      "category": "invalid_range",
+      "file": "invalid/tool-call-sequence-eight.json",
+      "validations": [
+        {
+          "schema": "tool-call.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "tool-result.failure-with-result-invalid",
+      "category": "invalid_state",
+      "file": "invalid/tool-result-failure-with-result.json",
+      "validations": [
+        {
+          "schema": "tool-result.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "tool-result.missing-correlation-invalid",
+      "category": "invalid_field",
+      "file": "invalid/tool-result-missing-correlation.json",
+      "validations": [
+        {
+          "schema": "tool-result.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "player-context.extra-argument-invalid",
+      "category": "invalid_field",
+      "file": "invalid/player-context-read-extra-argument.json",
+      "validations": [
+        {
+          "schema": "tools/player-context-read-arguments.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "recipe-lookup.extra-argument-invalid",
+      "category": "invalid_field",
+      "file": "invalid/recipe-lookup-extra-argument.json",
+      "validations": [
+        {
+          "schema": "tools/server-recipe-lookup-arguments.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "recipe-lookup.plain-text-result-invalid",
+      "category": "invalid_type",
+      "file": "invalid/recipe-lookup-result-plain-text.json",
+      "validations": [
+        {
+          "schema": "tools/server-recipe-lookup-result.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "envelope.proposal-create.valid",
+      "category": "valid",
+      "file": "valid/envelope-proposal-create.json",
+      "validations": [
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        },
+        {
+          "schema": "proposal.schema.json",
+          "documentPointer": "/payload",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "envelope.proposal-confirmed.valid",
+      "category": "valid",
+      "file": "valid/envelope-proposal-confirmed.json",
+      "validations": [
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        },
+        {
+          "schema": "proposal-confirmed.schema.json",
+          "documentPointer": "/payload",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "envelope.proposal-cancelled.valid",
+      "category": "valid",
+      "file": "valid/envelope-proposal-cancelled.json",
+      "validations": [
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        },
+        {
+          "schema": "proposal-cancelled.schema.json",
+          "documentPointer": "/payload",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "proposal-confirmed.arguments-leak-invalid",
+      "category": "invalid_field",
+      "file": "invalid/envelope-proposal-confirmed-arguments-leak.json",
+      "validations": [
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        },
+        {
+          "schema": "proposal-confirmed.schema.json",
+          "documentPointer": "/payload",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "proposal-confirmed.hash-format-invalid",
+      "category": "invalid_format",
+      "file": "invalid/proposal-confirmed-hash-format-invalid.json",
+      "validations": [
+        {
+          "schema": "proposal-confirmed.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "proposal-confirmed.status-invalid",
+      "category": "invalid_value",
+      "file": "invalid/proposal-confirmed-status-invalid.json",
+      "validations": [
+        {
+          "schema": "proposal-confirmed.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "proposal-cancelled.reason-invalid",
+      "category": "invalid_value",
+      "file": "invalid/proposal-cancelled-reason-invalid.json",
+      "validations": [
+        {
+          "schema": "proposal-cancelled.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "proposal-cancelled.missing-correlation",
+      "category": "invalid_field",
+      "file": "invalid/proposal-cancelled-missing-correlation.json",
+      "validations": [
+        {
+          "schema": "proposal-cancelled.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "proposal.valid",
+      "category": "valid",
+      "file": "valid/proposal.json",
+      "validations": [
+        {
+          "schema": "proposal.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "proposal.argument-hash-v1-golden",
+      "category": "valid",
+      "file": "valid/proposal-argument-hash-v1.json",
+      "validations": [
+        {
+          "schema": "proposal.schema.json",
+          "documentPointer": "/proposal",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "proposal-argument-hash-v1",
+        "expectedValid": true
+      }
+    },
+    {
+      "id": "proposal.summary-control-character-invalid",
+      "category": "invalid_value",
+      "file": "invalid/proposal-summary-control-character.json",
+      "validations": [
+        {
+          "schema": "proposal.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "client-handshake.valid",
+      "category": "valid",
+      "file": "valid/client-handshake.json",
+      "validations": [
+        {
+          "schema": "client-handshake.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "client-handshake.legacy-v1-valid",
+      "category": "valid",
+      "file": "valid/client-handshake-legacy-v1.json",
+      "validations": [
+        {
+          "schema": "client-handshake.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "client-handshake.diagnostics-missing",
+      "category": "invalid_field",
+      "file": "invalid/client-handshake-diagnostics-missing.json",
+      "validations": [
+        {
+          "schema": "client-handshake.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "client-payload.messages-valid",
+      "category": "valid",
+      "file": "valid/client-payload-messages.json",
+      "validations": [
+        {
+          "schema": "client-payload.schema.json",
+          "documentPointer": "/hello",
+          "expectedValid": true
+        },
+        {
+          "schema": "client-payload.schema.json",
+          "documentPointer": "/serverHello",
+          "expectedValid": true
+        },
+        {
+          "schema": "client-payload.schema.json",
+          "documentPointer": "/begin",
+          "expectedValid": true
+        },
+        {
+          "schema": "client-payload.schema.json",
+          "documentPointer": "/chunk",
+          "expectedValid": true
+        },
+        {
+          "schema": "client-payload.schema.json",
+          "documentPointer": "/ack",
+          "expectedValid": true
+        },
+        {
+          "schema": "client-payload.schema.json",
+          "documentPointer": "/control",
+          "expectedValid": true
+        },
+        {
+          "schema": "client-payload.schema.json",
+          "documentPointer": "/clear",
+          "expectedValid": true
+        },
+        {
+          "schema": "client-payload.schema.json",
+          "documentPointer": "/error",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "client-payload.ack-authority-field",
+      "category": "policy_override",
+      "file": "invalid/client-payload-ack-authority.json",
+      "validations": [
+        {
+          "schema": "client-payload.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "client-payload.server-hello-state",
+      "category": "invalid_state",
+      "file": "invalid/client-payload-server-hello-state.json",
+      "validations": [
+        {
+          "schema": "client-payload.schema.json",
+          "documentPointer": "/acceptedWithoutVersion",
+          "expectedValid": false
+        },
+        {
+          "schema": "client-payload.schema.json",
+          "documentPointer": "/rejectedWithVersion",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "client-payload.uuid-noncanonical",
+      "category": "invalid_identifier",
+      "file": "invalid/client-payload-uuid-noncanonical.json",
+      "validations": [
+        {
+          "schema": "client-payload.schema.json",
+          "documentPointer": "/abbreviated",
+          "expectedValid": false
+        },
+        {
+          "schema": "client-payload.schema.json",
+          "documentPointer": "/uppercase",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "client-handshake.dependency-version-invalid",
+      "category": "invalid_dependency",
+      "file": "invalid/client-handshake-dependency-version-invalid.json",
+      "validations": [
+        {
+          "schema": "client-handshake.schema.json",
+          "documentPointer": "/control",
+          "expectedValid": false
+        },
+        {
+          "schema": "client-handshake.schema.json",
+          "documentPointer": "/nonAscii",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "view-negotiation.supported-text",
+      "category": "valid",
+      "file": "valid/view-negotiation-supported-text.json",
+      "validations": [
+        {
+          "schema": "client-handshake.schema.json",
+          "documentPointer": "/client",
+          "expectedValid": true
+        },
+        {
+          "schema": "structured-view.schema.json",
+          "documentPointer": "/view",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "view-negotiation-v1",
+        "expectedValid": true
+      }
+    },
+    {
+      "id": "view-negotiation.undeclared-item-icons",
+      "category": "semantic_error",
+      "file": "invalid/view-negotiation-undeclared-item-icons.json",
+      "validations": [
+        {
+          "schema": "client-handshake.schema.json",
+          "documentPointer": "/client",
+          "expectedValid": true
+        },
+        {
+          "schema": "structured-view.schema.json",
+          "documentPointer": "/view",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "view-negotiation-v1",
+        "expectedValid": false,
+        "errorCode": "VIEW_CAPABILITY_UNDECLARED"
+      }
+    },
+    {
+      "id": "structured-text-view.valid",
+      "category": "valid",
+      "file": "valid/structured-text-view.json",
+      "validations": [
+        {
+          "schema": "structured-view.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "structured-item-stack.valid",
+      "category": "valid",
+      "file": "valid/structured-item-stack-view.json",
+      "validations": [
+        {
+          "schema": "structured-view.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "structured-item-stack.invalid-content",
+      "category": "invalid_reference_content",
+      "file": "invalid/structured-item-stack-content-invalid.json",
+      "validations": [
+        {
+          "schema": "structured-view.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "structured-item-list.invalid-content",
+      "category": "invalid_reference_content",
+      "file": "invalid/structured-item-list-content-invalid.json",
+      "validations": [
+        {
+          "schema": "structured-view.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "structured-recipe.invalid-content",
+      "category": "invalid_reference_content",
+      "file": "invalid/structured-recipe-content-invalid.json",
+      "validations": [
+        {
+          "schema": "structured-view.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "structured-build-preview.invalid-content",
+      "category": "invalid_reference_content",
+      "file": "invalid/structured-build-preview-content-invalid.json",
+      "validations": [
+        {
+          "schema": "structured-view.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "structured-proposal.invalid-content",
+      "category": "invalid_reference_content",
+      "file": "invalid/structured-proposal-content-invalid.json",
+      "validations": [
+        {
+          "schema": "structured-view.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "recipe-view.valid",
+      "category": "valid",
+      "file": "valid/recipe-view.json",
+      "validations": [
+        {
+          "schema": "recipe-view.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "recipe-view-v1",
+        "expectedValid": true
+      }
+    },
+    {
+      "id": "recipe-view-v2.valid",
+      "category": "valid",
+      "file": "valid/recipe-view-v2.json",
+      "validations": [
+        {
+          "schema": "recipe-view-v2.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "recipe-view-v2",
+        "expectedValid": true
+      }
+    },
+    {
+      "id": "structured-recipe-v2.valid",
+      "category": "valid",
+      "file": "valid/structured-recipe-v2.json",
+      "validations": [
+        {
+          "schema": "structured-view.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "client-handshake.recipe-v2-valid",
+      "category": "valid",
+      "file": "valid/client-handshake-recipe-v2.json",
+      "validations": [
+        {
+          "schema": "client-handshake.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "view-negotiation.recipe-v2-valid",
+      "category": "valid",
+      "file": "valid/view-negotiation-recipe-v2.json",
+      "validations": [
+        {
+          "schema": "client-handshake.schema.json",
+          "documentPointer": "/client",
+          "expectedValid": true
+        },
+        {
+          "schema": "structured-view.schema.json",
+          "documentPointer": "/view",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "view-negotiation-v1",
+        "expectedValid": true
+      }
+    },
+    {
+      "id": "build-preview.valid",
+      "category": "valid",
+      "file": "valid/build-preview.json",
+      "validations": [
+        {
+          "schema": "build-preview.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "build-preview-transfer-v1",
+        "expectedValid": true
+      }
+    },
+    {
+      "id": "build-preview.out-of-order-chunks-valid",
+      "category": "valid",
+      "file": "valid/build-preview-out-of-order-chunks.json",
+      "validations": [
+        {
+          "schema": "build-preview.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "build-preview-transfer-v1",
+        "expectedValid": true
+      }
+    },
+    {
+      "id": "capability.valid",
+      "category": "valid",
+      "file": "valid/capability.json",
+      "validations": [
+        {
+          "schema": "capability.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "capability-manifest-v1",
+        "expectedValid": true
+      }
+    },
+    {
+      "id": "envelope.missing-request-id",
+      "category": "missing_field",
+      "file": "invalid/envelope-missing-request-id.json",
+      "validations": [
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "agent-request.missing-message",
+      "category": "missing_field",
+      "file": "invalid/agent-request-missing-message.json",
+      "validations": [
+        {
+          "schema": "agent-request.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "agent-complete.missing-fallback-text",
+      "category": "missing_field",
+      "file": "invalid/agent-complete-missing-fallback-text.json",
+      "validations": [
+        {
+          "schema": "agent-complete.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "agent-complete.blank-fallback-text",
+      "category": "over_limit",
+      "file": "invalid/agent-complete-blank-fallback-text.json",
+      "validations": [
+        {
+          "schema": "agent-complete.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "agent-error.extra-field",
+      "category": "unexpected_field",
+      "file": "invalid/agent-error-extra-field.json",
+      "validations": [
+        {
+          "schema": "agent-error.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "agent-cancel.reason-invalid",
+      "category": "invalid_value",
+      "file": "invalid/agent-cancel-reason-invalid.json",
+      "validations": [
+        {
+          "schema": "agent-cancel.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "envelope.version-mismatch",
+      "category": "version_mismatch",
+      "file": "invalid/envelope-version-mismatch.json",
+      "validations": [
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "client-handshake.version-mismatch",
+      "category": "version_mismatch",
+      "file": "invalid/client-version-mismatch.json",
+      "validations": [
+        {
+          "schema": "client-handshake.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "build-preview.compressed-size-over-limit",
+      "category": "over_limit",
+      "file": "invalid/build-preview-over-limit.json",
+      "validations": [
+        {
+          "schema": "build-preview.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "build-preview.missing-chunk",
+      "category": "missing_chunk",
+      "file": "invalid/build-preview-missing-chunk.json",
+      "validations": [
+        {
+          "schema": "build-preview.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "build-preview-transfer-v1",
+        "expectedValid": false,
+        "errorCode": "CHUNK_SET_INCOMPLETE"
+      }
+    },
+    {
+      "id": "build-preview.duplicate-chunk-index",
+      "category": "duplicate_chunk",
+      "file": "invalid/build-preview-duplicate-chunk.json",
+      "validations": [
+        {
+          "schema": "build-preview.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "build-preview-transfer-v1",
+        "expectedValid": false,
+        "errorCode": "CHUNK_INDEX_DUPLICATE"
+      }
+    },
+    {
+      "id": "build-preview.chunk-hash-error",
+      "category": "hash_error",
+      "file": "invalid/build-preview-hash-error.json",
+      "validations": [
+        {
+          "schema": "build-preview.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "build-preview-transfer-v1",
+        "expectedValid": false,
+        "errorCode": "CHUNK_HASH_MISMATCH"
+      }
+    },
+    {
+      "id": "build-preview.gzip-expansion-over-declared",
+      "category": "semantic_error",
+      "file": "invalid/build-preview-gzip-expansion-over-declared.json",
+      "validations": [
+        {
+          "schema": "build-preview.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "build-preview-transfer-v1",
+        "expectedValid": false,
+        "errorCode": "CONTENT_DECOMPRESSION_FAILED"
+      }
+    },
+    {
+      "id": "recipe-view.selected-index-out-of-range",
+      "category": "semantic_error",
+      "file": "invalid/recipe-selected-index-out-of-range.json",
+      "validations": [
+        {
+          "schema": "recipe-view.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "recipe-view-v1",
+        "expectedValid": false,
+        "errorCode": "RECIPE_SELECTED_INDEX_OUT_OF_RANGE"
+      }
+    },
+    {
+      "id": "recipe-view.duplicate-id",
+      "category": "semantic_error",
+      "file": "invalid/recipe-duplicate-id.json",
+      "validations": [
+        {
+          "schema": "recipe-view.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "recipe-view-v1",
+        "expectedValid": false,
+        "errorCode": "RECIPE_ID_DUPLICATE"
+      }
+    },
+    {
+      "id": "recipe-view.slot-coordinate-mismatch",
+      "category": "semantic_error",
+      "file": "invalid/recipe-slot-coordinate-mismatch.json",
+      "validations": [
+        {
+          "schema": "recipe-view.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "recipe-view-v1",
+        "expectedValid": false,
+        "errorCode": "RECIPE_SLOT_COORDINATE_MISMATCH"
+      }
+    },
+    {
+      "id": "recipe-view-v2.source-provider-invalid",
+      "category": "semantic_error",
+      "file": "invalid/recipe-v2-source-provider-invalid.json",
+      "validations": [
+        {
+          "schema": "recipe-view-v2.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "recipe-view-v2",
+        "expectedValid": false,
+        "errorCode": "RECIPE_SOURCE_INVALID"
+      }
+    },
+    {
+      "id": "recipe-view-v2.plugin-provider-missing",
+      "category": "semantic_error",
+      "file": "invalid/recipe-v2-plugin-provider-missing.json",
+      "validations": [
+        {
+          "schema": "recipe-view-v2.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "recipe-view-v2",
+        "expectedValid": false,
+        "errorCode": "RECIPE_SOURCE_INVALID"
+      }
+    },
+    {
+      "id": "recipe-view-v2.processing-invalid",
+      "category": "semantic_error",
+      "file": "invalid/recipe-v2-processing-invalid.json",
+      "validations": [
+        {
+          "schema": "recipe-view-v2.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ],
+      "semanticValidation": {
+        "validator": "recipe-view-v2",
+        "expectedValid": false,
+        "errorCode": "RECIPE_PROCESSING_INVALID"
+      }
+    },
+    {
+      "id": "recipe-view-v2.remaining-slot-invalid",
+      "category": "semantic_error",
+      "file": "invalid/recipe-v2-remaining-slot-invalid.json",
+      "validations": [
+        {
+          "schema": "recipe-view-v2.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "recipe-view-v2",
+        "expectedValid": false,
+        "errorCode": "RECIPE_REMAINING_ITEM_INVALID"
+      }
+    },
+    {
+      "id": "recipe-view-v2.component-damage-invalid",
+      "category": "semantic_error",
+      "file": "invalid/recipe-v2-component-damage-invalid.json",
+      "validations": [
+        {
+          "schema": "recipe-view-v2.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "recipe-view-v2",
+        "expectedValid": false,
+        "errorCode": "RECIPE_COMPONENT_INVALID"
+      }
+    },
+    {
+      "id": "recipe-view-v2.component-text-invalid",
+      "category": "semantic_error",
+      "file": "invalid/recipe-v2-component-text-invalid.json",
+      "validations": [
+        {
+          "schema": "recipe-view-v2.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "recipe-view-v2",
+        "expectedValid": false,
+        "errorCode": "RECIPE_COMPONENT_INVALID"
+      }
+    },
+    {
+      "id": "recipe-view-v2.summary-invalid",
+      "category": "semantic_error",
+      "file": "invalid/recipe-v2-summary-invalid.json",
+      "validations": [
+        {
+          "schema": "recipe-view-v2.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "recipe-view-v2",
+        "expectedValid": false,
+        "errorCode": "RECIPE_RESULT_SUMMARY_INVALID"
+      }
+    },
+    {
+      "id": "view-negotiation.recipe-v2-capability-invalid",
+      "category": "semantic_error",
+      "file": "invalid/view-negotiation-recipe-v2-capability-invalid.json",
+      "validations": [
+        {
+          "schema": "client-handshake.schema.json",
+          "documentPointer": "/client",
+          "expectedValid": true
+        },
+        {
+          "schema": "structured-view.schema.json",
+          "documentPointer": "/view",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "view-negotiation-v1",
+        "expectedValid": false,
+        "errorCode": "VIEW_CAPABILITY_UNDECLARED"
+      }
+    },
+    {
+      "id": "capability.undeclared-placeholder",
+      "category": "semantic_error",
+      "file": "invalid/capability-undeclared-placeholder.json",
+      "validations": [
+        {
+          "schema": "capability.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "capability-manifest-v1",
+        "expectedValid": false,
+        "errorCode": "CAPABILITY_TEMPLATE_ARGUMENT_UNDECLARED"
+      }
+    },
+    {
+      "id": "capability.duplicate-placeholder",
+      "category": "semantic_error",
+      "file": "invalid/capability-duplicate-placeholder.json",
+      "validations": [
+        {
+          "schema": "capability.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "capability-manifest-v1",
+        "expectedValid": false,
+        "errorCode": "CAPABILITY_TEMPLATE_ARGUMENT_DUPLICATE"
+      }
+    },
+    {
+      "id": "capability.range-invalid",
+      "category": "semantic_error",
+      "file": "invalid/capability-range-invalid.json",
+      "validations": [
+        {
+          "schema": "capability.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "capability-manifest-v1",
+        "expectedValid": false,
+        "errorCode": "CAPABILITY_ARGUMENT_RANGE_INVALID"
+      }
+    },
+    {
+      "id": "capability.console-policy-deferred",
+      "category": "valid",
+      "file": "valid/capability-console-policy-deferred.json",
+      "validations": [
+        {
+          "schema": "capability.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "capability-manifest-v1",
+        "expectedValid": true
+      }
+    },
+    {
+      "id": "capability.status-example",
+      "category": "valid",
+      "file": "valid/capability-status-example.json",
+      "validations": [
+        {
+          "schema": "capability.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "capability-manifest-v1",
+        "expectedValid": true
+      }
+    },
+    {
+      "id": "capability.status-self-approved",
+      "category": "policy_override",
+      "file": "invalid/capability-status-self-approved.json",
+      "validations": [
+        {
+          "schema": "capability.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "capability.console-self-authorization",
+      "category": "policy_override",
+      "file": "invalid/capability-console-self-authorization.json",
+      "validations": [
+        {
+          "schema": "capability.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "capability.optional-argument",
+      "category": "semantic_error",
+      "file": "invalid/capability-optional-argument.json",
+      "validations": [
+        {
+          "schema": "capability.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "capability-manifest-v1",
+        "expectedValid": false,
+        "errorCode": "CAPABILITY_OPTIONAL_ARGUMENT_UNSUPPORTED"
+      }
+    },
+    {
+      "id": "capability.placeholder-not-standalone",
+      "category": "semantic_error",
+      "file": "invalid/capability-placeholder-not-standalone.json",
+      "validations": [
+        {
+          "schema": "capability.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "capability-manifest-v1",
+        "expectedValid": false,
+        "errorCode": "CAPABILITY_TEMPLATE_PLACEHOLDER_MALFORMED"
+      }
+    },
+    {
+      "id": "capability.plugin-version-range",
+      "category": "semantic_error",
+      "file": "invalid/capability-plugin-version-range.json",
+      "validations": [
+        {
+          "schema": "capability.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "capability-manifest-v1",
+        "expectedValid": false,
+        "errorCode": "CAPABILITY_PLUGIN_VERSION_RANGE_INVALID"
+      }
+    },
+    {
+      "id": "capability.plugin-duplicate",
+      "category": "semantic_error",
+      "file": "invalid/capability-plugin-duplicate.json",
+      "validations": [
+        {
+          "schema": "capability.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "capability-manifest-v1",
+        "expectedValid": false,
+        "errorCode": "CAPABILITY_PLUGIN_REQUIREMENT_DUPLICATE"
+      }
+    },
+    {
+      "id": "capability.plugin-version-golden",
+      "category": "valid",
+      "file": "valid/capability-plugin-version-v1.json",
+      "validations": [
+        {
+          "schema": "capability.schema.json",
+          "documentPointer": "/manifest",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "capability-plugin-version-v1",
+        "expectedValid": true
+      }
+    },
+    {
+      "id": "capability.effect-constraint",
+      "category": "semantic_error",
+      "file": "invalid/capability-effect-constraint.json",
+      "validations": [
+        {
+          "schema": "capability.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "capability-manifest-v1",
+        "expectedValid": false,
+        "errorCode": "CAPABILITY_EFFECT_CONSTRAINT_INVALID"
+      }
+    },
+    {
+      "id": "capability.confirmation-policy",
+      "category": "semantic_error",
+      "file": "invalid/capability-confirmation-policy.json",
+      "validations": [
+        {
+          "schema": "capability.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "capability-manifest-v1",
+        "expectedValid": false,
+        "errorCode": "CAPABILITY_CONFIRMATION_POLICY_INVALID"
+      }
+    },
+    {
+      "id": "capability-pack.reversal-valid",
+      "category": "valid",
+      "file": "valid/capability-pack-reversal.json",
+      "validations": [
+        {
+          "schema": "capability.schema.json",
+          "documentPointer": "/capabilities/0",
+          "expectedValid": true
+        },
+        {
+          "schema": "capability.schema.json",
+          "documentPointer": "/capabilities/1",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "capability-pack-v1",
+        "expectedValid": true
+      }
+    },
+    {
+      "id": "capability-pack.reversal-missing",
+      "category": "semantic_error",
+      "file": "invalid/capability-pack-reversal-missing.json",
+      "validations": [
+        {
+          "schema": "capability.schema.json",
+          "documentPointer": "/capabilities/0",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "capability-pack-v1",
+        "expectedValid": false,
+        "errorCode": "CAPABILITY_REVERSIBILITY_TARGET_INVALID"
+      }
+    },
+    {
+      "id": "capability.command-injection",
+      "category": "command_injection",
+      "file": "invalid/capability-command-injection.json",
+      "validations": [
+        {
+          "schema": "capability.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "runtime-local-tools.valid",
+      "category": "valid",
+      "file": "valid/runtime-local-tool-contracts.json",
+      "validations": [
+        {
+          "schema": "tools/server-docs-search-arguments.schema.json",
+          "documentPointer": "/docsSearch/arguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/server-docs-search-result.schema.json",
+          "documentPointer": "/docsSearch/result",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/project-list-arguments.schema.json",
+          "documentPointer": "/projectList/arguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/project-list-result.schema.json",
+          "documentPointer": "/projectList/result",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/project-read-arguments.schema.json",
+          "documentPointer": "/projectRead/arguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/project-read-result.schema.json",
+          "documentPointer": "/projectRead/result",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/project-create-arguments.schema.json",
+          "documentPointer": "/projectCreate/arguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/project-create-result.schema.json",
+          "documentPointer": "/projectCreate/result",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/project-update-arguments.schema.json",
+          "documentPointer": "/projectUpdate/arguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/project-update-result.schema.json",
+          "documentPointer": "/projectUpdate/result",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "server-docs-search.control-character",
+      "category": "invalid_control_character",
+      "file": "invalid/server-docs-search-control-character.json",
+      "validations": [
+        {
+          "schema": "tools/server-docs-search-arguments.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "project-create.owner-injection",
+      "category": "privilege_escalation",
+      "file": "invalid/project-create-owner-injection.json",
+      "validations": [
+        {
+          "schema": "tools/project-create-arguments.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "project-update.revision-zero",
+      "category": "invalid_range",
+      "file": "invalid/project-update-revision-zero.json",
+      "validations": [
+        {
+          "schema": "tools/project-update-arguments.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "landmark-search.valid",
+      "category": "valid",
+      "file": "valid/landmark-search.json",
+      "validations": [
+        {
+          "schema": "tools/landmark-search-arguments.schema.json",
+          "documentPointer": "/arguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/landmark-search-result.schema.json",
+          "documentPointer": "/result",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "build-preview-create-tool.valid",
+      "category": "valid",
+      "file": "valid/build-preview-create-tool.json",
+      "validations": [
+        {
+          "schema": "tools/build-preview-create-arguments.schema.json",
+          "documentPointer": "/arguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/build-preview-create-result.schema.json",
+          "documentPointer": "/result",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "build-preview.empty-target-valid",
+      "category": "valid",
+      "file": "valid/build-preview-empty-target.json",
+      "validations": [
+        {
+          "schema": "build-preview.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "build-preview-transfer-v1",
+        "expectedValid": true
+      }
+    },
+    {
+      "id": "build-preview.palette-hash",
+      "category": "semantic_error",
+      "file": "invalid/build-preview-palette-hash.json",
+      "validations": [
+        {
+          "schema": "build-preview.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "build-preview-transfer-v1",
+        "expectedValid": false,
+        "errorCode": "PALETTE_HASH_MISMATCH"
+      }
+    },
+    {
+      "id": "build-preview.content-noncanonical",
+      "category": "semantic_error",
+      "file": "invalid/build-preview-content-noncanonical.json",
+      "validations": [
+        {
+          "schema": "build-preview.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "build-preview-transfer-v1",
+        "expectedValid": false,
+        "errorCode": "CONTENT_CANONICAL_MISMATCH"
+      }
+    },
+    {
+      "id": "build-preview.content-duplicate-key",
+      "category": "semantic_error",
+      "file": "invalid/build-preview-content-duplicate-key.json",
+      "validations": [
+        {
+          "schema": "build-preview.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "build-preview-transfer-v1",
+        "expectedValid": false,
+        "errorCode": "CONTENT_JSON_INVALID"
+      }
+    },
+    {
+      "id": "build-preview.concatenated-gzip",
+      "category": "semantic_error",
+      "file": "invalid/build-preview-concatenated-gzip.json",
+      "validations": [
+        {
+          "schema": "build-preview.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "build-preview-transfer-v1",
+        "expectedValid": false,
+        "errorCode": "CONTENT_DECOMPRESSION_FAILED"
+      }
+    },
+    {
+      "id": "build-preview.origin-outside",
+      "category": "semantic_error",
+      "file": "invalid/build-preview-origin-outside.json",
+      "validations": [
+        {
+          "schema": "build-preview.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "build-preview-transfer-v1",
+        "expectedValid": false,
+        "errorCode": "BLOCK_GEOMETRY_INVALID"
+      }
+    },
+    {
+      "id": "build-preview.axis-over-limit",
+      "category": "semantic_error",
+      "file": "invalid/build-preview-axis-over-limit.json",
+      "validations": [
+        {
+          "schema": "build-preview.schema.json",
+          "documentPointer": "",
+          "expectedValid": true
+        }
+      ],
+      "semanticValidation": {
+        "validator": "build-preview-transfer-v1",
+        "expectedValid": false,
+        "errorCode": "BLOCK_GEOMETRY_INVALID"
+      }
+    },
+    {
+      "id": "management-costs.valid",
+      "category": "valid",
+      "file": "valid/management-costs.json",
+      "validations": [
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "/request",
+          "expectedValid": true
+        },
+        {
+          "schema": "management-costs-request.schema.json",
+          "documentPointer": "/request/payload",
+          "expectedValid": true
+        },
+        {
+          "schema": "envelope.schema.json",
+          "documentPointer": "/response",
+          "expectedValid": true
+        },
+        {
+          "schema": "management-costs-response.schema.json",
+          "documentPointer": "/response/payload",
+          "expectedValid": true
+        }
+      ]
+    },
+    {
+      "id": "management-costs.negative",
+      "category": "invalid_value",
+      "file": "invalid/management-costs-negative.json",
+      "validations": [
+        {
+          "schema": "management-costs-response.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "management-costs.period-kind",
+      "category": "invalid_value",
+      "file": "invalid/management-costs-period-kind.json",
+      "validations": [
+        {
+          "schema": "management-costs-response.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "client-handshake.diagnostics-status-unknown",
+      "category": "invalid_value",
+      "file": "invalid/client-handshake-diagnostics-status-unknown.json",
+      "validations": [
+        {
+          "schema": "client-handshake.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "client-handshake.diagnostics-path",
+      "category": "invalid_structure",
+      "file": "invalid/client-handshake-diagnostics-path.json",
+      "validations": [
+        {
+          "schema": "client-handshake.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "client-handshake.diagnostics-incoherent",
+      "category": "invalid_value",
+      "file": "invalid/client-handshake-diagnostics-incoherent.json",
+      "validations": [
+        {
+          "schema": "client-handshake.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "client-handshake.diagnostics-version-path",
+      "category": "invalid_value",
+      "file": "invalid/client-handshake-diagnostics-version-path.json",
+      "validations": [
+        {
+          "schema": "client-handshake.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "client-handshake.diagnostic-dependency-presence",
+      "category": "invalid_dependency",
+      "file": "invalid/client-handshake-diagnostic-dependency-presence.json",
+      "validations": [
+        {
+          "schema": "client-handshake.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    },
+    {
+      "id": "client-handshake.non-ready-capability",
+      "category": "invalid_state",
+      "file": "invalid/client-handshake-non-ready-capability.json",
+      "validations": [
+        {
+          "schema": "client-handshake.schema.json",
+          "documentPointer": "",
+          "expectedValid": false
+        }
+      ]
+    }
+  ]
+}

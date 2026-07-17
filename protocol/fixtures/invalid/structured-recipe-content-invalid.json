@@ -1,0 +1,11 @@
+{
+  "viewSchemaVersion": "1.0",
+  "viewId": "a0000000-0000-4000-8000-000000000005",
+  "requestId": "a0000000-0000-4000-8000-000000000006",
+  "viewType": "recipe",
+  "revision": 1,
+  "title": "Invalid recipe",
+  "fallbackText": "Invalid recipe fixture",
+  "pinnable": true,
+  "content": {}
+}

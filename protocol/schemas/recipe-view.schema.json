@@ -1,0 +1,301 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/recipe-view.schema.json",
+  "title": "AGMA Recipe View Content",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "query", "selectedRecipe", "recipes"],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "query": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "itemId"],
+      "properties": {
+        "mode": {
+          "enum": ["lookup", "uses"]
+        },
+        "itemId": {
+          "$ref": "#/$defs/namespacedId"
+        }
+      }
+    },
+    "selectedRecipe": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 127
+    },
+    "recipes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {
+        "$ref": "#/$defs/recipe"
+      }
+    }
+  },
+  "$defs": {
+    "namespacedId": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 256,
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+    },
+    "safeComponents": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customName": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "lore": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "damage": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "maxDamage": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "customModelData": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "enchantmentGlint": {
+          "type": "boolean"
+        }
+      }
+    },
+    "itemStack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["itemId", "count", "components"],
+      "properties": {
+        "itemId": {
+          "$ref": "#/$defs/namespacedId"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 999999
+        },
+        "components": {
+          "$ref": "#/$defs/safeComponents"
+        }
+      }
+    },
+    "ingredientChoice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["choiceType", "alternatives"],
+      "properties": {
+        "choiceType": {
+          "enum": ["material", "exact", "tag"]
+        },
+        "tagId": {
+          "$ref": "#/$defs/namespacedId"
+        },
+        "alternatives": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/$defs/itemStack"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "choiceType": { "const": "tag" } },
+            "required": ["choiceType"]
+          },
+          "then": {
+            "required": ["tagId"],
+            "properties": {
+              "tagId": {}
+            }
+          },
+          "else": {
+            "not": {
+              "required": ["tagId"]
+            }
+          }
+        }
+      ]
+    },
+    "ingredientSlot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slot", "x", "y", "ingredient"],
+      "properties": {
+        "slot": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8
+        },
+        "x": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "y": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "ingredient": {
+          "$ref": "#/$defs/ingredientChoice"
+        }
+      }
+    },
+    "remainingItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slot", "item"],
+      "properties": {
+        "slot": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8
+        },
+        "item": {
+          "$ref": "#/$defs/itemStack"
+        }
+      }
+    },
+    "recipe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recipeId",
+        "recipeType",
+        "source",
+        "result",
+        "layout",
+        "remainingItems"
+      ],
+      "properties": {
+        "recipeId": {
+          "$ref": "#/$defs/namespacedId"
+        },
+        "recipeType": {
+          "enum": [
+            "shaped",
+            "shapeless",
+            "smelting",
+            "blasting",
+            "smoking",
+            "campfire_cooking",
+            "stonecutting",
+            "smithing_transform",
+            "smithing_trim",
+            "custom"
+          ]
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "providerId"],
+          "properties": {
+            "kind": {
+              "enum": [
+                "server_registry",
+                "plugin_provider",
+                "server_docs",
+                "web_documentation",
+                "model_knowledge"
+              ]
+            },
+            "providerId": {
+              "oneOf": [{ "$ref": "#/$defs/namespacedId" }, { "type": "null" }]
+            }
+          }
+        },
+        "result": {
+          "$ref": "#/$defs/itemStack"
+        },
+        "layout": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["width", "height", "ingredients"],
+          "properties": {
+            "width": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 3
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 3
+            },
+            "ingredients": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 9,
+              "items": {
+                "$ref": "#/$defs/ingredientSlot"
+              }
+            }
+          }
+        },
+        "remainingItems": {
+          "type": "array",
+          "maxItems": 9,
+          "items": {
+            "$ref": "#/$defs/remainingItem"
+          }
+        },
+        "processing": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["timeTicks", "experience"],
+          "properties": {
+            "timeTicks": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 120000
+            },
+            "experience": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "recipeType": {
+                "enum": ["smelting", "blasting", "smoking", "campfire_cooking"]
+              }
+            },
+            "required": ["recipeType"]
+          },
+          "then": {
+            "required": ["processing"],
+            "properties": {
+              "processing": {}
+            }
+          }
+        }
+      ]
+    }
+  }
+}

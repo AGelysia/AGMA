@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/recipe-view-v2.schema.json",
+  "title": "AGMA Recipe View Content v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "query",
+    "selectedRecipe",
+    "totalMatches",
+    "truncated",
+    "recipes"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "2.0"
+    },
+    "query": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "itemId"],
+      "properties": {
+        "mode": {
+          "enum": ["lookup", "uses"]
+        },
+        "itemId": {
+          "$ref": "tools/common.schema.json#/$defs/namespacedId"
+        }
+      }
+    },
+    "selectedRecipe": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 15
+    },
+    "totalMatches": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000000
+    },
+    "truncated": {
+      "type": "boolean"
+    },
+    "recipes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": {
+        "$ref": "tools/common.schema.json#/$defs/recipe"
+      }
+    }
+  }
+}

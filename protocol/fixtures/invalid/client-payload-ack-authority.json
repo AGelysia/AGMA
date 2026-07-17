@@ -1,0 +1,12 @@
+{
+  "clientPayloadVersion": "1.0",
+  "messageId": "d1000000-0000-4000-8000-000000000001",
+  "type": "client.ack",
+  "payload": {
+    "generation": 1,
+    "transferId": "d1000000-0000-4000-8000-000000000002",
+    "status": "DISPLAYED",
+    "code": "VIEW_DISPLAYED",
+    "permission": "minecraftagent.admin"
+  }
+}

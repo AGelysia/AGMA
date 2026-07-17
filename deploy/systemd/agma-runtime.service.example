@@ -1,0 +1,33 @@
+[Unit]
+Description=AGMA Runtime
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=agma
+Group=agma
+WorkingDirectory=/opt/agma/current
+EnvironmentFile=/etc/agma/runtime.env
+ExecStart=/usr/bin/node /opt/agma/current/runtime/dist/bootstrap/index.js --config /var/lib/agma/runtime/config.yml
+Restart=on-abnormal
+RestartSec=5s
+TimeoutStartSec=150s
+TimeoutStopSec=30s
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+LockPersonality=true
+RestrictSUIDSGID=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+AmbientCapabilities=
+ReadWritePaths=/var/lib/agma/runtime
+
+[Install]
+WantedBy=multi-user.target

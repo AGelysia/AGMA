@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/envelope.schema.json",
+  "title": "AGMA Runtime-Paper Envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocolVersion",
+    "messageId",
+    "requestId",
+    "serverId",
+    "type",
+    "timestamp",
+    "nonce",
+    "payload"
+  ],
+  "properties": {
+    "protocolVersion": {
+      "const": "1.0"
+    },
+    "messageId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "requestId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "serverId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "type": {
+      "enum": [
+        "runtime.hello",
+        "paper.hello",
+        "runtime.ready",
+        "paper.capabilities",
+        "paper.client_capabilities",
+        "agent.request",
+        "agent.delta",
+        "agent.complete",
+        "agent.error",
+        "agent.cancel",
+        "session.resume",
+        "session.resumed",
+        "view.publish",
+        "view.clear",
+        "tool.call",
+        "tool.result",
+        "proposal.create",
+        "proposal.confirmed",
+        "proposal.cancelled",
+        "control.off",
+        "control.on",
+        "health.ping",
+        "health.pong",
+        "management.costs.request",
+        "management.costs.response"
+      ]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "nonce": {
+      "type": "string",
+      "minLength": 22,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "payload": {
+      "type": "object",
+      "maxProperties": 64
+    }
+  }
+}

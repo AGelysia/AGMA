@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "1.0",
+  "query": {
+    "mode": "lookup",
+    "itemId": "minecraft:stick"
+  },
+  "selectedRecipe": 0,
+  "recipes": [
+    {
+      "recipeId": "minecraft:stick",
+      "recipeType": "shaped",
+      "source": {
+        "kind": "server_registry",
+        "providerId": null
+      },
+      "result": {
+        "itemId": "minecraft:stick",
+        "count": 4,
+        "components": {}
+      },
+      "layout": {
+        "width": 2,
+        "height": 1,
+        "ingredients": [
+          {
+            "slot": 0,
+            "x": 1,
+            "y": 0,
+            "ingredient": {
+              "choiceType": "material",
+              "alternatives": [
+                {
+                  "itemId": "minecraft:oak_planks",
+                  "count": 1,
+                  "components": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "remainingItems": []
+    }
+  ]
+}

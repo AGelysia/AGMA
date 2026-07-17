@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/proposal-cancelled.schema.json",
+  "title": "AGMA Proposal Cancelled Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proposalId",
+    "sessionId",
+    "playerUuid",
+    "tool",
+    "argumentHash",
+    "status",
+    "reason",
+    "cancelledAt"
+  ],
+  "properties": {
+    "proposalId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "sessionId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "playerUuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tool": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$"
+    },
+    "argumentHash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "status": {
+      "const": "CANCELLED"
+    },
+    "reason": {
+      "enum": [
+        "PLAYER_REJECTED",
+        "REQUEST_CANCELLED",
+        "REQUEST_CONTEXT_INVALID",
+        "EXPIRED",
+        "AGENT_OFFLINE",
+        "PLAYER_OFFLINE",
+        "IDENTITY_MISMATCH",
+        "PERMISSION_REVOKED",
+        "TOOL_DISABLED",
+        "POLICY_CHANGED",
+        "ARGUMENT_HASH_MISMATCH",
+        "REGION_HASH_MISMATCH",
+        "CHANGE_SET_HASH_MISMATCH",
+        "CHANGE_LIMIT_EXCEEDED",
+        "AUDIT_UNAVAILABLE",
+        "EXECUTION_ADMISSION_FAILED",
+        "SUPERSEDED",
+        "SERVER_SHUTDOWN"
+      ]
+    },
+    "cancelledAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}

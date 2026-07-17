@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/server-recipe-uses-arguments.schema.json",
+  "title": "server.recipe.uses Arguments",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["itemId"],
+  "properties": {
+    "itemId": {
+      "$ref": "common.schema.json#/$defs/namespacedId"
+    }
+  }
+}

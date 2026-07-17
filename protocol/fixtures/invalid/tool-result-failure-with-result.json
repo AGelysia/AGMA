@@ -1,0 +1,18 @@
+{
+  "toolCallId": "55555555-5555-4555-8555-555555555555",
+  "sessionId": "33333333-3333-4333-8333-333333333333",
+  "playerUuid": "44444444-4444-4444-8444-444444444444",
+  "tool": "player.context.read",
+  "sequence": 1,
+  "status": "failed",
+  "source": "paper_api",
+  "trust": "authoritative",
+  "result": {
+    "online": true
+  },
+  "error": {
+    "code": "TOOL_EXECUTION_FAILED",
+    "message": "The read operation failed.",
+    "retryable": true
+  }
+}

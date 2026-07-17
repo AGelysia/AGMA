@@ -1,0 +1,11 @@
+{
+  "viewSchemaVersion": "1.0",
+  "viewId": "a0000000-0000-4000-8000-000000000001",
+  "requestId": "a0000000-0000-4000-8000-000000000002",
+  "viewType": "item_stack",
+  "revision": 1,
+  "title": "Invalid item stack",
+  "fallbackText": "Invalid item stack fixture",
+  "pinnable": true,
+  "content": {}
+}

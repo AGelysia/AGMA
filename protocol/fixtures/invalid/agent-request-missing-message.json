@@ -1,0 +1,16 @@
+{
+  "sessionId": null,
+  "playerUuid": "44444444-4444-4444-8444-444444444444",
+  "module": "general",
+  "clientCapabilities": {
+    "connected": false,
+    "clientProtocolVersion": null,
+    "features": {
+      "overlay": 0,
+      "itemIcons": 0,
+      "recipeView": 0,
+      "litematicaPreview": 0,
+      "litematicaMaterialList": 0
+    }
+  }
+}

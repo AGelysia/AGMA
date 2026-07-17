@@ -1,0 +1,39 @@
+{
+  "id": "essentials.sethome",
+  "version": 1,
+  "status": "draft",
+  "description": "Set a named home for the requesting player.",
+  "requirements": {
+    "plugins": [{ "name": "Essentials", "version": ">=2.20 <3" }]
+  },
+  "execution": {
+    "type": "command",
+    "source": "player",
+    "commandRoot": "sethome",
+    "template": "/sethome {name}"
+  },
+  "arguments": {
+    "name": {
+      "type": "string",
+      "description": "Home name parsed by a reviewed single-token adapter.",
+      "required": true,
+      "minLength": 1,
+      "maxLength": 32
+    }
+  },
+  "effects": {
+    "category": "WRITE_PLAYER",
+    "scope": "requesting_player",
+    "maximumBlocks": null
+  },
+  "permissions": {
+    "minimum": "PERMISSION",
+    "node": "essentials.sethome"
+  },
+  "confirmation": {
+    "required": true
+  },
+  "reversibility": {
+    "type": "none"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "id": "example.player_write",
+  "version": 1,
+  "description": "Player writes cannot disable confirmation.",
+  "requirements": {
+    "plugins": []
+  },
+  "execution": {
+    "type": "command",
+    "source": "player",
+    "commandRoot": "playerwrite",
+    "template": "/playerwrite"
+  },
+  "arguments": {},
+  "effects": {
+    "category": "WRITE_PLAYER",
+    "scope": "requesting_player",
+    "maximumBlocks": null
+  },
+  "permissions": {
+    "minimum": "OP"
+  },
+  "confirmation": {
+    "required": false
+  },
+  "reversibility": {
+    "type": "none"
+  }
+}

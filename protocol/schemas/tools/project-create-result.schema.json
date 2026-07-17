@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/project-create-result.schema.json",
+  "title": "Project Create Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["outcome", "project"],
+  "properties": {
+    "outcome": { "enum": ["CREATED", "LIMIT_REACHED", "NAME_CONFLICT"] },
+    "project": {
+      "oneOf": [
+        { "$ref": "project-common.schema.json#/$defs/project" },
+        { "type": "null" }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "outcome": { "const": "CREATED" } },
+        "required": ["outcome"]
+      },
+      "then": { "properties": { "project": { "type": "object" } } },
+      "else": { "properties": { "project": { "type": "null" } } }
+    }
+  ]
+}

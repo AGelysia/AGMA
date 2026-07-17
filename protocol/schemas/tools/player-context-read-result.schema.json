@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/player-context-read-result.schema.json",
+  "title": "player.context.read Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "online",
+    "playerName",
+    "worldId",
+    "position",
+    "gameMode",
+    "health",
+    "maxHealth",
+    "foodLevel",
+    "saturation",
+    "experienceLevel"
+  ],
+  "properties": {
+    "online": {
+      "const": true
+    },
+    "playerName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 16,
+      "pattern": "^[A-Za-z0-9_]+$"
+    },
+    "worldId": {
+      "$ref": "common.schema.json#/$defs/namespacedId"
+    },
+    "position": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "z", "yaw", "pitch"],
+      "properties": {
+        "x": {
+          "type": "number",
+          "minimum": -30000000,
+          "maximum": 30000000
+        },
+        "y": {
+          "type": "number",
+          "minimum": -20000000,
+          "maximum": 20000000
+        },
+        "z": {
+          "type": "number",
+          "minimum": -30000000,
+          "maximum": 30000000
+        },
+        "yaw": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360
+        },
+        "pitch": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        }
+      }
+    },
+    "gameMode": {
+      "enum": ["survival", "creative", "adventure", "spectator"]
+    },
+    "health": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "maxHealth": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 1000000
+    },
+    "foodLevel": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 20
+    },
+    "saturation": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 20
+    },
+    "experienceLevel": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 2147483647
+    }
+  }
+}

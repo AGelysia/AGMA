@@ -1,0 +1,15 @@
+{
+  "clientProtocolVersion": "1.0",
+  "modVersion": "0.1.0",
+  "capabilities": {
+    "overlay": 1,
+    "itemIcons": 1,
+    "recipeView": 1,
+    "litematicaPreview": 1,
+    "litematicaMaterialList": 1
+  },
+  "dependencies": {
+    "litematica": "0.26.12",
+    "malilib": "0.27.16"
+  }
+}

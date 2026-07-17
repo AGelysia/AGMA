@@ -1,0 +1,45 @@
+{
+  "id": "worldedit.replace",
+  "version": 1,
+  "description": "Capability with a structurally valid but undeclared placeholder.",
+  "requirements": {
+    "plugins": [
+      {
+        "name": "WorldEdit",
+        "version": ">=7.3 <8"
+      }
+    ]
+  },
+  "execution": {
+    "type": "command",
+    "source": "player",
+    "commandRoot": "replace",
+    "template": "/replace {from} {to} {mask}"
+  },
+  "arguments": {
+    "from": {
+      "type": "minecraft:block-pattern",
+      "description": "Block pattern to replace.",
+      "required": true
+    },
+    "to": {
+      "type": "minecraft:block-pattern",
+      "description": "Replacement block pattern.",
+      "required": true
+    }
+  },
+  "effects": {
+    "category": "WRITE_WORLD",
+    "scope": "current_selection",
+    "maximumBlocks": 100000
+  },
+  "permissions": {
+    "minimum": "OP"
+  },
+  "confirmation": {
+    "required": true
+  },
+  "reversibility": {
+    "type": "none"
+  }
+}
