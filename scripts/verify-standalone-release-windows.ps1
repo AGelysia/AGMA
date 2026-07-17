@@ -245,4 +245,6 @@ try {
     }
 }
 
+# The final native invocation is an expected negative probe. Do not leak its exit code to the caller.
 Write-Output "verify-standalone-release-windows version=$Version embedded_node=v$NodeVersion result=passed"
+exit 0
