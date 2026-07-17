@@ -8,7 +8,7 @@ import { coreToolIds } from "../src/tools/tool-types.js";
 
 const schemas = await SchemaRegistry.load();
 const clientSchemas = await SchemaRegistry.load(
-  new URL("../../standalone-client/contracts/", import.meta.url).pathname,
+  new URL("../../standalone-client/contracts/", import.meta.url),
 );
 const registry = new ToolRegistry(schemas);
 const fixture = JSON.parse(

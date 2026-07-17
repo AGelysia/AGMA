@@ -1,5 +1,5 @@
 import { createServer } from "node:net";
-import { chmod, mkdtemp, mkdir, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, mkdir, realpath, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -120,7 +120,7 @@ privacy:
 export async function temporaryRuntimeDirectory(): Promise<string> {
   const directory = await mkdtemp(join(tmpdir(), "minecraft-agent-runtime-"));
   await chmod(directory, 0o700);
-  return directory;
+  return realpath(directory);
 }
 
 export async function writeRuntimeConfig(

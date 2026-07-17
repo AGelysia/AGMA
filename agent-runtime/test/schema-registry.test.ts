@@ -1,6 +1,7 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -41,6 +42,17 @@ async function createProtocolRoot(): Promise<string> {
 }
 
 describe("SchemaRegistry", () => {
+  it("loads a protocol root supplied as a file URL", async () => {
+    const root = await createProtocolRoot();
+    const registry = await SchemaRegistry.load(pathToFileURL(root));
+
+    expect(registry.protocolRoot).toBe(resolve(root));
+    expect(registry.validate("example.schema.json", { name: "runtime" })).toEqual({
+      valid: true,
+      errors: [],
+    });
+  });
+
   it("loads schemas by protocol-relative path and validates all errors", async () => {
     const root = await createProtocolRoot();
     const registry = await SchemaRegistry.load(root);

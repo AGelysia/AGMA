@@ -1,4 +1,4 @@
-import { chmod, mkdir, rm } from "node:fs/promises";
+import { chmod, mkdir, rm, symlink } from "node:fs/promises";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { PassThrough } from "node:stream";
@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ModelProvider } from "../src/providers/model-provider.js";
+import { loadStandaloneClientConfig } from "../src/config/standalone-client-config.js";
 import { migrateRuntimeStorage } from "../src/storage/migrations.js";
 import type {
   ModelProviderHealthCheck,
@@ -136,6 +137,18 @@ describe("standalone-only Runtime bootstrap", () => {
         standaloneProtocolRoot: protocolRoot,
       }),
     ).rejects.toMatchObject({ code: "CONFIG_SCHEMA_INVALID", field: "/configVersion" });
+  });
+
+  it("rejects a symbolic link to the standalone configuration file", async () => {
+    const directory = await temporaryRuntimeDirectory();
+    directories.push(directory);
+    const target = await writeRuntimeConfig(directory, validClientRuntimeConfig(), "target.yml");
+    const link = join(directory, "linked.yml");
+    await symlink(target, link, "file");
+
+    await expect(
+      loadStandaloneClientConfig({ configPath: link, environment: runtimeEnvironment() }),
+    ).rejects.toMatchObject({ code: "CONFIG_PATH_SYMLINK" });
   });
 
   it("accepts only the fixed --config form with an optional final --managed flag", () => {

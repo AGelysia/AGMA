@@ -1,5 +1,5 @@
 import { constants } from "node:fs";
-import { open, realpath } from "node:fs/promises";
+import { lstat, open, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { TextDecoder } from "node:util";
 
@@ -407,7 +407,9 @@ export async function loadStandaloneClientConfig(
   const cwd = resolve(options.cwd ?? process.cwd());
   const requested = resolve(cwd, options.configPath ?? "config.local.yml");
   let canonical: string;
+  let requestedIsSymbolicLink: boolean;
   try {
+    requestedIsSymbolicLink = (await lstat(requested)).isSymbolicLink();
     canonical = await realpath(requested);
   } catch (error) {
     throw new RuntimeStartupError({
@@ -417,7 +419,7 @@ export async function loadStandaloneClientConfig(
       cause: error,
     });
   }
-  if (canonical !== requested) {
+  if (requestedIsSymbolicLink) {
     throw new RuntimeStartupError({
       code: "CONFIG_PATH_SYMLINK",
       stage: "config",

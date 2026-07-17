@@ -1,5 +1,5 @@
 import { constants } from "node:fs";
-import { open, realpath } from "node:fs/promises";
+import { lstat, open, realpath } from "node:fs/promises";
 import { basename, dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { TextDecoder } from "node:util";
 
@@ -1019,9 +1019,22 @@ async function readConfigurationFile(configFile: string): Promise<{
   readonly permissionsWide: boolean;
 }> {
   let handle;
+  let pathIdentity: { readonly dev: number; readonly ino: number };
   try {
+    const pathMetadata = await lstat(configFile);
+    if (pathMetadata.isSymbolicLink()) {
+      throw new RuntimeStartupError({
+        code: "CONFIG_PATH_SYMLINK",
+        stage: "config",
+        safeMessage: "Runtime configuration must not be a symbolic link.",
+      });
+    }
+    pathIdentity = { dev: pathMetadata.dev, ino: pathMetadata.ino };
     handle = await open(configFile, constants.O_RDONLY | constants.O_NOFOLLOW);
   } catch (error) {
+    if (error instanceof RuntimeStartupError) {
+      throw error;
+    }
     if (isErrno(error, "ENOENT")) {
       throw new RuntimeStartupError({
         code: "CONFIG_NOT_FOUND",
@@ -1048,11 +1061,18 @@ async function readConfigurationFile(configFile: string): Promise<{
 
   try {
     const metadata = await handle.stat();
-    if (!metadata.isFile()) {
+    if (metadata.dev !== pathIdentity.dev || metadata.ino !== pathIdentity.ino) {
       throw new RuntimeStartupError({
         code: "CONFIG_READ_FAILED",
         stage: "config",
-        safeMessage: "Runtime configuration path is not a regular file.",
+        safeMessage: "Runtime configuration file changed while it was being opened.",
+      });
+    }
+    if (!metadata.isFile() || metadata.nlink !== 1) {
+      throw new RuntimeStartupError({
+        code: "CONFIG_READ_FAILED",
+        stage: "config",
+        safeMessage: "Runtime configuration path is not a private regular file.",
       });
     }
     if (metadata.size > MAX_CONFIG_BYTES) {
@@ -1089,7 +1109,7 @@ async function readConfigurationFile(configFile: string): Promise<{
 
     return {
       source: buffer.toString("utf8", 0, bytesRead),
-      permissionsWide: (metadata.mode & 0o077) !== 0,
+      permissionsWide: process.platform !== "win32" && (metadata.mode & 0o077) !== 0,
     };
   } catch (error) {
     if (error instanceof RuntimeStartupError) {

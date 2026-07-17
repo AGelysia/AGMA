@@ -25,4 +25,8 @@ agent-runtime/dist-standalone/
 
 # Release output
 dist/
+!standalone-client/managed-runtime/fixtures/payload/app/dist/
+!standalone-client/managed-runtime/fixtures/payload/app/dist/standalone/
+!standalone-client/managed-runtime/fixtures/payload/app/dist/standalone/bootstrap/
+!standalone-client/managed-runtime/fixtures/payload/app/dist/standalone/bootstrap/index.js
 release/

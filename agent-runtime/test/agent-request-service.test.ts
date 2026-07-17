@@ -1305,7 +1305,7 @@ describe("Agent request service", () => {
 
   it("isolates untrusted web evidence from Tools and downgrades unsupported exact claims", async () => {
     const clientSchemas = await SchemaRegistry.load(
-      new URL("../../standalone-client/contracts/", import.meta.url).pathname,
+      new URL("../../standalone-client/contracts/", import.meta.url),
     );
     const clientTools = new ToolRegistry(clientSchemas, "client", ["game.resource.search"]);
     clientTools.activateClientCapabilities(["game.resource.search"]);

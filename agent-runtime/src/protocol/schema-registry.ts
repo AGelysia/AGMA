@@ -76,8 +76,10 @@ export class SchemaRegistry {
   readonly #validators = new Map<string, ValidateFunction>();
   readonly #protocolRoot: string;
 
-  private constructor(protocolRoot: string) {
-    this.#protocolRoot = resolve(protocolRoot);
+  private constructor(protocolRoot: string | URL) {
+    this.#protocolRoot = resolve(
+      protocolRoot instanceof URL ? fileURLToPath(protocolRoot) : protocolRoot,
+    );
     this.#ajv = new Ajv2020({
       allErrors: true,
       strict: true,
@@ -86,7 +88,9 @@ export class SchemaRegistry {
     addFormats(this.#ajv);
   }
 
-  public static async load(protocolRoot = defaultProtocolRoot()): Promise<SchemaRegistry> {
+  public static async load(
+    protocolRoot: string | URL = defaultProtocolRoot(),
+  ): Promise<SchemaRegistry> {
     const registry = new SchemaRegistry(protocolRoot);
     await registry.#loadSchemas();
     return registry;

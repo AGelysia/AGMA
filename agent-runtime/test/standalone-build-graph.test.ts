@@ -1,11 +1,12 @@
 import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
 import { beforeAll, describe, expect, it } from "vitest";
 
 const execute = promisify(execFile);
-const root = new URL("../", import.meta.url).pathname;
+const root = fileURLToPath(new URL("../", import.meta.url));
 
 interface Metafile {
   readonly inputs: Readonly<Record<string, unknown>>;

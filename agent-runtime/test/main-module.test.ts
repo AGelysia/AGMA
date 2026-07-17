@@ -1,11 +1,12 @@
+import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { describe, expect, it, vi } from "vitest";
 
 import { isMainModule } from "../src/bootstrap/main-module.js";
 
-const RELEASE_ENTRY = "/opt/agma/releases/0.1.0/runtime/dist/bootstrap/index.js";
-const CURRENT_ENTRY = "/opt/agma/current/runtime/dist/bootstrap/index.js";
+const RELEASE_ENTRY = resolve("/opt/agma/releases/0.1.0/runtime/dist/bootstrap/index.js");
+const CURRENT_ENTRY = resolve("/opt/agma/current/runtime/dist/bootstrap/index.js");
 const MODULE_URL = pathToFileURL(RELEASE_ENTRY).href;
 
 describe("main module detection", () => {
@@ -28,6 +29,6 @@ describe("main module detection", () => {
   });
 
   it("rejects a different physical entry", () => {
-    expect(isMainModule("/opt/agma/other.js", MODULE_URL, (path) => path)).toBe(false);
+    expect(isMainModule(resolve("/opt/agma/other.js"), MODULE_URL, (path) => path)).toBe(false);
   });
 });

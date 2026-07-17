@@ -78,7 +78,7 @@ async function registry(): Promise<ClientToolRegistry> {
 
 async function registryWith(allowed: readonly string[]): Promise<ClientToolRegistry> {
   const schemas = await SchemaRegistry.load(
-    new URL("../../standalone-client/contracts/", import.meta.url).pathname,
+    new URL("../../standalone-client/contracts/", import.meta.url),
   );
   const tools = new ClientToolRegistry(schemas, allowed);
   tools.activateClientCapabilities(allowed);

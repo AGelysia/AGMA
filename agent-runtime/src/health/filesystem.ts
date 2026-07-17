@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { constants } from "node:fs";
 import { chmod, lstat, mkdir, open, realpath, unlink } from "node:fs/promises";
-import { dirname, relative, resolve, sep } from "node:path";
+import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 
 import {
   RuntimeStartupError,
@@ -55,8 +55,9 @@ function assertPrivateMetadata(
 }
 
 export async function ensurePrivateDirectory(options: PrivateDirectoryOptions): Promise<void> {
-  const rootDirectory = await realpath(options.rootDirectory);
-  const relativePath = relative(rootDirectory, options.directory);
+  const requestedRootDirectory = resolve(options.rootDirectory);
+  const requestedDirectory = resolve(options.directory);
+  const relativePath = relative(requestedRootDirectory, requestedDirectory);
   if (relativePath.length === 0) {
     throw new RuntimeStartupError({
       code: "PATH_INSECURE_PERMISSIONS",
@@ -65,11 +66,7 @@ export async function ensurePrivateDirectory(options: PrivateDirectoryOptions): 
       safeMessage: "Runtime state must use a private subdirectory.",
     });
   }
-  if (
-    relativePath === ".." ||
-    relativePath.startsWith(`..${sep}`) ||
-    resolve(rootDirectory, relativePath) !== options.directory
-  ) {
+  if (relativePath === ".." || relativePath.startsWith(`..${sep}`) || isAbsolute(relativePath)) {
     throw new RuntimeStartupError({
       code: "CONFIG_PATH_ESCAPE",
       stage: options.stage,
@@ -78,6 +75,7 @@ export async function ensurePrivateDirectory(options: PrivateDirectoryOptions): 
     });
   }
 
+  const rootDirectory = await realpath(requestedRootDirectory);
   let current = rootDirectory;
   for (const segment of relativePath.split(sep).filter((entry) => entry.length > 0)) {
     current = resolve(current, segment);

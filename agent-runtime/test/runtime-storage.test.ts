@@ -50,9 +50,11 @@ describe("runtime filesystem readiness", () => {
       .all();
 
     expect(probeTables).toEqual([]);
-    expect((await stat(logDirectory)).mode & 0o777).toBe(0o700);
-    expect((await stat(join(directory, "data"))).mode & 0o777).toBe(0o700);
-    expect((await stat(sqlitePath)).mode & 0o777).toBe(0o600);
+    if (process.platform !== "win32") {
+      expect((await stat(logDirectory)).mode & 0o777).toBe(0o700);
+      expect((await stat(join(directory, "data"))).mode & 0o777).toBe(0o700);
+      expect((await stat(sqlitePath)).mode & 0o777).toBe(0o600);
+    }
 
     sqlite.close();
     const reopened = new DatabaseSync(sqlitePath);
@@ -63,7 +65,7 @@ describe("runtime filesystem readiness", () => {
   it("rejects a symbolic-link log directory", async () => {
     const directory = await fixtureDirectory();
     const outside = await fixtureDirectory();
-    await symlink(outside, join(directory, "logs"));
+    await symlink(outside, join(directory, "logs"), "junction");
 
     await expectCode(checkLogDirectory(directory, join(directory, "logs")), "CONFIG_PATH_SYMLINK");
   });
@@ -129,6 +131,9 @@ describe("runtime filesystem readiness", () => {
   });
 
   it("rejects state directories with broad permissions even under a permissive umask", async () => {
+    if (process.platform === "win32") {
+      return;
+    }
     const directory = await fixtureDirectory();
     const logDirectory = join(directory, "logs");
     await mkdir(logDirectory, { mode: 0o755 });

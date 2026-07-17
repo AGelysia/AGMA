@@ -470,14 +470,18 @@ describe("runtime configuration", () => {
       configPath: broad,
       environment: runtimeEnvironment(),
     });
-    expect(broadLoaded.warnings).toEqual([{ code: "CONFIG_FILE_PERMISSIONS_WIDE" }]);
+    expect(broadLoaded.warnings).toEqual(
+      process.platform === "win32" ? [] : [{ code: "CONFIG_FILE_PERMISSIONS_WIDE" }],
+    );
 
     await chmod(target, 0o644);
-    await expectStartupError(
-      loadRuntimeConfig({ configPath: target, environment: {} }),
-      "CONFIG_INSECURE_PERMISSIONS",
-      "/model/apiKey",
-    );
+    if (process.platform !== "win32") {
+      await expectStartupError(
+        loadRuntimeConfig({ configPath: target, environment: {} }),
+        "CONFIG_INSECURE_PERMISSIONS",
+        "/model/apiKey",
+      );
+    }
 
     const link = join(directory, "linked.yml");
     await symlink(target, link);
@@ -491,10 +495,12 @@ describe("runtime configuration", () => {
     const directory = await fixtureDirectory();
     const writable = await writeRuntimeConfig(directory, validRuntimeConfig(), "writable.yml");
     await chmod(writable, 0o660);
-    await expectStartupError(
-      loadRuntimeConfig({ configPath: writable, environment: runtimeEnvironment() }),
-      "CONFIG_INSECURE_PERMISSIONS",
-    );
+    if (process.platform !== "win32") {
+      await expectStartupError(
+        loadRuntimeConfig({ configPath: writable, environment: runtimeEnvironment() }),
+        "CONFIG_INSECURE_PERMISSIONS",
+      );
+    }
 
     const rootLog = await writeRuntimeConfig(
       directory,
