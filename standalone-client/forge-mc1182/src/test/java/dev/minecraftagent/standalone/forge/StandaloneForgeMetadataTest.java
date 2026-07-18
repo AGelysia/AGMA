@@ -70,6 +70,7 @@ class StandaloneForgeMetadataTest {
     assertFalse(constants.contains("net/minecraftforge/client"));
     assertFalse(constants.contains("org/lwjgl"));
     assertTrue(constants.contains("net/minecraftforge/fml/DistExecutor"));
+    assertTrue(constants.contains("unsafeRunWhenOn"));
     assertTrue(constants.contains("StandaloneForgeClient"));
   }
 
