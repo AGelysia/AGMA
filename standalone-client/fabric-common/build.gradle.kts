@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.spotless)
 }
 
-version = providers.gradleProperty("standaloneVersion").orElse("0.3.1").get()
+version = providers.gradleProperty("standaloneVersion").orElse("0.3.2").get()
 
 base {
     archivesName = "AGMA-Standalone-Fabric-Common"

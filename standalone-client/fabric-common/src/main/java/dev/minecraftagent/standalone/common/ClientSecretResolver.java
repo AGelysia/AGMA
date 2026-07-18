@@ -99,6 +99,17 @@ public final class ClientSecretResolver {
     }
   }
 
+  SecretMaterial resolveSecret(
+      RuntimeClientProfile.SecretReference reference,
+      String field,
+      Path profileRoot,
+      Map<String, String> environment) {
+    Objects.requireNonNull(reference, "reference");
+    Objects.requireNonNull(environment, "environment");
+    return SecretMaterial.fromUtf8(
+        resolve(reference, field, requireRoot(profileRoot), environment));
+  }
+
   private static String resolve(
       RuntimeClientProfile.SecretReference reference,
       String field,

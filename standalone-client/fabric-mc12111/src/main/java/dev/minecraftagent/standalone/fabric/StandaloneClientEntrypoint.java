@@ -36,14 +36,16 @@ public final class StandaloneClientEntrypoint implements ClientModInitializer {
         net.fabricmc.loader.api.FabricLoader.getInstance()
             .getModContainer(MOD_ID)
             .map(container -> container.getMetadata().getVersion().getFriendlyString())
-            .orElse("0.3.1");
+            .orElse("0.3.2");
     var root =
         net.fabricmc.loader.api.FabricLoader.getInstance()
             .getConfigDir()
             .resolve(MOD_ID)
             .toAbsolutePath()
             .normalize();
-    runtime = new ClientRuntimeController(root, version);
+    runtime =
+        new ClientRuntimeController(
+            root, version, StandaloneClientEntrypoint.class.getClassLoader());
     tools = new CatalogToolExecutor(CATALOG);
     registerCatalogLifecycle();
     registerKey();

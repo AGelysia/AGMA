@@ -7,7 +7,7 @@ plugins {
     alias(libs.plugins.spotless)
 }
 
-version = providers.gradleProperty("standaloneVersion").orElse("0.3.1").get()
+version = providers.gradleProperty("standaloneVersion").orElse("0.3.2").get()
 
 base {
     archivesName = "AGMA-Standalone-Client-mc1.18.2-forge"
@@ -50,6 +50,7 @@ dependencies {
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.gson)
     testImplementation(libs.night.config.toml)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

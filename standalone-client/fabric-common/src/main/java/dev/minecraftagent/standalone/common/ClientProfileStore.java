@@ -6,7 +6,9 @@ import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
@@ -69,19 +71,21 @@ public final class ClientProfileStore {
   public RuntimeClientProfile configure(ClientSetup setup) {
     try {
       prepareRoots();
-      var installationId = existingInstallationId();
+      var existing = existingProfileForRetainedSecrets(setup);
+      var installationId =
+          existing == null ? existingInstallationId() : existing.identity().installationId();
       var profile = profile(setup, installationId, availablePort());
+      validateDistinctSecrets(setup, existing);
       if (!setup.storeConversations()) {
         deleteConversationData();
       }
-      if (setup.webSearch() != null && setup.apiKey().equals(setup.webSearch().apiKey())) {
-        throw new IllegalArgumentException("Model and Web Search API keys must be distinct");
+      if (!setup.apiKey().keepsExisting()) {
+        writeSecret(MODEL_SECRET, setup.apiKey().replacement());
       }
-      writeSecret(MODEL_SECRET, setup.apiKey());
       if (setup.webSearch() == null) {
         PrivateFilePermissions.deleteFileIfPresent(root, root.resolve(SEARCH_SECRET));
-      } else {
-        writeSecret(SEARCH_SECRET, setup.webSearch().apiKey());
+      } else if (!setup.webSearch().apiKey().keepsExisting()) {
+        writeSecret(SEARCH_SECRET, setup.webSearch().apiKey().replacement());
       }
       rotateConnectorToken();
       PrivateFilePermissions.atomicWrite(
@@ -162,6 +166,97 @@ public final class ClientProfileStore {
     } catch (RuntimeException ignored) {
       return UUID.randomUUID();
     }
+  }
+
+  private RuntimeClientProfile existingProfileForRetainedSecrets(ClientSetup setup) {
+    var keepModel = setup.apiKey().keepsExisting();
+    var keepSearch = setup.webSearch() != null && setup.webSearch().apiKey().keepsExisting();
+    if (!keepModel && !keepSearch) {
+      return null;
+    }
+    var missingField = keepModel ? "/model/apiKey" : "/webEvidence/apiKey";
+    if (!isConfigured()) {
+      throw retainedSecretMissing(missingField);
+    }
+    var existing = codec.load(profilePath());
+    if (keepModel) {
+      requirePrivateSecret(existing.model().apiKey(), MODEL_SECRET, "/model/apiKey");
+    }
+    if (keepSearch) {
+      if (existing.webEvidence() == null) {
+        throw retainedSecretMissing("/webEvidence/apiKey");
+      }
+      requirePrivateSecret(existing.webEvidence().apiKey(), SEARCH_SECRET, "/webEvidence/apiKey");
+    }
+    return existing;
+  }
+
+  private void requirePrivateSecret(
+      RuntimeClientProfile.SecretReference reference, String relativePath, String field) {
+    if (!"private_file".equals(reference.source()) || !relativePath.equals(reference.reference())) {
+      throw retainedSecretMissing(field);
+    }
+    try {
+      PrivateFilePermissions.verifyFile(root, root.resolve(relativePath));
+    } catch (IOException failure) {
+      throw new ClientConfigurationException(
+          "SECRET_REPLACEMENT_REQUIRED",
+          field,
+          "The existing private key is unavailable; enter a replacement",
+          failure);
+    }
+  }
+
+  private void validateDistinctSecrets(ClientSetup setup, RuntimeClientProfile existing) {
+    if (setup.webSearch() == null) {
+      return;
+    }
+    byte[] model = null;
+    byte[] search = null;
+    try {
+      if ((setup.apiKey().keepsExisting() || setup.webSearch().apiKey().keepsExisting())
+          && existing == null) {
+        throw retainedSecretMissing(
+            setup.apiKey().keepsExisting() ? "/model/apiKey" : "/webEvidence/apiKey");
+      }
+      var resolver = new ClientSecretResolver();
+      model =
+          setup.apiKey().keepsExisting()
+              ? resolveRetainedSecret(resolver, existing.model().apiKey(), "/model/apiKey")
+              : setup.apiKey().replacement().getBytes(StandardCharsets.UTF_8);
+      search =
+          setup.webSearch().apiKey().keepsExisting()
+              ? resolveRetainedSecret(
+                  resolver, existing.webEvidence().apiKey(), "/webEvidence/apiKey")
+              : setup.webSearch().apiKey().replacement().getBytes(StandardCharsets.UTF_8);
+      if (MessageDigest.isEqual(model, search)) {
+        throw new ClientConfigurationException(
+            "SECRET_REUSE",
+            "/webEvidence/apiKey",
+            "Model and Web Search API keys must be distinct");
+      }
+    } finally {
+      if (model != null) {
+        Arrays.fill(model, (byte) 0);
+      }
+      if (search != null) {
+        Arrays.fill(search, (byte) 0);
+      }
+    }
+  }
+
+  private byte[] resolveRetainedSecret(
+      ClientSecretResolver resolver, RuntimeClientProfile.SecretReference reference, String field) {
+    try (var secret = resolver.resolveSecret(reference, field, root, java.util.Map.of())) {
+      return secret.copyBytes();
+    }
+  }
+
+  private static ClientConfigurationException retainedSecretMissing(String field) {
+    return new ClientConfigurationException(
+        "SECRET_REPLACEMENT_REQUIRED",
+        field,
+        "The existing private key is unavailable; enter a replacement");
   }
 
   private RuntimeClientProfile profile(ClientSetup setup, UUID installationId, int port) {

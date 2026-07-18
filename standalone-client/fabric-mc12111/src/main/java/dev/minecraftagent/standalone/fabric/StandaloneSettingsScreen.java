@@ -1,11 +1,12 @@
 package dev.minecraftagent.standalone.fabric;
 
 import dev.minecraftagent.standalone.common.CatalogToolExecutor;
+import dev.minecraftagent.standalone.common.ClientConfigurationException;
 import dev.minecraftagent.standalone.common.ClientDiagnosticExporter;
 import dev.minecraftagent.standalone.common.ClientLifecycleState;
 import dev.minecraftagent.standalone.common.ClientRuntimeController;
 import dev.minecraftagent.standalone.common.ClientSetup;
-import java.math.BigDecimal;
+import dev.minecraftagent.standalone.common.ClientUsdAmount;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
@@ -38,6 +39,7 @@ public final class StandaloneSettingsScreen extends Screen {
   private String model = "";
   private String baseUrl = "";
   private String modelKey = "";
+  private boolean modelSecretConfigured;
   private String dailyRequests = "100";
   private String modelBudgetUsd = "5.000000";
   private String inputPriceUsd = "0";
@@ -48,11 +50,13 @@ public final class StandaloneSettingsScreen extends Screen {
   private boolean confirmUninstall;
   private boolean webEnabled;
   private String searchKey = "";
+  private boolean searchSecretConfigured;
   private String searchCostUsd = "0.000001";
   private String searchBudgetUsd = "0.100000";
   private String country = "CN";
   private String searchLanguage = "zh-cn";
   private String localStatus = "";
+  private boolean localStatusError;
 
   public StandaloneSettingsScreen(
       StandaloneCatalogService catalog,
@@ -268,10 +272,14 @@ public final class StandaloneSettingsScreen extends Screen {
       state.status = "";
       modelKey = "";
       searchKey = "";
+      modelSecretConfigured = false;
+      searchSecretConfigured = false;
       localStatus =
           Component.translatable("screen.agma_standalone.private_data_deleted").getString();
+      localStatusError = false;
     } catch (RuntimeException failure) {
       localStatus = "CONFIG_DELETE_FAILED";
+      localStatusError = true;
     }
     confirmDelete = false;
     rebuildWidgets();
@@ -287,8 +295,10 @@ public final class StandaloneSettingsScreen extends Screen {
       runtime.uninstallManagedRuntime();
       localStatus =
           Component.translatable("screen.agma_standalone.runtime_uninstalled").getString();
+      localStatusError = false;
     } catch (RuntimeException failure) {
       localStatus = "RUNTIME_UNINSTALL_FAILED";
+      localStatusError = true;
     }
     confirmUninstall = false;
     rebuildWidgets();
@@ -344,9 +354,9 @@ public final class StandaloneSettingsScreen extends Screen {
       if (webEnabled) {
         web =
             new ClientSetup.WebSearchSetup(
-                searchKey,
-                microUsd(searchCostUsd),
-                microUsd(searchBudgetUsd),
+                secretInput(searchKey, searchSecretConfigured),
+                ClientUsdAmount.parse(searchCostUsd, "/webEvidence/requestCostUsd"),
+                ClientUsdAmount.parse(searchBudgetUsd, "/webEvidence/monthlyBudgetUsd"),
                 country,
                 searchLanguage);
       }
@@ -355,20 +365,27 @@ public final class StandaloneSettingsScreen extends Screen {
               provider,
               url,
               model,
-              modelKey,
-              microUsd(inputPriceUsd),
-              microUsd(outputPriceUsd),
+              secretInput(modelKey, modelSecretConfigured),
+              ClientUsdAmount.parse(inputPriceUsd, "/model/inputPriceUsd"),
+              ClientUsdAmount.parse(outputPriceUsd, "/model/outputPriceUsd"),
               Integer.parseInt(dailyRequests),
-              microUsd(modelBudgetUsd),
+              ClientUsdAmount.parse(modelBudgetUsd, "/limits/monthlyBudgetUsd"),
               web,
               storeConversations,
               storeConversations ? Integer.parseInt(retentionDays) : 0));
       modelKey = "";
       searchKey = "";
+      modelSecretConfigured = true;
+      searchSecretConfigured = webEnabled;
       localStatus = Component.translatable("screen.agma_standalone.saved").getString();
+      localStatusError = false;
       rebuildWidgets();
+    } catch (ClientConfigurationException failure) {
+      localStatus = Component.translatable(validationKey(failure.field())).getString();
+      localStatusError = true;
     } catch (RuntimeException failure) {
       localStatus = Component.translatable("screen.agma_standalone.invalid_settings").getString();
+      localStatusError = true;
     }
   }
 
@@ -378,6 +395,7 @@ public final class StandaloneSettingsScreen extends Screen {
     }
     try {
       var profile = runtime.profileStore().load();
+      modelSecretConfigured = true;
       provider = profile.model().provider();
       model = profile.model().model();
       baseUrl = profile.model().baseUrl() == null ? "" : profile.model().baseUrl().toString();
@@ -389,6 +407,7 @@ public final class StandaloneSettingsScreen extends Screen {
       retentionDays = Integer.toString(storeConversations ? profile.privacy().retentionDays() : 30);
       if (profile.webEvidence() != null) {
         webEnabled = true;
+        searchSecretConfigured = true;
         searchCostUsd = usd(profile.webEvidence().requestCostMicroUsd());
         searchBudgetUsd = usd(profile.webEvidence().monthlyBudgetMicroUsd());
         country = profile.webEvidence().country();
@@ -396,6 +415,7 @@ public final class StandaloneSettingsScreen extends Screen {
       }
     } catch (RuntimeException failure) {
       localStatus = "CONFIG_FILE_INVALID";
+      localStatusError = true;
     }
   }
 
@@ -421,18 +441,35 @@ public final class StandaloneSettingsScreen extends Screen {
                   viewer));
       localStatus =
           Component.translatable("screen.agma_standalone.diagnostics_exported").getString();
+      localStatusError = false;
     } catch (RuntimeException failure) {
       localStatus = "DIAGNOSTIC_EXPORT_FAILED";
+      localStatusError = true;
     }
     rebuildWidgets();
   }
 
-  private static long microUsd(String value) {
-    return new BigDecimal(value.strip()).movePointRight(6).longValueExact();
+  private static ClientSetup.SecretInput secretInput(String value, boolean configured) {
+    return value.isBlank() && configured
+        ? ClientSetup.SecretInput.keepExisting()
+        : ClientSetup.SecretInput.replace(value);
   }
 
   private static String usd(long microUsd) {
-    return BigDecimal.valueOf(microUsd, 6).stripTrailingZeros().toPlainString();
+    return ClientUsdAmount.format(microUsd);
+  }
+
+  private static String validationKey(String field) {
+    return switch (field) {
+      case "/model/apiKey" -> "screen.agma_standalone.invalid_model_api_key";
+      case "/webEvidence/apiKey" -> "screen.agma_standalone.invalid_search_api_key";
+      case "/model/inputPriceUsd" -> "screen.agma_standalone.invalid_input_price";
+      case "/model/outputPriceUsd" -> "screen.agma_standalone.invalid_output_price";
+      case "/limits/monthlyBudgetUsd" -> "screen.agma_standalone.invalid_model_budget";
+      case "/webEvidence/requestCostUsd" -> "screen.agma_standalone.invalid_search_cost";
+      case "/webEvidence/monthlyBudgetUsd" -> "screen.agma_standalone.invalid_search_budget";
+      default -> "screen.agma_standalone.invalid_settings";
+    };
   }
 
   @Override
@@ -449,7 +486,13 @@ public final class StandaloneSettingsScreen extends Screen {
       label(graphics, left, top + 72, "screen.agma_standalone.provider");
       label(graphics, left, top + 96, "screen.agma_standalone.model");
       label(graphics, left, top + 120, "screen.agma_standalone.base_url");
-      label(graphics, left, top + 144, "screen.agma_standalone.model_api_key");
+      label(
+          graphics,
+          left,
+          top + 144,
+          modelSecretConfigured
+              ? "screen.agma_standalone.model_api_key_configured"
+              : "screen.agma_standalone.model_api_key");
     } else if (page == Page.LIMITS) {
       label(graphics, left, top + 72, "screen.agma_standalone.daily_limit");
       label(graphics, left, top + 102, "screen.agma_standalone.model_budget");
@@ -469,7 +512,13 @@ public final class StandaloneSettingsScreen extends Screen {
           false);
     } else {
       label(graphics, left, top + 72, "screen.agma_standalone.web_provider");
-      label(graphics, left, top + 102, "screen.agma_standalone.search_api_key");
+      label(
+          graphics,
+          left,
+          top + 102,
+          searchSecretConfigured
+              ? "screen.agma_standalone.search_api_key_configured"
+              : "screen.agma_standalone.search_api_key");
       label(graphics, left, top + 132, "screen.agma_standalone.search_cost");
       label(graphics, left, top + 162, "screen.agma_standalone.search_budget");
       label(graphics, left, top + 192, "screen.agma_standalone.locale");
@@ -477,10 +526,10 @@ public final class StandaloneSettingsScreen extends Screen {
     if (!localStatus.isBlank()) {
       graphics.drawString(
           font,
-          font.plainSubstrByWidth(localStatus, Math.max(20, panelWidth - 264)),
-          left + 248,
-          top + panelHeight - 22,
-          localStatus.equals("CONFIG_FILE_INVALID") ? WARNING_TEXT : ACCENT,
+          font.plainSubstrByWidth(localStatus, panelWidth - 32),
+          left + 16,
+          top + panelHeight - 42,
+          localStatusError ? WARNING_TEXT : ACCENT,
           false);
     }
     super.render(graphics, mouseX, mouseY, partialTick);

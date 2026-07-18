@@ -3,7 +3,7 @@
 ## Supported Version
 
 Security fixes are provided for the AGMA 0.1.0 Minecraft 1.21.11 server line and the separately
-versioned AGMA Standalone Client 0.3.1 line: Minecraft 1.18.2 on Fabric or Forge and Minecraft
+versioned AGMA Standalone Client 0.3.2 line: Minecraft 1.18.2 on Fabric or Forge and Minecraft
 1.21.11 on Fabric. Modified artifacts and dependency combinations not listed in
 [CLIENT-COMPATIBILITY.md](CLIENT-COMPATIBILITY.md) are unsupported.
 

@@ -7,9 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.electronwill.nightconfig.core.UnmodifiableConfig;
 import com.electronwill.nightconfig.toml.TomlParser;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class StandaloneForgeMetadataTest {
@@ -26,7 +29,7 @@ class StandaloneForgeMetadataTest {
     assertEquals("[40,)", descriptor.get("loaderVersion"));
     assertEquals("Apache-2.0", descriptor.get("license"));
     assertEquals(true, descriptor.get("clientSideOnly"));
-    assertEquals(true, descriptor.get("showAsResourcePack"));
+    assertEquals(false, descriptor.get("showAsResourcePack"));
     assertFalse(descriptor.contains("mixins"));
 
     List<? extends UnmodifiableConfig> mods = descriptor.get("mods");
@@ -72,6 +75,84 @@ class StandaloneForgeMetadataTest {
     assertTrue(constants.contains("net/minecraftforge/fml/DistExecutor"));
     assertTrue(constants.contains("unsafeRunWhenOn"));
     assertTrue(constants.contains("StandaloneForgeClient"));
+  }
+
+  @Test
+  void clientResourcesContainUsableLanguageBundles() throws Exception {
+    var english = languageKeys("assets/agma_standalone/lang/en_us.json");
+    var chinese = languageKeys("assets/agma_standalone/lang/zh_cn.json");
+    assertEquals(english, chinese);
+    assertTrue(
+        english.containsAll(
+            Set.of(
+                "key.agma_standalone.open",
+                "key.categories.agma_standalone",
+                "screen.agma_standalone.catalog",
+                "screen.agma_standalone.ask",
+                "screen.agma_standalone.settings",
+                "screen.agma_standalone.start_runtime",
+                "screen.agma_standalone.stop_runtime",
+                "screen.agma_standalone.runtime_state",
+                "screen.agma_standalone.input_price",
+                "screen.agma_standalone.output_price",
+                "screen.agma_standalone.invalid_settings",
+                "screen.agma_standalone.model_api_key_configured",
+                "screen.agma_standalone.search_api_key_configured",
+                "screen.agma_standalone.invalid_model_api_key",
+                "screen.agma_standalone.invalid_search_api_key",
+                "screen.agma_standalone.invalid_input_price",
+                "screen.agma_standalone.invalid_output_price",
+                "screen.agma_standalone.invalid_model_budget",
+                "screen.agma_standalone.invalid_search_cost",
+                "screen.agma_standalone.invalid_search_budget",
+                "screen.agma_standalone.runtime_unconfigured",
+                "screen.agma_standalone.runtime_unconfigured_detail",
+                "screen.agma_standalone.runtime_stopped_state",
+                "screen.agma_standalone.runtime_stopped_state_detail",
+                "screen.agma_standalone.runtime_starting_state",
+                "screen.agma_standalone.runtime_starting_state_detail",
+                "screen.agma_standalone.runtime_connecting_state",
+                "screen.agma_standalone.runtime_connecting_state_detail",
+                "screen.agma_standalone.runtime_running_state",
+                "screen.agma_standalone.runtime_running_state_detail",
+                "screen.agma_standalone.runtime_running_counts",
+                "screen.agma_standalone.runtime_recovering_state",
+                "screen.agma_standalone.runtime_recovering_state_detail",
+                "screen.agma_standalone.runtime_stopping_state",
+                "screen.agma_standalone.runtime_stopping_state_detail",
+                "screen.agma_standalone.runtime_error_state",
+                "screen.agma_standalone.runtime_error_state_detail",
+                "screen.agma_standalone.runtime_configure",
+                "screen.agma_standalone.runtime_cancel_start",
+                "screen.agma_standalone.runtime_restart",
+                "screen.agma_standalone.runtime_wait",
+                "screen.agma_standalone.runtime_retry")));
+
+    try (var input = getClass().getClassLoader().getResourceAsStream("pack.mcmeta")) {
+      assertNotNull(input);
+      var pack = JsonParser.parseReader(new InputStreamReader(input, StandardCharsets.UTF_8));
+      assertTrue(pack.isJsonObject());
+      JsonObject packSection = pack.getAsJsonObject().getAsJsonObject("pack");
+      assertNotNull(packSection);
+      assertEquals(
+          "AGMA Standalone Client resources", packSection.get("description").getAsString());
+      assertEquals(8, packSection.get("pack_format").getAsInt());
+    }
+  }
+
+  private static Set<String> languageKeys(String path) throws Exception {
+    try (var input = StandaloneForgeMetadataTest.class.getClassLoader().getResourceAsStream(path)) {
+      assertNotNull(input);
+      var json = JsonParser.parseReader(new InputStreamReader(input, StandardCharsets.UTF_8));
+      assertTrue(json.isJsonObject());
+      var object = json.getAsJsonObject();
+      for (var entry : object.entrySet()) {
+        var value = entry.getValue();
+        assertTrue(value.isJsonPrimitive() && value.getAsJsonPrimitive().isString());
+        assertFalse(value.getAsString().isBlank());
+      }
+      return Set.copyOf(object.keySet());
+    }
   }
 
   private static String classConstants(Class<?> type) throws Exception {

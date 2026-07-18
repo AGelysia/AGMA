@@ -348,7 +348,7 @@ function forgeModsToml(clientVersion) {
 loaderVersion = "[40,)"
 license = "Apache-2.0"
 clientSideOnly = true
-showAsResourcePack = true
+showAsResourcePack = false
 
 [[mods]]
 modId = "agma_standalone"

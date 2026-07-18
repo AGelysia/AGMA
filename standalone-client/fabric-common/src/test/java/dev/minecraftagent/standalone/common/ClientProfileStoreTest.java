@@ -64,6 +64,190 @@ final class ClientProfileStoreTest {
   }
 
   @Test
+  void priceOnlyUpdateRetainsTheExistingModelSecret() throws Exception {
+    var root = temporary.resolve("state").toAbsolutePath().normalize();
+    var store = new ClientProfileStore(root);
+    store.configure(setup("provider-secret-value-123456789"));
+    var secret = root.resolve("secrets/model-api-key");
+    var before = Files.readString(secret, StandardCharsets.UTF_8);
+
+    var updated =
+        store.configure(
+            new ClientSetup(
+                "openai",
+                URI.create("https://api.openai.com/v1"),
+                "gpt-4.1-mini",
+                ClientSetup.SecretInput.keepExisting(),
+                150_000,
+                600_000,
+                100,
+                5_000_000,
+                null,
+                false,
+                0));
+
+    assertEquals(150_000, updated.model().inputMicroUsdPerMillionTokens());
+    assertEquals(600_000, updated.model().outputMicroUsdPerMillionTokens());
+    assertEquals(before, Files.readString(secret, StandardCharsets.UTF_8));
+  }
+
+  @Test
+  void retainedSecretsRequireAnExistingPrivateKey() {
+    var store = new ClientProfileStore(temporary.resolve("state").toAbsolutePath().normalize());
+    var failure =
+        assertThrows(
+            ClientConfigurationException.class,
+            () ->
+                store.configure(
+                    new ClientSetup(
+                        "openai",
+                        URI.create("https://api.openai.com/v1"),
+                        "gpt-4.1-mini",
+                        ClientSetup.SecretInput.keepExisting(),
+                        150_000,
+                        600_000,
+                        100,
+                        5_000_000,
+                        null,
+                        false,
+                        0)));
+    assertEquals("SECRET_REPLACEMENT_REQUIRED", failure.code());
+    assertEquals("/model/apiKey", failure.field());
+  }
+
+  @Test
+  void webSettingsUpdateRetainsAndCanRemoveTheExistingSearchSecret() throws Exception {
+    var root = temporary.resolve("state").toAbsolutePath().normalize();
+    var store = new ClientProfileStore(root);
+    store.configure(
+        new ClientSetup(
+            "openai",
+            URI.create("https://api.openai.com/v1"),
+            "gpt-4.1-mini",
+            "provider-secret-value-123456789",
+            150_000,
+            600_000,
+            100,
+            5_000_000,
+            new ClientSetup.WebSearchSetup(
+                "search-secret-value-987654321", 1, 100_000, "CN", "zh-cn"),
+            false,
+            0));
+    var searchSecret = root.resolve("secrets/search-api-key");
+    var before = Files.readString(searchSecret, StandardCharsets.UTF_8);
+
+    var updated =
+        store.configure(
+            new ClientSetup(
+                "openai",
+                URI.create("https://api.openai.com/v1"),
+                "gpt-4.1-mini",
+                ClientSetup.SecretInput.keepExisting(),
+                200_000,
+                800_000,
+                100,
+                5_000_000,
+                new ClientSetup.WebSearchSetup(
+                    ClientSetup.SecretInput.keepExisting(), 2, 200_000, "US", "en-us"),
+                false,
+                0));
+    assertEquals(2, updated.webEvidence().requestCostMicroUsd());
+    assertEquals(before, Files.readString(searchSecret, StandardCharsets.UTF_8));
+
+    store.configure(
+        new ClientSetup(
+            "openai",
+            URI.create("https://api.openai.com/v1"),
+            "gpt-4.1-mini",
+            ClientSetup.SecretInput.keepExisting(),
+            200_000,
+            800_000,
+            100,
+            5_000_000,
+            null,
+            false,
+            0));
+    assertFalse(Files.exists(searchSecret));
+  }
+
+  @Test
+  void replacesAMissingSearchSecretWhileRetainingTheModelSecret() throws Exception {
+    var root = temporary.resolve("state").toAbsolutePath().normalize();
+    var store = new ClientProfileStore(root);
+    store.configure(
+        new ClientSetup(
+            "openai",
+            URI.create("https://api.openai.com/v1"),
+            "gpt-4.1-mini",
+            "provider-secret-value-123456789",
+            150_000,
+            600_000,
+            100,
+            5_000_000,
+            new ClientSetup.WebSearchSetup(
+                "search-secret-value-987654321", 1, 100_000, "CN", "zh-cn"),
+            false,
+            0));
+    var modelSecret = root.resolve("secrets/model-api-key");
+    var searchSecret = root.resolve("secrets/search-api-key");
+    var modelBefore = Files.readString(modelSecret, StandardCharsets.UTF_8);
+    Files.delete(searchSecret);
+
+    var updated =
+        store.configure(
+            new ClientSetup(
+                "openai",
+                URI.create("https://api.openai.com/v1"),
+                "gpt-4.1-mini",
+                ClientSetup.SecretInput.keepExisting(),
+                200_000,
+                800_000,
+                100,
+                5_000_000,
+                new ClientSetup.WebSearchSetup(
+                    ClientSetup.SecretInput.replace("replacement-search-secret-246813579"),
+                    2,
+                    200_000,
+                    "US",
+                    "en-us"),
+                false,
+                0));
+
+    assertEquals(modelBefore, Files.readString(modelSecret, StandardCharsets.UTF_8));
+    try (var secrets = new ClientSecretResolver().resolve(updated, root, Map.of())) {
+      assertEquals(
+          "replacement-search-secret-246813579",
+          new String(secrets.searchApiKey().copyBytes(), StandardCharsets.UTF_8));
+    }
+  }
+
+  @Test
+  void enablingWebSearchRequiresANewSearchKey() {
+    var store = new ClientProfileStore(temporary.resolve("state").toAbsolutePath().normalize());
+    store.configure(setup("provider-secret-value-123456789"));
+    var failure =
+        assertThrows(
+            ClientConfigurationException.class,
+            () ->
+                store.configure(
+                    new ClientSetup(
+                        "openai",
+                        URI.create("https://api.openai.com/v1"),
+                        "gpt-4.1-mini",
+                        ClientSetup.SecretInput.keepExisting(),
+                        150_000,
+                        600_000,
+                        100,
+                        5_000_000,
+                        new ClientSetup.WebSearchSetup(
+                            ClientSetup.SecretInput.keepExisting(), 1, 100_000, "CN", "zh-cn"),
+                        false,
+                        0)));
+    assertEquals("SECRET_REPLACEMENT_REQUIRED", failure.code());
+    assertEquals("/webEvidence/apiKey", failure.field());
+  }
+
+  @Test
   void storesAnOptionalDistinctSearchSecretWithoutSerializingIt() throws Exception {
     var root = temporary.resolve("state").toAbsolutePath().normalize();
     var store = new ClientProfileStore(root);

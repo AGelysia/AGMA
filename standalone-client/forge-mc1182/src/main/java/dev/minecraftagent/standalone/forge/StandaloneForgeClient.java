@@ -57,10 +57,11 @@ final class StandaloneForgeClient {
           ModList.get()
               .getModContainerById(StandaloneForgeMod.MOD_ID)
               .map(container -> container.getModInfo().getVersion().toString())
-              .orElse("0.3.1");
+              .orElse("0.3.2");
       var root =
           FMLPaths.CONFIGDIR.get().resolve(StandaloneForgeMod.MOD_ID).toAbsolutePath().normalize();
-      runtime = new ClientRuntimeController(root, version);
+      runtime =
+          new ClientRuntimeController(root, version, StandaloneForgeClient.class.getClassLoader());
       tools = new CatalogToolExecutor(CATALOG);
       OptionalViewerRegistry.setRefresh(StandaloneForgeClient::refreshCatalog);
       CATALOG.refresh(Minecraft.getInstance());

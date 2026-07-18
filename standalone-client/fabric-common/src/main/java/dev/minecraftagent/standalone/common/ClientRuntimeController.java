@@ -45,10 +45,12 @@ public final class ClientRuntimeController implements AutoCloseable {
   private boolean closed;
 
   public ClientRuntimeController(Path root, String componentVersion) {
-    this(
-        root,
-        componentVersion,
-        () -> EmbeddedRuntimeDistribution.load(ClientRuntimeController.class.getClassLoader()));
+    this(root, componentVersion, ClientRuntimeController.class.getClassLoader());
+  }
+
+  public ClientRuntimeController(
+      Path root, String componentVersion, ClassLoader runtimeResourceLoader) {
+    this(root, componentVersion, distribution(runtimeResourceLoader));
   }
 
   ClientRuntimeController(
@@ -70,9 +72,22 @@ public final class ClientRuntimeController implements AutoCloseable {
     loadExistingProfile();
   }
 
-  public synchronized ClientRuntimeView view() {
-    var tools = connectorSession == null ? Set.<String>of() : connectorSession.activeTools();
-    return new ClientRuntimeView(profileSession.snapshot(), tools, startupFailureCode);
+  public ClientRuntimeView view() {
+    final ClientProfileSnapshot profile;
+    final String failureCode;
+    final RuntimeSupervisor activeSupervisor;
+    final LocalConnector.Session activeSession;
+    synchronized (this) {
+      profile = profileSession.snapshot();
+      failureCode = startupFailureCode;
+      activeSupervisor = supervisor;
+      activeSession = connectorSession;
+    }
+    var tools = activeSession == null ? Set.<String>of() : activeSession.activeTools();
+    var activeConnectorState = activeSession == null ? null : activeSession.state();
+    var supervisorSnapshot = activeSupervisor == null ? null : activeSupervisor.snapshot();
+    return new ClientRuntimeView(
+        profile, tools, failureCode, supervisorSnapshot, activeConnectorState);
   }
 
   public synchronized RuntimeClientProfile configure(ClientSetup setup) {
@@ -509,5 +524,10 @@ public final class ClientRuntimeController implements AutoCloseable {
 
   private static <T> CompletionStage<T> failed(Throwable failure) {
     return CompletableFuture.failedFuture(failure);
+  }
+
+  private static Supplier<EmbeddedRuntimeDistribution> distribution(ClassLoader loader) {
+    Objects.requireNonNull(loader, "runtimeResourceLoader");
+    return () -> EmbeddedRuntimeDistribution.load(loader);
   }
 }

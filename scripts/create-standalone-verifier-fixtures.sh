@@ -99,7 +99,7 @@ make_forge_base() {
     'loaderVersion = "[40,)"' \
     'license = "Apache-2.0"' \
     'clientSideOnly = true' \
-    'showAsResourcePack = true' \
+    'showAsResourcePack = false' \
     '' \
     '[[mods]]' \
     'modId = "agma_standalone"' \

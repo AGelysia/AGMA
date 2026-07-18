@@ -391,7 +391,7 @@ function validateForgeMetadata(jar, entries, name, version, minecraft) {
     forge.root.loaderVersion !== "[40,)" ||
     forge.root.license !== "Apache-2.0" ||
     forge.root.clientSideOnly !== true ||
-    forge.root.showAsResourcePack !== true ||
+    forge.root.showAsResourcePack !== false ||
     forge.mods.length !== 1 ||
     !exactKeys(mod, [
       "modId",

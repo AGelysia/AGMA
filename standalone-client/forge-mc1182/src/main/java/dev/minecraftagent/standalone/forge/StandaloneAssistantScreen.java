@@ -4,14 +4,15 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import dev.minecraftagent.standalone.common.CatalogToolExecutor;
 import dev.minecraftagent.standalone.common.ClientLifecycleState;
 import dev.minecraftagent.standalone.common.ClientRuntimeController;
+import dev.minecraftagent.standalone.common.RuntimeStatus;
 import dev.minecraftagent.standalone.common.TextCompletion;
 import dev.minecraftagent.standalone.common.TextRequest;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
+import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -29,12 +30,17 @@ public final class StandaloneAssistantScreen extends Screen {
   private static final int PRIMARY_TEXT = 0xFFF2F5F6;
   private static final int SECONDARY_TEXT = 0xFFADB7BC;
   private static final int WARNING_TEXT = 0xFFE5B567;
+  private static final int STATUS_BACKGROUND = 0xF022292E;
 
   private final StandaloneCatalogService catalog;
   private final ClientRuntimeController runtime;
   private final CatalogToolExecutor tools;
   private final StandaloneUiState state;
   private EditBox questionBox;
+  private RuntimeStatus liveRuntimeStatus;
+  private boolean runtimeStatusUnavailable;
+  private boolean runtimeStatusPending;
+  private int runtimeStatusRefreshTicks = 40;
 
   public StandaloneAssistantScreen(
       StandaloneCatalogService catalog,
@@ -55,6 +61,7 @@ public final class StandaloneAssistantScreen extends Screen {
     var left = (width - panelWidth) / 2;
     var top = (height - panelHeight) / 2;
     addTabs(left, top, panelWidth);
+    var runtimePanel = RuntimePanelStatus.from(runtime.view(), runtimeStatusUnavailable);
     questionBox =
         new EditBox(
             font,
@@ -77,8 +84,7 @@ public final class StandaloneAssistantScreen extends Screen {
             tr("screen.agma_standalone.send"),
             ignored -> send());
     ask.active =
-        runtime.view().profile().state() == ClientLifecycleState.READY
-            && state.activeRequestId == null;
+        runtimePanel.state() == RuntimePanelStatus.State.RUNNING && state.activeRequestId == null;
     addRenderableWidget(ask);
 
     var half = (panelWidth - 38) / 2;
@@ -107,30 +113,15 @@ public final class StandaloneAssistantScreen extends Screen {
       }
     }
 
-    var lifecycle = runtime.view().profile().state();
-    if (lifecycle == ClientLifecycleState.READY
-        || lifecycle == ClientLifecycleState.STARTING
-        || lifecycle == ClientLifecycleState.STOPPING) {
-      var stop =
-          button(
-              left + 16,
-              top + panelHeight - 28,
-              120,
-              tr("screen.agma_standalone.stop_runtime"),
-              ignored -> stopRuntime());
-      stop.active = lifecycle != ClientLifecycleState.STOPPING;
-      addRenderableWidget(stop);
-    } else {
-      var start =
-          button(
-              left + 16,
-              top + panelHeight - 28,
-              120,
-              tr("screen.agma_standalone.start_runtime"),
-              ignored -> startRuntime());
-      start.active = lifecycle != ClientLifecycleState.UNCONFIGURED;
-      addRenderableWidget(start);
-    }
+    var runtimeAction =
+        button(
+            left + 16,
+            top + panelHeight - 28,
+            120,
+            tr(runtimePanel.action().labelKey()),
+            ignored -> handleRuntimeAction(runtimePanel.action()));
+    runtimeAction.active = runtimePanel.action() != RuntimePanelStatus.Action.WAIT;
+    addRenderableWidget(runtimeAction);
     if (state.activeRequestId != null) {
       addRenderableWidget(
           button(
@@ -154,6 +145,19 @@ public final class StandaloneAssistantScreen extends Screen {
             20,
             new TextComponent("v"),
             ignored -> scroll(1)));
+  }
+
+  private void handleRuntimeAction(RuntimePanelStatus.Action action) {
+    switch (action) {
+      case CONFIGURE ->
+          minecraft.setScreen(new StandaloneSettingsScreen(catalog, runtime, tools, state));
+      case START, RETRY -> startRuntime();
+      case CANCEL_START, STOP -> stopRuntime();
+      case RESTART -> restartRuntime();
+      case WAIT -> {
+        // The disabled action documents the current transition without accepting input.
+      }
+    }
   }
 
   private void addTabs(int left, int top, int panelWidth) {
@@ -186,24 +190,22 @@ public final class StandaloneAssistantScreen extends Screen {
   }
 
   private void startRuntime() {
-    state.status = tr("screen.agma_standalone.runtime_starting").getString();
+    liveRuntimeStatus = null;
+    runtimeStatusUnavailable = false;
+    var startup = runtime.start(tools);
     rebuild();
-    runtime
-        .start(tools)
-        .whenComplete(
-            (snapshot, failure) ->
-                minecraft.execute(
-                    () -> {
-                      state.status =
-                          failure == null
-                              ? tr("screen.agma_standalone.runtime_ready").getString()
-                              : safeRuntimeFailure();
-                      rebuild();
-                    }));
+    startup.whenComplete(
+        (snapshot, failure) ->
+            minecraft.execute(
+                () -> {
+                  runtimeStatusUnavailable = failure != null;
+                  rebuild();
+                }));
   }
 
   private void stopRuntime() {
-    state.status = tr("screen.agma_standalone.runtime_stopping").getString();
+    liveRuntimeStatus = null;
+    runtimeStatusUnavailable = false;
     runtime
         .stop()
         .whenComplete(
@@ -211,8 +213,27 @@ public final class StandaloneAssistantScreen extends Screen {
                 minecraft.execute(
                     () -> {
                       state.activeRequestId = null;
-                      state.status = tr("screen.agma_standalone.runtime_stopped").getString();
+                      runtimeStatusUnavailable = failure != null;
                       rebuild();
+                    }));
+    rebuild();
+  }
+
+  private void restartRuntime() {
+    liveRuntimeStatus = null;
+    runtimeStatusUnavailable = false;
+    runtime
+        .stop()
+        .whenComplete(
+            (snapshot, failure) ->
+                minecraft.execute(
+                    () -> {
+                      if (failure != null) {
+                        runtimeStatusUnavailable = true;
+                        rebuild();
+                        return;
+                      }
+                      startRuntime();
                     }));
     rebuild();
   }
@@ -365,11 +386,6 @@ public final class StandaloneAssistantScreen extends Screen {
     }
   }
 
-  private String safeRuntimeFailure() {
-    var code = runtime.view().startupFailureCode();
-    return code == null ? "RUNTIME_START_FAILED" : code;
-  }
-
   private void scroll(int delta) {
     state.answerScroll = Math.max(0, state.answerScroll + delta);
   }
@@ -388,6 +404,52 @@ public final class StandaloneAssistantScreen extends Screen {
   }
 
   @Override
+  public void tick() {
+    super.tick();
+    if (questionBox != null) {
+      questionBox.tick();
+    }
+    runtimeStatusRefreshTicks++;
+    if (runtimeStatusRefreshTicks >= 40) {
+      runtimeStatusRefreshTicks = 0;
+      refreshRuntimeStatus();
+    }
+  }
+
+  private void refreshRuntimeStatus() {
+    if (runtimeStatusPending) {
+      return;
+    }
+    var view = runtime.view();
+    if (view.profile().state() != ClientLifecycleState.READY) {
+      liveRuntimeStatus = null;
+      runtimeStatusUnavailable = false;
+      return;
+    }
+    runtimeStatusPending = true;
+    runtime
+        .queryStatus()
+        .whenComplete(
+            (status, failure) ->
+                minecraft.execute(
+                    () -> {
+                      runtimeStatusPending = false;
+                      if (minecraft.screen != this) {
+                        return;
+                      }
+                      var wasUnavailable = runtimeStatusUnavailable;
+                      liveRuntimeStatus = failure == null ? status : null;
+                      runtimeStatusUnavailable =
+                          failure != null
+                              || status == null
+                              || status.state() != RuntimeStatus.State.READY;
+                      if (wasUnavailable != runtimeStatusUnavailable) {
+                        rebuild();
+                      }
+                    }));
+  }
+
+  @Override
   public void render(PoseStack pose, int mouseX, int mouseY, float partialTick) {
     renderBackground(pose);
     var panelWidth = Math.min(PANEL_MAXIMUM_WIDTH, Math.max(300, width - 24));
@@ -397,14 +459,7 @@ public final class StandaloneAssistantScreen extends Screen {
     fill(pose, left, top, left + panelWidth, top + panelHeight, PANEL_BACKGROUND);
     fill(pose, left, top, left + panelWidth, top + 1, PANEL_BORDER);
     fill(pose, left, top, left + 3, top + panelHeight, ACCENT);
-    font.draw(
-        pose,
-        new TranslatableComponent(
-            "screen.agma_standalone.runtime_state",
-            runtime.view().profile().state().name().toLowerCase(Locale.ROOT)),
-        left + 16,
-        top + 42,
-        SECONDARY_TEXT);
+    renderRuntimePanel(pose, left, top, panelWidth);
     if (state.lastCostKind != null) {
       var cost =
           new TranslatableComponent(
@@ -415,7 +470,7 @@ public final class StandaloneAssistantScreen extends Screen {
           pose,
           font.plainSubstrByWidth(cost.getString(), panelWidth - 32),
           left + 16,
-          top + 54,
+          top + 132,
           SECONDARY_TEXT);
     }
     var selected =
@@ -428,8 +483,15 @@ public final class StandaloneAssistantScreen extends Screen {
         left + 16,
         top + 120,
         SECONDARY_TEXT);
+    var answerTop = state.lastCostKind == null ? 142 : 154;
     var lines = font.split(new TextComponent(state.answer), panelWidth - 44);
-    var maximumLines = Math.max(2, (panelHeight - (state.sources.isEmpty() ? 190 : 216)) / 10);
+    var maximumLines =
+        Math.max(
+            2,
+            (panelHeight
+                    - (state.sources.isEmpty() ? 190 : 216)
+                    - (state.lastCostKind == null ? 0 : 12))
+                / 10);
     var maximumScroll = Math.max(0, lines.size() - maximumLines);
     state.answerScroll = Math.min(state.answerScroll, maximumScroll);
     for (var index = 0;
@@ -439,7 +501,7 @@ public final class StandaloneAssistantScreen extends Screen {
           pose,
           lines.get(state.answerScroll + index),
           left + 16,
-          top + 142 + index * 10,
+          top + answerTop + index * 10,
           PRIMARY_TEXT);
     }
     if (!state.status.isBlank()) {
@@ -451,6 +513,31 @@ public final class StandaloneAssistantScreen extends Screen {
           state.status.endsWith("FAILED") ? WARNING_TEXT : ACCENT);
     }
     super.render(pose, mouseX, mouseY, partialTick);
+  }
+
+  private void renderRuntimePanel(PoseStack pose, int left, int top, int panelWidth) {
+    var panel = RuntimePanelStatus.from(runtime.view(), runtimeStatusUnavailable);
+    fill(pose, left + 16, top + 38, left + panelWidth - 16, top + 62, STATUS_BACKGROUND);
+    fill(pose, left + 22, top + 45, left + 29, top + 52, panel.state().color());
+    font.draw(
+        pose,
+        tr(panel.state().titleKey()).withStyle(ChatFormatting.BOLD),
+        left + 36,
+        top + 40,
+        panel.state().color());
+    var detail =
+        panel.state() == RuntimePanelStatus.State.RUNNING && liveRuntimeStatus != null
+            ? new TranslatableComponent(
+                "screen.agma_standalone.runtime_running_counts",
+                liveRuntimeStatus.activeRequests(),
+                liveRuntimeStatus.queuedRequests())
+            : tr(panel.state().detailKey());
+    font.draw(
+        pose,
+        font.plainSubstrByWidth(detail.getString(), panelWidth - 56),
+        left + 36,
+        top + 51,
+        SECONDARY_TEXT);
   }
 
   private static TranslatableComponent tr(String key) {

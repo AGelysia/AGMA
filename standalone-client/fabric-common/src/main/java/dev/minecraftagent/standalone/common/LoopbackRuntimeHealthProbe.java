@@ -23,7 +23,11 @@ public final class LoopbackRuntimeHealthProbe implements RuntimeHealthProbe {
     if (port < 1024 || port > 65_535) {
       throw new IllegalArgumentException("Runtime health port is out of range");
     }
-    client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(1)).build();
+    client =
+        HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_1_1)
+            .connectTimeout(Duration.ofSeconds(1))
+            .build();
     endpoint = URI.create("http://127.0.0.1:" + port + "/health");
   }
 
