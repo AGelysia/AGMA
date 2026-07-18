@@ -26,6 +26,7 @@ tasks.register("checkAll") {
         ":standalone-client:fabric-common:check",
         ":standalone-client:fabric-mc12111:check",
         ":standalone-client:fabric-mc1182:check",
+        ":standalone-client:forge-mc1182:check",
     )
 }
 
@@ -40,5 +41,6 @@ tasks.register("formatAll") {
         ":standalone-client:fabric-common:spotlessApply",
         ":standalone-client:fabric-mc12111:spotlessApply",
         ":standalone-client:fabric-mc1182:spotlessApply",
+        ":standalone-client:forge-mc1182:spotlessApply",
     )
 }

@@ -16,14 +16,20 @@ if (-not (Test-Path -LiteralPath $Release -PathType Container)) {
     throw "Standalone release directory is missing."
 }
 
-$MinecraftVersions = @("1.18.2", "1.21.11")
+$Targets = @(
+    [PSCustomObject]@{ Minecraft = "1.18.2"; Loader = "fabric" },
+    [PSCustomObject]@{ Minecraft = "1.18.2"; Loader = "forge" },
+    [PSCustomObject]@{ Minecraft = "1.21.11"; Loader = "fabric" }
+)
 $Platforms = @("linux-x86_64", "windows-x86_64")
 $ChecksumName = "AGMA-Client-Standalone-$Version-SHA256SUMS"
 $SbomName = "AGMA-Client-Standalone-$Version-SBOM.cdx.json"
 $Expected = [System.Collections.Generic.List[string]]::new()
-foreach ($Minecraft in $MinecraftVersions) {
+foreach ($Target in $Targets) {
     foreach ($Platform in $Platforms) {
-        $Expected.Add("AGMA-Client-Standalone-$Version-mc$Minecraft-fabric-$Platform.jar")
+        $Expected.Add(
+            "AGMA-Client-Standalone-$Version-mc$($Target.Minecraft)-$($Target.Loader)-$Platform.jar"
+        )
     }
 }
 $Expected.Add($SbomName)
@@ -43,8 +49,8 @@ foreach ($Line in Get-Content -LiteralPath (Join-Path $Release $ChecksumName)) {
     }
     $Checksums[$Matches[2]] = $Matches[1]
 }
-if ($Checksums.Count -ne 5) {
-    throw "Standalone checksum manifest does not cover exactly four JARs and one SBOM."
+if ($Checksums.Count -ne 7) {
+    throw "Standalone checksum manifest does not cover exactly six JARs and one SBOM."
 }
 
 $Sbom = Get-Content -LiteralPath (Join-Path $Release $SbomName) -Raw | ConvertFrom-Json
@@ -66,10 +72,90 @@ if (
     $Sbom.version -ne 1 -or
     $Sbom.metadata.component.name -ne 'AGMA Client Standalone' -or
     $Sbom.metadata.component.version -ne $Version -or
-    @($Sbom.components).Count -lt 9 -or
-    @($Sbom.dependencies).Count -lt 10
+    @($Sbom.components).Count -lt 11 -or
+    @($Sbom.dependencies).Count -lt 12
 ) {
     throw "Standalone CycloneDX SBOM identity or component inventory is invalid."
+}
+$ReleaseCountProperty = @(
+    $Sbom.metadata.properties |
+        Where-Object { $_.name -eq "dev.minecraftagent.agma:releaseArtifactCount" }
+)
+$JarComponents = @(
+    $Sbom.components |
+        Where-Object {
+            $_.type -eq "application" -and
+            $_.name -like "AGMA Client Standalone mc*"
+        }
+)
+if (
+    $ReleaseCountProperty.Count -ne 1 -or
+    [string]$ReleaseCountProperty[0].value -ne "6" -or
+    $JarComponents.Count -ne 6
+) {
+    throw "Standalone CycloneDX SBOM does not describe exactly six release JAR components."
+}
+foreach ($Target in $Targets) {
+    foreach ($Platform in $Platforms) {
+        $Name = "AGMA-Client-Standalone-$Version-mc$($Target.Minecraft)-$($Target.Loader)-$Platform.jar"
+        $Components = @(
+            $JarComponents |
+                Where-Object {
+                    @(
+                        $_.properties |
+                            Where-Object {
+                                $_.name -eq "dev.minecraftagent.agma:releaseAsset" -and
+                                $_.value -eq $Name
+                            }
+                    ).Count -eq 1
+                }
+        )
+        if ($Components.Count -ne 1) {
+            throw "Standalone CycloneDX SBOM has no unique JAR component for $Name."
+        }
+        $Component = $Components[0]
+        $LoaderProperties = @(
+            $Component.properties |
+                Where-Object {
+                    $_.name -eq "dev.minecraftagent.agma:loader" -and
+                    $_.value -eq $Target.Loader
+                }
+        )
+        $MinecraftProperties = @(
+            $Component.properties |
+                Where-Object {
+                    $_.name -eq "dev.minecraftagent.agma:minecraftVersion" -and
+                    $_.value -eq $Target.Minecraft
+                }
+        )
+        $PlatformProperties = @(
+            $Component.properties |
+                Where-Object {
+                    $_.name -eq "dev.minecraftagent.agma:platform" -and
+                    $_.value -eq $Platform
+                }
+        )
+        $Hashes = @(
+            $Component.hashes |
+                Where-Object {
+                    $_.alg -eq "SHA-256" -and
+                    $_.content -eq $Checksums[$Name]
+                }
+        )
+        $ExpectedPurl = "pkg:generic/AGMA-Client-Standalone@${Version}?loader=$($Target.Loader)&minecraft=$($Target.Minecraft)&platform=$Platform"
+        if (
+            $Component.group -ne "dev.minecraftagent" -or
+            $Component.version -ne $Version -or
+            $Component.name -ne "AGMA Client Standalone mc$($Target.Minecraft) $($Target.Loader) $Platform" -or
+            $Component.purl -ne $ExpectedPurl -or
+            $LoaderProperties.Count -ne 1 -or
+            $MinecraftProperties.Count -ne 1 -or
+            $PlatformProperties.Count -ne 1 -or
+            $Hashes.Count -ne 1
+        ) {
+            throw "Standalone CycloneDX SBOM loader, platform, or hash metadata is invalid for $Name."
+        }
+    }
 }
 foreach ($Name in $Expected | Where-Object { $_ -ne $ChecksumName }) {
     $Path = Join-Path $Release $Name
@@ -112,8 +198,11 @@ $Temporary = Join-Path ([System.IO.Path]::GetTempPath()) ("agma-standalone-windo
 [System.IO.Directory]::CreateDirectory($Temporary) | Out-Null
 try {
     $WindowsRuntimeHashes = @{}
-    foreach ($Minecraft in $MinecraftVersions) {
-        $Name = "AGMA-Client-Standalone-$Version-mc$Minecraft-fabric-windows-x86_64.jar"
+    foreach ($Target in $Targets) {
+        $Minecraft = $Target.Minecraft
+        $Loader = $Target.Loader
+        $TargetKey = "$Minecraft-$Loader"
+        $Name = "AGMA-Client-Standalone-$Version-mc$Minecraft-$Loader-windows-x86_64.jar"
         $Jar = [System.IO.Compression.ZipFile]::OpenRead((Join-Path $Release $Name))
         try {
             $Seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
@@ -132,10 +221,119 @@ try {
                     throw "Unsafe standalone JAR entry: $($Entry.FullName)"
                 }
             }
+            if ($Loader -eq "fabric") {
+                if ($Seen.Contains("META-INF/mods.toml") -or $Seen.Contains("META-INF/jarjar/metadata.json")) {
+                    throw "Fabric standalone JAR unexpectedly contains Forge metadata: $Name"
+                }
+                $FabricBytes = Read-ZipEntryBytes $Jar "fabric.mod.json"
+            } else {
+                if ($Seen.Contains("fabric.mod.json")) {
+                    throw "Forge standalone JAR unexpectedly contains Fabric metadata: $Name"
+                }
+                $ForgeDescriptorBytes = Read-ZipEntryBytes $Jar "META-INF/mods.toml"
+                $JarJarBytes = Read-ZipEntryBytes $Jar "META-INF/jarjar/metadata.json"
+            }
             $DescriptorBytes = Read-ZipEntryBytes $Jar "META-INF/agma-standalone/runtime-artifact.json"
             $RuntimeBytes = Read-ZipEntryBytes $Jar "META-INF/agma-standalone/runtime.zip"
         } finally {
             $Jar.Dispose()
+        }
+
+        if ($Loader -eq "fabric") {
+            $FabricText = [System.Text.UTF8Encoding]::new($false, $true).GetString($FabricBytes)
+            $Fabric = $FabricText | ConvertFrom-Json
+            if (
+                $Fabric.id -ne "agma_standalone" -or
+                $Fabric.version -ne $Version -or
+                $Fabric.depends.minecraft -ne $Minecraft
+            ) {
+                throw "Fabric identity does not match final JAR name: $Name"
+            }
+        } else {
+            $ForgeDescriptor = [System.Text.UTF8Encoding]::new($false, $true).GetString(
+                $ForgeDescriptorBytes
+            )
+            $ExpectedForgeDescriptor = @"
+modLoader = "javafml"
+loaderVersion = "[40,)"
+license = "Apache-2.0"
+clientSideOnly = true
+showAsResourcePack = true
+
+[[mods]]
+modId = "agma_standalone"
+version = "$Version"
+displayName = "AGMA Standalone Client"
+authors = "AGMA contributors"
+description = '''
+Pure client AGMA shell with an authenticated local Runtime boundary.
+'''
+
+[[dependencies.agma_standalone]]
+modId = "forge"
+mandatory = true
+versionRange = "[40.3.12,41)"
+ordering = "NONE"
+side = "CLIENT"
+
+[[dependencies.agma_standalone]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.18.2,1.18.3)"
+ordering = "NONE"
+side = "CLIENT"
+"@
+            if (
+                $ForgeDescriptor.TrimEnd([char[]]"`r`n") -cne
+                $ExpectedForgeDescriptor.TrimEnd([char[]]"`r`n")
+            ) {
+                throw "Forge descriptor identity or client-only boundary is invalid: $Name"
+            }
+            $JarJarText = [System.Text.UTF8Encoding]::new($false, $true).GetString($JarJarBytes)
+            $JarJar = $JarJarText | ConvertFrom-Json
+            $JarJarFields = @($JarJar.PSObject.Properties.Name)
+            $ExpectedNested = @{
+                "core" = "META-INF/jars/AGMA-Standalone-Client-Core-$Version.jar"
+                "fabric-common" = "META-INF/jars/AGMA-Standalone-Fabric-Common-$Version.jar"
+                "runtime-supervisor-core" = "META-INF/jars/AGMA-Standalone-Runtime-Supervisor-Core-$Version.jar"
+            }
+            if ($JarJarFields.Count -ne 1 -or $JarJarFields[0] -ne "jars" -or @($JarJar.jars).Count -ne 3) {
+                throw "Forge JarJar metadata does not contain exactly three libraries: $Name"
+            }
+            $NestedArtifacts = [System.Collections.Generic.HashSet[string]]::new(
+                [System.StringComparer]::Ordinal
+            )
+            $ActualNestedPaths = @(
+                $Seen |
+                    Where-Object {
+                        $_.StartsWith("META-INF/jars/", [System.StringComparison]::OrdinalIgnoreCase) -and
+                        $_.EndsWith(".jar", [System.StringComparison]::OrdinalIgnoreCase)
+                    }
+            )
+            if ($ActualNestedPaths.Count -ne 3) {
+                throw "Forge JAR does not contain exactly three nested libraries: $Name"
+            }
+            foreach ($Nested in $JarJar.jars) {
+                $Artifact = [string]$Nested.identifier.artifact
+                $ExpectedPath = $ExpectedNested[$Artifact]
+                $NestedFields = @($Nested.PSObject.Properties.Name | Sort-Object)
+                $IdentifierFields = @($Nested.identifier.PSObject.Properties.Name | Sort-Object)
+                $VersionFields = @($Nested.version.PSObject.Properties.Name | Sort-Object)
+                if (
+                    [string]::Join("`n", $NestedFields) -ne "identifier`npath`nversion" -or
+                    [string]::Join("`n", $IdentifierFields) -ne "artifact`ngroup" -or
+                    [string]::Join("`n", $VersionFields) -ne "artifactVersion`nrange" -or
+                    -not $ExpectedNested.ContainsKey($Artifact) -or
+                    -not $NestedArtifacts.Add($Artifact) -or
+                    $Nested.identifier.group -ne "dev.minecraftagent" -or
+                    $Nested.version.range -ne "[$Version,)" -or
+                    $Nested.version.artifactVersion -ne $Version -or
+                    $Nested.path -ne $ExpectedPath -or
+                    -not $Seen.Contains($ExpectedPath)
+                ) {
+                    throw "Forge JarJar library metadata is invalid: $Name"
+                }
+            }
         }
 
         $DescriptorText = [System.Text.UTF8Encoding]::new($false, $true).GetString($DescriptorBytes)
@@ -164,7 +362,7 @@ try {
         ) {
             throw "Windows embedded Runtime descriptor is invalid: $Name"
         }
-        $WindowsRuntimeHashes[$Minecraft] = Get-Sha256Bytes $RuntimeBytes
+        $WindowsRuntimeHashes[$TargetKey] = Get-Sha256Bytes $RuntimeBytes
 
         $RuntimeMemory = [System.IO.MemoryStream]::new($RuntimeBytes, $false)
         $RuntimeArchive = [System.IO.Compression.ZipArchive]::new(
@@ -208,9 +406,9 @@ try {
             $RuntimeMemory.Dispose()
         }
 
-        $RuntimePath = Join-Path $Temporary "$Minecraft-runtime.zip"
+        $RuntimePath = Join-Path $Temporary "$TargetKey-runtime.zip"
         [System.IO.File]::WriteAllBytes($RuntimePath, $RuntimeBytes)
-        $RuntimeRoot = Join-Path $Temporary "$Minecraft-runtime"
+        $RuntimeRoot = Join-Path $Temporary "$TargetKey-runtime"
         [System.IO.Compression.ZipFile]::ExtractToDirectory($RuntimePath, $RuntimeRoot)
         $EmbeddedNode = Join-Path $RuntimeRoot "bin/node.exe"
         if (-not (Test-Path -LiteralPath $EmbeddedNode -PathType Leaf)) {
@@ -236,8 +434,12 @@ try {
             throw "Embedded Windows standalone Runtime bundle did not execute fail-closed."
         }
     }
-    if ($WindowsRuntimeHashes["1.18.2"] -ne $WindowsRuntimeHashes["1.21.11"]) {
-        throw "The two Minecraft builds do not embed the same Windows sidecar."
+    $ReferenceRuntimeHash = $WindowsRuntimeHashes["1.18.2-fabric"]
+    foreach ($Target in $Targets) {
+        $TargetKey = "$($Target.Minecraft)-$($Target.Loader)"
+        if ($WindowsRuntimeHashes[$TargetKey] -ne $ReferenceRuntimeHash) {
+            throw "The three release targets do not embed the same Windows sidecar."
+        }
     }
 } finally {
     if (Test-Path -LiteralPath $Temporary) {
@@ -246,5 +448,5 @@ try {
 }
 
 # The final native invocation is an expected negative probe. Do not leak its exit code to the caller.
-Write-Output "verify-standalone-release-windows version=$Version embedded_node=v$NodeVersion result=passed"
+Write-Output "verify-standalone-release-windows version=$Version targets=3 assets=8 embedded_node=v$NodeVersion result=passed"
 exit 0

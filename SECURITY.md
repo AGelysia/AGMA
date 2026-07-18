@@ -3,9 +3,9 @@
 ## Supported Version
 
 Security fixes are provided for the AGMA 0.1.0 Minecraft 1.21.11 server line and the separately
-versioned AGMA Standalone Client 0.2.0 line for Minecraft 1.18.2 and 1.21.11. Modified artifacts and
-dependency combinations not listed in [CLIENT-COMPATIBILITY.md](CLIENT-COMPATIBILITY.md) are
-unsupported.
+versioned AGMA Standalone Client 0.3.0 line: Minecraft 1.18.2 on Fabric or Forge and Minecraft
+1.21.11 on Fabric. Modified artifacts and dependency combinations not listed in
+[CLIENT-COMPATIBILITY.md](CLIENT-COMPATIBILITY.md) are unsupported.
 
 Paper is the authoritative boundary. Model output, player input, custom provider responses, server
 documents, client payloads, optional mods, and client acknowledgements are all untrusted.
@@ -28,7 +28,7 @@ log. Use the repository's private
 Include:
 
 - AGMA artifact name, version, and SHA-256;
-- exact Minecraft, Paper, Fabric, and optional-mod versions;
+- exact Minecraft, Paper, Fabric or Forge, and optional-mod versions;
 - minimal reproduction steps and observed impact;
 - whether authentication, permissions, Offline state, storage, client payloads, custom endpoints,
   or cost accounting are involved; and

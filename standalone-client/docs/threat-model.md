@@ -65,7 +65,7 @@ must not describe local file fallback as hardware-backed encryption.
 ## 4. Trust Boundaries
 
 ```text
-Minecraft / Fabric process
+Minecraft client process
   [UI and context]       untrusted game-visible data
           |
           v
@@ -88,7 +88,7 @@ Important boundaries are:
 
 1. Minecraft client data to immutable standalone DTOs.
 2. Optional viewer API to the viewer-neutral core.
-3. The Fabric process to the Runtime process over loopback.
+3. The Minecraft client process to the Runtime process over loopback.
 4. Runtime state to private filesystem storage.
 5. Runtime requests to a configured Provider endpoint.
 6. In C6, controlled search and fetch output to an isolated evidence channel.

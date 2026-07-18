@@ -10,7 +10,11 @@ NODE_COMMAND="${AGMA_STANDALONE_BUILD_NODE:-node}"
 RUNTIME_VERSION="$("$NODE_COMMAND" -p "require('$ROOT/standalone-client/version.json').version")"
 CLIENT_VERSION="${AGMA_STANDALONE_VERSION:-$RUNTIME_VERSION}"
 NODE_VERSION="$("$NODE_COMMAND" -p "require('$ROOT/standalone-client/managed-runtime/node-distributions.json').nodeVersion")"
-MINECRAFT_VERSIONS=(1.18.2 1.21.11)
+TARGETS=(
+  '1.18.2:fabric:fabric-mc1182'
+  '1.18.2:forge:forge-mc1182'
+  '1.21.11:fabric:fabric-mc12111'
+)
 PLATFORMS=(linux-x86_64 windows-x86_64)
 CHECKSUM_NAME="AGMA-Client-Standalone-${CLIENT_VERSION}-SHA256SUMS"
 SBOM_NAME="AGMA-Client-Standalone-${CLIENT_VERSION}-SBOM.cdx.json"
@@ -47,17 +51,18 @@ done
 "$ROOT/gradlew" --no-daemon --max-workers=1 --no-build-cache --rerun-tasks \
   -PstandaloneVersion="$CLIENT_VERSION" \
   :standalone-client:fabric-mc1182:remapJar \
+  :standalone-client:forge-mc1182:remapJar \
   :standalone-client:fabric-mc12111:remapJar
 
 declare -A BASE_JARS
-for minecraft in "${MINECRAFT_VERSIONS[@]}"; do
-  module="fabric-mc${minecraft//./}"
+for target in "${TARGETS[@]}"; do
+  IFS=: read -r minecraft loader module <<<"$target"
   mapfile -t candidates < <(find "$ROOT/standalone-client/$module/build/libs" \
     -maxdepth 1 -type f \
-    -name "AGMA-Standalone-Client-mc${minecraft}-fabric-${CLIENT_VERSION}.jar" -print)
+    -name "AGMA-Standalone-Client-mc${minecraft}-${loader}-${CLIENT_VERSION}.jar" -print)
   [[ "${#candidates[@]}" -eq 1 ]] \
-    || fail "expected one remapped base JAR for Minecraft $minecraft"
-  BASE_JARS[$minecraft]="${candidates[0]}"
+    || fail "expected one remapped base JAR for Minecraft $minecraft $loader"
+  BASE_JARS["$minecraft:$loader"]="${candidates[0]}"
 done
 
 mkdir "$OUTPUT"
@@ -65,11 +70,13 @@ for platform in "${PLATFORMS[@]}"; do
   mapfile -t sidecars < <(find "$WORK/runtime/$platform" -maxdepth 1 -type f \
     -name "AGMA-Standalone-Runtime-${RUNTIME_VERSION}-${platform}.zip" -print)
   [[ "${#sidecars[@]}" -eq 1 ]] || fail "expected one managed Runtime for $platform"
-  for minecraft in "${MINECRAFT_VERSIONS[@]}"; do
-    name="AGMA-Client-Standalone-${CLIENT_VERSION}-mc${minecraft}-fabric-${platform}.jar"
+  for target in "${TARGETS[@]}"; do
+    IFS=: read -r minecraft loader _ <<<"$target"
+    name="AGMA-Client-Standalone-${CLIENT_VERSION}-mc${minecraft}-${loader}-${platform}.jar"
     AGMA_STANDALONE_BUILD_NODE="$NODE_COMMAND" \
       "$ROOT/scripts/package-standalone-client-jar.sh" \
-      "${BASE_JARS[$minecraft]}" "${sidecars[0]}" "$minecraft" "$platform" \
+      "${BASE_JARS["$minecraft:$loader"]}" "${sidecars[0]}" \
+      "$minecraft" "$loader" "$platform" \
       "$CLIENT_VERSION" "$RUNTIME_VERSION" "$NODE_VERSION" "$OUTPUT/$name" >/dev/null
   done
 done
@@ -85,5 +92,5 @@ AGMA_STANDALONE_BUILD_NODE="$NODE_COMMAND" \
   AGMA_STANDALONE_EXECUTE_RUNTIME=1 \
   "$ROOT/scripts/verify-standalone-release.sh" \
   "$OUTPUT" "$CLIENT_VERSION" "$RUNTIME_VERSION" "$NODE_VERSION"
-printf 'package-standalone-release version=%s assets=5 result=%s\n' \
+printf 'package-standalone-release version=%s assets=8 result=%s\n' \
   "$CLIENT_VERSION" "$OUTPUT"

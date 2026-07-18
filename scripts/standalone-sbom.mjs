@@ -13,10 +13,16 @@ import {
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 
-const MINECRAFT_VERSIONS = ["1.18.2", "1.21.11"];
+const TARGETS = [
+  { minecraft: "1.18.2", loader: "fabric" },
+  { minecraft: "1.18.2", loader: "forge" },
+  { minecraft: "1.21.11", loader: "fabric" },
+];
 const PLATFORMS = ["linux-x86_64", "windows-x86_64"];
 const DESCRIPTOR_ENTRY = "META-INF/agma-standalone/runtime-artifact.json";
 const RUNTIME_ENTRY = "META-INF/agma-standalone/runtime.zip";
+const FORGE_DESCRIPTOR_ENTRY = "META-INF/mods.toml";
+const FORGE_JARJAR_ENTRY = "META-INF/jarjar/metadata.json";
 const MANIFEST_ENTRY = "sidecar-manifest.json";
 const INVENTORY_ENTRY = "licenses/npm-production-packages.json";
 const VERSION = /^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)$/u;
@@ -62,6 +68,85 @@ function parseCanonicalJson(bytes, label) {
     fail(`${label} is not canonical JSON`);
   }
   return parsed;
+}
+
+function parseForgeJarJarJson(bytes, label) {
+  let parsed;
+  try {
+    parsed = JSON.parse(decoder.decode(bytes));
+  } catch {
+    fail(`${label} is not valid UTF-8 JSON`);
+  }
+  const canonical = Buffer.from(canonicalJson(parsed), "utf8");
+  if (
+    !bytes.equals(canonical) &&
+    !bytes.equals(canonical.subarray(0, canonical.length - 1))
+  ) {
+    fail(`${label} is not stable Forge JSON`);
+  }
+  return parsed;
+}
+
+function parseForgeModsToml(bytes, label) {
+  let text;
+  try {
+    text = decoder.decode(bytes);
+  } catch {
+    fail(`${label} is not valid UTF-8 TOML`);
+  }
+  const document = { root: {}, mods: [], dependencies: [] };
+  let current = document.root;
+  const lines = text.split("\n");
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (line === "") continue;
+    if (line === "[[mods]]") {
+      current = {};
+      document.mods.push(current);
+      continue;
+    }
+    if (line === "[[dependencies.agma_standalone]]") {
+      current = {};
+      document.dependencies.push(current);
+      continue;
+    }
+    const assignment = /^([A-Za-z][A-Za-z0-9]*) = (.+)$/u.exec(line);
+    if (assignment === null || Object.hasOwn(current, assignment[1])) {
+      fail(
+        `${label} contains unsupported or duplicate TOML at line ${index + 1}`,
+      );
+    }
+    const [, key, raw] = assignment;
+    let value;
+    if (raw === "true" || raw === "false") {
+      value = raw === "true";
+    } else if (raw === "'''") {
+      const content = [];
+      for (
+        index += 1;
+        index < lines.length && lines[index] !== "'''";
+        index += 1
+      ) {
+        content.push(lines[index]);
+      }
+      if (index >= lines.length)
+        fail(`${label} contains an unterminated TOML string`);
+      value = content.join("\n");
+    } else {
+      try {
+        value = JSON.parse(raw);
+      } catch {
+        fail(
+          `${label} contains an unsupported TOML value at line ${index + 1}`,
+        );
+      }
+      if (typeof value !== "string") {
+        fail(`${label} contains a non-string TOML value at line ${index + 1}`);
+      }
+    }
+    current[key] = value;
+  }
+  return document;
 }
 
 function sha256Bytes(bytes) {
@@ -266,14 +351,15 @@ function validateInventory(inventory) {
   }
 }
 
-function inspectJar(release, version, minecraft, platform) {
-  const name = `AGMA-Client-Standalone-${version}-mc${minecraft}-fabric-${platform}.jar`;
-  const jar = ordinaryFile(join(release, name), MAXIMUM_JAR_BYTES);
-  const jarEntries = archiveEntries(jar.path);
+function validateFabricMetadata(jar, entries, name, version, minecraft) {
+  if (
+    entries.includes(FORGE_DESCRIPTOR_ENTRY) ||
+    entries.includes(FORGE_JARJAR_ENTRY)
+  ) {
+    fail(`Fabric JAR unexpectedly contains Forge metadata: ${name}`);
+  }
   const fabric = JSON.parse(
-    decoder.decode(
-      archiveEntry(jar.path, jarEntries, "fabric.mod.json", 1024 * 1024),
-    ),
+    decoder.decode(archiveEntry(jar, entries, "fabric.mod.json", 1024 * 1024)),
   );
   if (
     fabric?.id !== "agma_standalone" ||
@@ -282,6 +368,136 @@ function inspectJar(release, version, minecraft, platform) {
   ) {
     fail(`Fabric identity does not match final JAR name: ${name}`);
   }
+}
+
+function validateForgeMetadata(jar, entries, name, version, minecraft) {
+  if (minecraft !== "1.18.2" || entries.includes("fabric.mod.json")) {
+    fail(`Forge target identity does not match final JAR name: ${name}`);
+  }
+  const forge = parseForgeModsToml(
+    archiveEntry(jar, entries, FORGE_DESCRIPTOR_ENTRY, 1024 * 1024),
+    `${name}:${FORGE_DESCRIPTOR_ENTRY}`,
+  );
+  const mod = forge.mods[0];
+  if (
+    !exactKeys(forge.root, [
+      "modLoader",
+      "loaderVersion",
+      "license",
+      "clientSideOnly",
+      "showAsResourcePack",
+    ]) ||
+    forge.root.modLoader !== "javafml" ||
+    forge.root.loaderVersion !== "[40,)" ||
+    forge.root.license !== "Apache-2.0" ||
+    forge.root.clientSideOnly !== true ||
+    forge.root.showAsResourcePack !== true ||
+    forge.mods.length !== 1 ||
+    !exactKeys(mod, [
+      "modId",
+      "version",
+      "displayName",
+      "authors",
+      "description",
+    ]) ||
+    mod.modId !== "agma_standalone" ||
+    mod.version !== version ||
+    mod.displayName !== "AGMA Standalone Client" ||
+    mod.authors !== "AGMA contributors" ||
+    typeof mod.description !== "string" ||
+    mod.description.length < 1 ||
+    forge.dependencies.length !== 2
+  ) {
+    fail(
+      `Forge descriptor identity or client-only boundary is invalid: ${name}`,
+    );
+  }
+  const dependencies = new Map();
+  for (const dependency of forge.dependencies) {
+    if (
+      !exactKeys(dependency, [
+        "modId",
+        "mandatory",
+        "versionRange",
+        "ordering",
+        "side",
+      ]) ||
+      typeof dependency.modId !== "string" ||
+      dependencies.has(dependency.modId)
+    ) {
+      fail(`Forge dependency metadata is invalid: ${name}`);
+    }
+    dependencies.set(dependency.modId, dependency);
+  }
+  const forgeDependency = dependencies.get("forge");
+  const minecraftDependency = dependencies.get("minecraft");
+  if (
+    forgeDependency?.mandatory !== true ||
+    forgeDependency?.versionRange !== "[40.3.12,41)" ||
+    forgeDependency?.ordering !== "NONE" ||
+    forgeDependency?.side !== "CLIENT" ||
+    minecraftDependency?.mandatory !== true ||
+    minecraftDependency?.versionRange !== "[1.18.2,1.18.3)" ||
+    minecraftDependency?.ordering !== "NONE" ||
+    minecraftDependency?.side !== "CLIENT"
+  ) {
+    fail(`Forge dependency versions or sides are invalid: ${name}`);
+  }
+
+  const jarJar = parseForgeJarJarJson(
+    archiveEntry(jar, entries, FORGE_JARJAR_ENTRY, 1024 * 1024),
+    `${name}:${FORGE_JARJAR_ENTRY}`,
+  );
+  const expectedNested = new Map([
+    ["core", `META-INF/jars/AGMA-Standalone-Client-Core-${version}.jar`],
+    [
+      "fabric-common",
+      `META-INF/jars/AGMA-Standalone-Fabric-Common-${version}.jar`,
+    ],
+    [
+      "runtime-supervisor-core",
+      `META-INF/jars/AGMA-Standalone-Runtime-Supervisor-Core-${version}.jar`,
+    ],
+  ]);
+  if (
+    !exactKeys(jarJar, ["jars"]) ||
+    !Array.isArray(jarJar.jars) ||
+    jarJar.jars.length !== 3
+  ) {
+    fail(
+      `Forge JarJar metadata does not contain exactly three libraries: ${name}`,
+    );
+  }
+  const seen = new Set();
+  for (const nested of jarJar.jars) {
+    const artifact = nested?.identifier?.artifact;
+    const expectedPath = expectedNested.get(artifact);
+    if (
+      !exactKeys(nested, ["identifier", "version", "path"]) ||
+      !exactKeys(nested.identifier, ["group", "artifact"]) ||
+      !exactKeys(nested.version, ["range", "artifactVersion"]) ||
+      nested.identifier.group !== "dev.minecraftagent" ||
+      expectedPath === undefined ||
+      seen.has(artifact) ||
+      nested.version.range !== `[${version},)` ||
+      nested.version.artifactVersion !== version ||
+      nested.path !== expectedPath ||
+      entries.filter((entry) => entry === expectedPath).length !== 1
+    ) {
+      fail(`Forge JarJar library metadata is invalid: ${name}`);
+    }
+    seen.add(artifact);
+  }
+}
+
+function inspectJar(release, version, target, platform) {
+  const { minecraft, loader } = target;
+  const name = `AGMA-Client-Standalone-${version}-mc${minecraft}-${loader}-${platform}.jar`;
+  const jar = ordinaryFile(join(release, name), MAXIMUM_JAR_BYTES);
+  const jarEntries = archiveEntries(jar.path);
+  if (loader === "fabric")
+    validateFabricMetadata(jar.path, jarEntries, name, version, minecraft);
+  else validateForgeMetadata(jar.path, jarEntries, name, version, minecraft);
   const descriptorBytes = archiveEntry(
     jar.path,
     jarEntries,
@@ -348,6 +564,7 @@ function inspectJar(release, version, minecraft, platform) {
     return {
       name,
       minecraft,
+      loader,
       platform,
       jarSha256: sha256File(jar.path),
       runtimeSha256: descriptor.sha256,
@@ -393,9 +610,9 @@ function buildBom(releaseValue, version) {
     fail("release directory is missing or unsafe");
   }
   const records = [];
-  for (const minecraft of MINECRAFT_VERSIONS) {
+  for (const target of TARGETS) {
     for (const platform of PLATFORMS)
-      records.push(inspectJar(release, version, minecraft, platform));
+      records.push(inspectJar(release, version, target, platform));
   }
 
   const runtimes = new Map();
@@ -411,7 +628,7 @@ function buildBom(releaseValue, version) {
       existing.inventoryCanonical !== record.inventoryCanonical
     ) {
       fail(
-        `Minecraft JARs do not embed one identical ${record.platform} Runtime inventory`,
+        `Release JARs do not embed one identical ${record.platform} Runtime inventory`,
       );
     }
   }
@@ -420,7 +637,7 @@ function buildBom(releaseValue, version) {
   const components = [];
   const dependencyMap = new Map([[rootReference, new Set()]]);
   for (const record of records) {
-    const reference = `urn:agma:standalone:jar:${record.minecraft}:${record.platform}:${record.jarSha256}`;
+    const reference = `urn:agma:standalone:jar:${record.minecraft}:${record.loader}:${record.platform}:${record.jarSha256}`;
     const runtimeReference = `urn:agma:standalone:runtime:${record.platform}:${record.runtimeSha256}`;
     dependencyMap.get(rootReference).add(reference);
     dependencyMap.set(reference, new Set([runtimeReference]));
@@ -428,11 +645,12 @@ function buildBom(releaseValue, version) {
       type: "application",
       "bom-ref": reference,
       group: "dev.minecraftagent",
-      name: `AGMA Client Standalone mc${record.minecraft} fabric ${record.platform}`,
+      name: `AGMA Client Standalone mc${record.minecraft} ${record.loader} ${record.platform}`,
       version,
       hashes: [{ alg: "SHA-256", content: record.jarSha256 }],
-      purl: `pkg:generic/AGMA-Client-Standalone@${version}?minecraft=${encodeURIComponent(record.minecraft)}&platform=${encodeURIComponent(record.platform)}`,
+      purl: `pkg:generic/AGMA-Client-Standalone@${version}?loader=${encodeURIComponent(record.loader)}&minecraft=${encodeURIComponent(record.minecraft)}&platform=${encodeURIComponent(record.platform)}`,
       properties: properties({
+        loader: record.loader,
         minecraftVersion: record.minecraft,
         platform: record.platform,
         releaseAsset: record.name,
@@ -562,7 +780,7 @@ function verifyBom(release, version, inputValue) {
     "utf8",
   );
   if (!readFileSync(input.path).equals(expected)) {
-    fail("CycloneDX SBOM differs from the four final JAR inventories");
+    fail("CycloneDX SBOM differs from the six final JAR inventories");
   }
 }
 

@@ -10,7 +10,7 @@ RUNTIME_VERSION="${3:-}"
 NODE_VERSION="${4:-}"
 NODE_COMMAND="${AGMA_STANDALONE_BUILD_NODE:-node}"
 EXECUTE_RUNTIME="${AGMA_STANDALONE_EXECUTE_RUNTIME:-0}"
-MINECRAFT_VERSIONS=(1.18.2 1.21.11)
+TARGETS=(1.18.2:fabric 1.18.2:forge 1.21.11:fabric)
 PLATFORMS=(linux-x86_64 windows-x86_64)
 CHECKSUM_NAME="AGMA-Client-Standalone-${CLIENT_VERSION}-SHA256SUMS"
 SBOM_NAME="AGMA-Client-Standalone-${CLIENT_VERSION}-SBOM.cdx.json"
@@ -37,19 +37,21 @@ RELEASE="$(realpath -- "$RELEASE_INPUT")"
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/agma-standalone-release-verify.XXXXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
 : >"$WORK/expected-assets"
-for minecraft in "${MINECRAFT_VERSIONS[@]}"; do
+for target in "${TARGETS[@]}"; do
+  minecraft="${target%%:*}"
+  loader="${target##*:}"
   for platform in "${PLATFORMS[@]}"; do
-    name="AGMA-Client-Standalone-${CLIENT_VERSION}-mc${minecraft}-fabric-${platform}.jar"
+    name="AGMA-Client-Standalone-${CLIENT_VERSION}-mc${minecraft}-${loader}-${platform}.jar"
     printf '%s\n' "$name" >>"$WORK/expected-assets"
     [[ -f "$RELEASE/$name" && ! -L "$RELEASE/$name" && -s "$RELEASE/$name" ]] \
       || fail "release asset is missing or unsafe: $name"
     AGMA_STANDALONE_BUILD_NODE="$NODE_COMMAND" \
       AGMA_STANDALONE_EXECUTE_RUNTIME="$EXECUTE_RUNTIME" \
       "$ROOT/scripts/verify-standalone-client-jar.sh" \
-      "$RELEASE/$name" "$minecraft" "$platform" "$CLIENT_VERSION" \
+      "$RELEASE/$name" "$minecraft" "$loader" "$platform" "$CLIENT_VERSION" \
       "$RUNTIME_VERSION" "$NODE_VERSION" >/dev/null
     unzip -p "$RELEASE/$name" META-INF/agma-standalone/runtime.zip \
-      >"$WORK/${minecraft}-${platform}.runtime.zip"
+      >"$WORK/${minecraft}-${loader}-${platform}.runtime.zip"
   done
 done
 printf '%s\n' "$SBOM_NAME" >>"$WORK/expected-assets"
@@ -84,12 +86,16 @@ cmp "$WORK/manifest-paths" "$WORK/actual-manifest-paths" \
   || fail "standalone release checksum verification failed"
 
 for platform in "${PLATFORMS[@]}"; do
-  cmp "$WORK/1.18.2-${platform}.runtime.zip" "$WORK/1.21.11-${platform}.runtime.zip" \
-    || fail "the two Minecraft builds do not embed one identical $platform sidecar"
+  cmp "$WORK/1.18.2-fabric-${platform}.runtime.zip" \
+    "$WORK/1.18.2-forge-${platform}.runtime.zip" \
+    || fail "the Fabric and Forge 1.18.2 builds do not embed one identical $platform sidecar"
+  cmp "$WORK/1.18.2-fabric-${platform}.runtime.zip" \
+    "$WORK/1.21.11-fabric-${platform}.runtime.zip" \
+    || fail "the three release targets do not embed one identical $platform sidecar"
 done
-if cmp -s "$WORK/1.21.11-linux-x86_64.runtime.zip" \
-  "$WORK/1.21.11-windows-x86_64.runtime.zip"; then
+if cmp -s "$WORK/1.21.11-fabric-linux-x86_64.runtime.zip" \
+  "$WORK/1.21.11-fabric-windows-x86_64.runtime.zip"; then
   fail "Linux and Windows releases unexpectedly embed the same sidecar"
 fi
 
-printf 'verify-standalone-release version=%s assets=5 result=passed\n' "$CLIENT_VERSION"
+printf 'verify-standalone-release version=%s assets=8 result=passed\n' "$CLIENT_VERSION"

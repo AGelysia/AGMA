@@ -51,6 +51,8 @@ final class VerifyTestResults {
           "dev.minecraftagent.standalone.common.JavaHttpLocalConnectorTest");
   private static final Set<String> FABRIC_VERSION_REQUIRED =
       Set.of("dev.minecraftagent.standalone.fabric.StandaloneModMetadataTest");
+  private static final Set<String> FORGE_VERSION_REQUIRED =
+      Set.of("dev.minecraftagent.standalone.forge.StandaloneForgeMetadataTest");
 
   private record Suite(String name, int tests, int failures, int errors, int skipped) {}
 
@@ -60,11 +62,11 @@ final class VerifyTestResults {
   private VerifyTestResults() {}
 
   public static void main(String[] args) throws Exception {
-    if (args.length != 8) {
+    if (args.length != 9) {
       fail(
           "usage: VerifyTestResults.java <runtime.xml> <paper-results> <client-results>"
               + " <standalone-core-results> <supervisor-results> <fabric-common-results>"
-              + " <fabric-mc12111-results> <fabric-mc1182-results>");
+              + " <fabric-mc12111-results> <fabric-mc1182-results> <forge-mc1182-results>");
     }
 
     verify(
@@ -86,11 +88,14 @@ final class VerifyTestResults {
         new Lane("Standalone Fabric Common", 10, 30, FABRIC_COMMON_REQUIRED),
         suitesFromDirectory(Path.of(args[5])));
     verify(
-        new Lane("Standalone Minecraft 1.21.11", 1, 1, FABRIC_VERSION_REQUIRED),
+        new Lane("Standalone Minecraft 1.21.11 Fabric", 1, 1, FABRIC_VERSION_REQUIRED),
         suitesFromDirectory(Path.of(args[6])));
     verify(
-        new Lane("Standalone Minecraft 1.18.2", 1, 1, FABRIC_VERSION_REQUIRED),
+        new Lane("Standalone Minecraft 1.18.2 Fabric", 1, 1, FABRIC_VERSION_REQUIRED),
         suitesFromDirectory(Path.of(args[7])));
+    verify(
+        new Lane("Standalone Minecraft 1.18.2 Forge", 1, 1, FORGE_VERSION_REQUIRED),
+        suitesFromDirectory(Path.of(args[8])));
   }
 
   private static List<Suite> suitesFromDirectory(Path directory) throws Exception {

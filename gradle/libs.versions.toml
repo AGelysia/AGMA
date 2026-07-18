@@ -3,6 +3,7 @@ fabric-api = "0.141.4+1.21.11"
 fabric-api12111 = "0.141.5+1.21.11"
 fabric-api1182 = "0.77.0+1.18.2"
 fabric-loader = "0.19.3"
+forge1182 = "1.18.2-40.3.12"
 google-java-format = "1.35.0"
 gson = "2.11.0"
 emi1182 = "0.7.3+1.18.2"
@@ -13,11 +14,13 @@ json-canonicalization = "1.1"
 json-schema-validator = "1.5.9"
 junit = "6.0.3"
 loom = "1.17.13"
+architectury-loom = "1.17.487"
 minecraft = "1.21.11"
 minecraft12111 = "1.21.11"
 minecraft1182 = "1.18.2"
 mockito = "5.18.0"
 mockbukkit = "4.110.0"
+night-config = "3.6.4"
 byte-buddy = "1.18.8"
 paper = "1.21.11-R0.1-SNAPSHOT"
 spotless = "8.8.0"
@@ -27,6 +30,7 @@ fabric-api = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fab
 fabric-api12111 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api12111" }
 fabric-api1182 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api1182" }
 fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader" }
+forge1182 = { module = "net.minecraftforge:forge", version.ref = "forge1182" }
 byte-buddy = { module = "net.bytebuddy:byte-buddy", version.ref = "byte-buddy" }
 byte-buddy-agent = { module = "net.bytebuddy:byte-buddy-agent", version.ref = "byte-buddy" }
 json-schema-validator = { module = "com.networknt:json-schema-validator", version.ref = "json-schema-validator" }
@@ -43,10 +47,14 @@ gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 emi1182 = { module = "maven.modrinth:emi", version.ref = "emi1182" }
 jei-api12111 = { module = "mezz.jei:jei-1.21.11-fabric-api", version.ref = "jei12111" }
 jei-api1182 = { module = "mezz.jei:jei-1.18.2-fabric-api", version.ref = "jei1182" }
+jei-api1182-forge = { module = "mezz.jei:jei-1.18.2-forge-api", version.ref = "jei1182" }
+jei1182-forge = { module = "mezz.jei:jei-1.18.2-forge", version.ref = "jei1182" }
 java-websocket = { module = "org.java-websocket:Java-WebSocket", version.ref = "java-websocket" }
 json-canonicalization = { module = "io.github.erdtman:java-json-canonicalization", version.ref = "json-canonicalization" }
+night-config-toml = { module = "com.electronwill.night-config:toml", version.ref = "night-config" }
 snakeyaml = { module = "org.yaml:snakeyaml", version = "2.2" }
 
 [plugins]
 fabric-loom = { id = "net.fabricmc.fabric-loom-remap", version.ref = "loom" }
+architectury-loom = { id = "dev.architectury.loom", version.ref = "architectury-loom" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

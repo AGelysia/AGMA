@@ -34,8 +34,9 @@ the production build and offline fixtures. Direct invocations may use a develope
 that path is not a release input and does not imply a player prerequisite.
 
 `scripts/package-standalone-release.sh` builds each platform sidecar once, embeds that exact ZIP and
-a closed `runtime-artifact.json` descriptor into both supported Minecraft Fabric JARs, and emits
-four independently named release assets. Linux and Windows Node distributions are never combined.
+a closed `runtime-artifact.json` descriptor into the three supported loader/version targets, and
+emits six independently named JAR assets: Minecraft 1.18.2 Fabric and Forge plus Minecraft 1.21.11
+Fabric, each for Linux and Windows x86_64. Linux and Windows Node distributions are never combined.
 The descriptor binds the embedded archive's platform, Runtime and Node versions, byte size, and
 SHA-256. The client verifies that descriptor before private installation.
 
@@ -84,11 +85,12 @@ scripts/test-standalone-client-release.sh
 ```
 
 The installer and catalog checks run on Java 17 bytecode through the standalone supervisor Gradle
-project. `scripts/verify-standalone-client-jar.sh` verifies the Fabric identity, exact embedded
-descriptor, JAR and sidecar hashes, managed Runtime manifest, installer classes, and absence of
-development plans, Paper/server payloads, external launch scripts, and YAML configuration. The
-four-asset verifier also requires the two Minecraft versions to contain byte-identical sidecars for
-the same operating system. Release CI executes the embedded `node.exe` on a real Windows runner.
+project. `scripts/verify-standalone-client-jar.sh` verifies the Fabric or Forge identity, exact
+embedded descriptor, JAR and sidecar hashes, managed Runtime manifest, installer classes, and
+absence of development plans, Paper/server payloads, external launch scripts, and YAML
+configuration. The six-JAR verifier also requires all three loader/version targets to contain
+byte-identical sidecars for the same operating system. Release CI executes the embedded `node.exe`
+on a real Windows runner.
 
 Windows and Linux Minecraft cold start, upgrade, uninstall, and long-session behavior remain manual
 release evidence in addition to these automated gates. A sidecar must never be presented as a public

@@ -8,11 +8,12 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BASE_JAR="${1:-}"
 SIDECAR="${2:-}"
 MINECRAFT_VERSION="${3:-}"
-PLATFORM="${4:-}"
-CLIENT_VERSION="${5:-}"
-RUNTIME_VERSION="${6:-}"
-NODE_VERSION="${7:-}"
-OUTPUT="${8:-}"
+LOADER="${4:-}"
+PLATFORM="${5:-}"
+CLIENT_VERSION="${6:-}"
+RUNTIME_VERSION="${7:-}"
+NODE_VERSION="${8:-}"
+OUTPUT="${9:-}"
 NODE_COMMAND="${AGMA_STANDALONE_BUILD_NODE:-node}"
 SOURCE_DATE_EPOCH=315532800
 
@@ -21,8 +22,8 @@ fail() {
   exit 1
 }
 
-[[ "$#" -eq 8 ]] \
-  || fail "usage: <base.jar> <sidecar.zip> <minecraft-version> <platform> <client-version> <runtime-version> <node-version> <output.jar>"
+[[ "$#" -eq 9 ]] \
+  || fail "usage: <base.jar> <sidecar.zip> <minecraft-version> <loader> <platform> <client-version> <runtime-version> <node-version> <output.jar>"
 for program in cp realpath touch unzip zip zipinfo; do
   command -v "$program" >/dev/null 2>&1 \
     || fail "required packaging program is unavailable: $program"
@@ -54,7 +55,7 @@ trap cleanup EXIT
 unzip -tqq "$BASE_JAR" >/dev/null || fail "base JAR integrity check failed"
 unzip -Z1 "$BASE_JAR" >"$WORK/base.entries"
 "$NODE_COMMAND" "$ROOT/scripts/standalone-client-artifact.mjs" \
-  verify-entry-list "$WORK/base.entries" base
+  verify-entry-list "$WORK/base.entries" base "$LOADER"
 AGMA_STANDALONE_BUILD_NODE="$NODE_COMMAND" \
   "$ROOT/scripts/verify-standalone-managed-runtime.sh" \
   "$SIDECAR" "$PLATFORM" "$RUNTIME_VERSION" "$NODE_VERSION" >/dev/null
@@ -76,9 +77,9 @@ cp "$BASE_JAR" "$TEMP_JAR"
 )
 AGMA_STANDALONE_BUILD_NODE="$NODE_COMMAND" \
   "$ROOT/scripts/verify-standalone-client-jar.sh" \
-  "$TEMP_JAR" "$MINECRAFT_VERSION" "$PLATFORM" "$CLIENT_VERSION" \
+  "$TEMP_JAR" "$MINECRAFT_VERSION" "$LOADER" "$PLATFORM" "$CLIENT_VERSION" \
   "$RUNTIME_VERSION" "$NODE_VERSION" >/dev/null
 mv "$TEMP_JAR" "$OUTPUT"
 
-printf 'package-standalone-client-jar minecraft=%s platform=%s result=%s\n' \
-  "$MINECRAFT_VERSION" "$PLATFORM" "$OUTPUT"
+printf 'package-standalone-client-jar minecraft=%s loader=%s platform=%s result=%s\n' \
+  "$MINECRAFT_VERSION" "$LOADER" "$PLATFORM" "$OUTPUT"

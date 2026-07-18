@@ -32,3 +32,4 @@ cd "$ROOT"
 ./gradlew "${GRADLE_ARGS[@]}" :standalone-client:fabric-common:build
 ./gradlew "${GRADLE_ARGS[@]}" :standalone-client:fabric-mc12111:build
 ./gradlew "${GRADLE_ARGS[@]}" :standalone-client:fabric-mc1182:build
+./gradlew "${GRADLE_ARGS[@]}" :standalone-client:forge-mc1182:build

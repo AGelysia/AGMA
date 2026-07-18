@@ -6,10 +6,11 @@ export LC_ALL=C
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 JAR="${1:-}"
 MINECRAFT_VERSION="${2:-}"
-PLATFORM="${3:-}"
-CLIENT_VERSION="${4:-}"
-RUNTIME_VERSION="${5:-}"
-NODE_VERSION="${6:-}"
+LOADER="${3:-}"
+PLATFORM="${4:-}"
+CLIENT_VERSION="${5:-}"
+RUNTIME_VERSION="${6:-}"
+NODE_VERSION="${7:-}"
 NODE_COMMAND="${AGMA_STANDALONE_BUILD_NODE:-node}"
 EXECUTE_RUNTIME="${AGMA_STANDALONE_EXECUTE_RUNTIME:-0}"
 DESCRIPTOR='META-INF/agma-standalone/runtime-artifact.json'
@@ -20,8 +21,8 @@ fail() {
   exit 1
 }
 
-[[ "$#" -eq 6 ]] \
-  || fail "usage: <client.jar> <minecraft-version> <platform> <client-version> <runtime-version> <node-version>"
+[[ "$#" -eq 7 ]] \
+  || fail "usage: <client.jar> <minecraft-version> <loader> <platform> <client-version> <runtime-version> <node-version>"
 [[ "$EXECUTE_RUNTIME" == 0 || "$EXECUTE_RUNTIME" == 1 ]] \
   || fail "AGMA_STANDALONE_EXECUTE_RUNTIME must be 0 or 1"
 for program in awk find grep realpath sha256sum unzip wc zipinfo; do
@@ -60,16 +61,37 @@ fi
 unzip -tqq "$JAR" >/dev/null || fail "client JAR integrity check failed"
 unzip -Z1 "$JAR" >"$WORK/entries"
 "$NODE_COMMAND" "$ROOT/scripts/standalone-client-artifact.mjs" \
-  verify-entry-list "$WORK/entries" integrated
+  verify-entry-list "$WORK/entries" integrated "$LOADER"
 
 unzip -p "$JAR" "$DESCRIPTOR" >"$WORK/runtime-artifact.json"
 unzip -p "$JAR" "$ARCHIVE" >"$WORK/runtime.zip"
-unzip -p "$JAR" fabric.mod.json >"$WORK/fabric.mod.json"
 "$NODE_COMMAND" "$ROOT/scripts/standalone-client-artifact.mjs" \
   verify-descriptor "$WORK/runtime-artifact.json" "$WORK/runtime.zip" \
   "$PLATFORM" "$RUNTIME_VERSION" "$NODE_VERSION"
-"$NODE_COMMAND" "$ROOT/scripts/standalone-client-artifact.mjs" \
-  verify-fabric "$WORK/fabric.mod.json" "$CLIENT_VERSION" "$MINECRAFT_VERSION"
+if [[ "$LOADER" == fabric ]]; then
+  unzip -p "$JAR" fabric.mod.json >"$WORK/fabric.mod.json"
+  "$NODE_COMMAND" "$ROOT/scripts/standalone-client-artifact.mjs" \
+    verify-fabric "$WORK/fabric.mod.json" "$CLIENT_VERSION" "$MINECRAFT_VERSION"
+elif [[ "$LOADER" == forge ]]; then
+  unzip -p "$JAR" META-INF/mods.toml >"$WORK/mods.toml"
+  unzip -p "$JAR" META-INF/jarjar/metadata.json >"$WORK/jarjar-metadata.json"
+  "$NODE_COMMAND" "$ROOT/scripts/standalone-client-artifact.mjs" \
+    verify-forge "$WORK/mods.toml" "$WORK/jarjar-metadata.json" \
+    "$CLIENT_VERSION" "$MINECRAFT_VERSION"
+  for nested in \
+    "META-INF/jars/AGMA-Standalone-Client-Core-${CLIENT_VERSION}.jar" \
+    "META-INF/jars/AGMA-Standalone-Fabric-Common-${CLIENT_VERSION}.jar" \
+    "META-INF/jars/AGMA-Standalone-Runtime-Supervisor-Core-${CLIENT_VERSION}.jar"; do
+    [[ "$(grep -Fxc "$nested" "$WORK/entries")" == 1 ]] \
+      || fail "Forge JarJar path is missing or version-mismatched: $nested"
+  done
+  if unzip -p "$JAR" 'dev/minecraftagent/standalone/forge/*.class' \
+    | grep -aEq 'net[/.]fabricmc|dev[/.]minecraftagent[/.]standalone[/.]fabric|dev[/.]emi|EmiPlugin'; then
+    fail "Forge outer classes contain a Fabric or EMI reference"
+  fi
+else
+  fail "unsupported standalone loader: $LOADER"
+fi
 AGMA_STANDALONE_BUILD_NODE="$NODE_COMMAND" \
   "$ROOT/scripts/verify-standalone-managed-runtime.sh" \
   "$WORK/runtime.zip" "$PLATFORM" "$RUNTIME_VERSION" "$NODE_VERSION" >/dev/null
@@ -97,15 +119,23 @@ while IFS= read -r nested; do
     || fail "nested standalone JAR is corrupt: $file"
   unzip -Z1 "$WORK/nested/$file" >"$WORK/nested/$file.entries"
   "$NODE_COMMAND" "$ROOT/scripts/standalone-client-artifact.mjs" \
-    verify-entry-list "$WORK/nested/$file.entries" nested
+    verify-entry-list "$WORK/nested/$file.entries" nested "$LOADER"
+  if [[ "$LOADER" == forge ]] \
+    && unzip -p "$WORK/nested/$file" '*.class' \
+      | grep -aEq 'net[/.]fabricmc|dev[/.]minecraftagent[/.]standalone[/.]fabric|dev[/.]emi|EmiPlugin'; then
+    fail "Forge nested library contains a Fabric or EMI reference: $file"
+  fi
 done <"$WORK/entries"
 
+mapfile -t core_jars < <(find "$WORK/nested" -maxdepth 1 -type f \
+  -name 'AGMA-Standalone-Client-Core-*.jar' -print)
 mapfile -t common_jars < <(find "$WORK/nested" -maxdepth 1 -type f \
   -name 'AGMA-Standalone-Fabric-Common-*.jar' -print)
 mapfile -t supervisor_jars < <(find "$WORK/nested" -maxdepth 1 -type f \
   -name 'AGMA-Standalone-Runtime-Supervisor-Core-*.jar' -print)
-[[ "${#common_jars[@]}" -eq 1 && "${#supervisor_jars[@]}" -eq 1 ]] \
-  || fail "standalone Runtime integration libraries are missing or duplicated"
+[[ "${#core_jars[@]}" -eq 1 && "${#common_jars[@]}" -eq 1 \
+  && "${#supervisor_jars[@]}" -eq 1 ]] \
+  || fail "standalone nested libraries are missing or duplicated"
 unzip -Z1 "${common_jars[0]}" >"$WORK/common.entries"
 unzip -Z1 "${supervisor_jars[0]}" >"$WORK/supervisor.entries"
 for required in \
@@ -119,7 +149,8 @@ done
   "$WORK/supervisor.entries")" == 1 ]] \
   || fail "standalone client is missing its verified Runtime installer"
 
-printf 'verify-standalone-client-jar minecraft=%s platform=%s sha256=%s result=passed\n' \
+printf 'verify-standalone-client-jar minecraft=%s loader=%s platform=%s sha256=%s result=passed\n' \
   "$MINECRAFT_VERSION" \
+  "$LOADER" \
   "$PLATFORM" \
   "$(sha256sum "$JAR" | cut -d ' ' -f 1)"

@@ -41,6 +41,20 @@ jobs:
           [[ "$GITHUB_REF_NAME" == "standalone-v$version" ]]
       - name: Build and verify standalone clients twice
         run: ./scripts/standalone-release-check.sh "$GITHUB_WORKSPACE/build/standalone-release"
+      - name: Verify standalone release inventory
+        shell: bash
+        run: |
+          version="$(node -p "require('./standalone-client/version.json').version")"
+          release_directory="$GITHUB_WORKSPACE/build/standalone-release"
+          [[ "$(find "$release_directory" -mindepth 1 -maxdepth 1 -type f | wc -l)" -eq 8 ]]
+          [[ "$(find "$release_directory" -mindepth 1 -maxdepth 1 -type f -name '*.jar' | wc -l)" -eq 6 ]]
+          for target in mc1.18.2-fabric mc1.18.2-forge mc1.21.11-fabric; do
+            for platform in linux-x86_64 windows-x86_64; do
+              test -f "$release_directory/AGMA-Client-Standalone-${version}-${target}-${platform}.jar"
+            done
+          done
+          test -f "$release_directory/AGMA-Client-Standalone-${version}-SBOM.cdx.json"
+          test -f "$release_directory/AGMA-Client-Standalone-${version}-SHA256SUMS"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: standalone-release-${{ github.sha }}

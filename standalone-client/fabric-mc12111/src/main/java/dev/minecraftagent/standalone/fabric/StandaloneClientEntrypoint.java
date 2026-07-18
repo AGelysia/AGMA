@@ -36,7 +36,7 @@ public final class StandaloneClientEntrypoint implements ClientModInitializer {
         net.fabricmc.loader.api.FabricLoader.getInstance()
             .getModContainer(MOD_ID)
             .map(container -> container.getMetadata().getVersion().getFriendlyString())
-            .orElse("0.2.0");
+            .orElse("0.3.0");
     var root =
         net.fabricmc.loader.api.FabricLoader.getInstance()
             .getConfigDir()

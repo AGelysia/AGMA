@@ -4,112 +4,111 @@
       <verify-metadata>true</verify-metadata>
       <verify-signatures>false</verify-signatures>
       <trusted-artifacts>
-         <!-- Loom exposes these exact locally generated, non-reproducible JARs through local Maven repositories. Their POMs and Gradle-resolved upstream inputs remain checksummed below. -->
-         <trust group="loom" name="mappings" version="layered+hash.2198" file="mappings-layered+hash.2198.jar" regex="false" reason="Fabric Loom produces this local layered mappings JAR with non-reproducible bytes"/>
-         <trust group="net.minecraft" name="minecraft-merged-6dd721cd7d" version="1.21.11-loom.mappings.1_21_11.layered+hash.2198-v2" file="minecraft-merged-6dd721cd7d-1.21.11-loom.mappings.1_21_11.layered+hash.2198-v2.jar" regex="false" reason="Fabric Loom produces this exact local merged Minecraft JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-api-4abd26ae" version="0.141.4+1.21.11" file="fabric-api-4abd26ae-0.141.4+1.21.11.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-api-base-4abd26ae" version="1.0.5+4ebb5c083e" file="fabric-api-base-4abd26ae-1.0.5+4ebb5c083e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-api-lookup-api-v1-4abd26ae" version="1.6.114+20dc27073e" file="fabric-api-lookup-api-v1-4abd26ae-1.6.114+20dc27073e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-biome-api-v1-4abd26ae" version="17.1.1+4fc5413f3e" file="fabric-biome-api-v1-4abd26ae-17.1.1+4fc5413f3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-block-api-v1-4abd26ae" version="1.1.10+4ebb5c083e" file="fabric-block-api-v1-4abd26ae-1.1.10+4ebb5c083e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-block-view-api-v2-4abd26ae" version="1.0.39+4ebb5c083e" file="fabric-block-view-api-v2-4abd26ae-1.0.39+4ebb5c083e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-client-gametest-api-v1-4abd26ae" version="4.3.5+bfe9fcf43e" file="fabric-client-gametest-api-v1-4abd26ae-4.3.5+bfe9fcf43e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-command-api-v2-4abd26ae" version="2.4.7+6b42a6003e" file="fabric-command-api-v2-4abd26ae-2.4.7+6b42a6003e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-content-registries-v0-4abd26ae" version="10.2.14+4fc5413f3e" file="fabric-content-registries-v0-4abd26ae-10.2.14+4fc5413f3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-convention-tags-v1-4abd26ae" version="2.1.55+7f945d5b3e" file="fabric-convention-tags-v1-4abd26ae-2.1.55+7f945d5b3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-convention-tags-v2-4abd26ae" version="2.17.3+8ef948ba3e" file="fabric-convention-tags-v2-4abd26ae-2.17.3+8ef948ba3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-crash-report-info-v1-4abd26ae" version="0.3.23+4ebb5c083e" file="fabric-crash-report-info-v1-4abd26ae-0.3.23+4ebb5c083e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-data-attachment-api-v1-4abd26ae" version="1.8.48+eed0806f3e" file="fabric-data-attachment-api-v1-4abd26ae-1.8.48+eed0806f3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-data-generation-api-v1-4abd26ae" version="23.4.1+69974c4e3e" file="fabric-data-generation-api-v1-4abd26ae-23.4.1+69974c4e3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-dimensions-v1-4abd26ae" version="4.0.28+4fc5413f3e" file="fabric-dimensions-v1-4abd26ae-4.0.28+4fc5413f3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-entity-events-v1-4abd26ae" version="3.1.1+1d0ab4303e" file="fabric-entity-events-v1-4abd26ae-3.1.1+1d0ab4303e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-events-interaction-v0-4abd26ae" version="4.1.1+3b89ecf63e" file="fabric-events-interaction-v0-4abd26ae-4.1.1+3b89ecf63e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-game-rule-api-v1-4abd26ae" version="2.0.3+4fc5413f3e" file="fabric-game-rule-api-v1-4abd26ae-2.0.3+4fc5413f3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-gametest-api-v1-4abd26ae" version="3.1.27+4fc5413f3e" file="fabric-gametest-api-v1-4abd26ae-3.1.27+4fc5413f3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-item-api-v1-4abd26ae" version="11.5.20+d0c46b9e3e" file="fabric-item-api-v1-4abd26ae-11.5.20+d0c46b9e3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-item-group-api-v1-4abd26ae" version="4.2.36+4fc5413f3e" file="fabric-item-group-api-v1-4abd26ae-4.2.36+4fc5413f3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-key-binding-api-v1-4abd26ae" version="1.1.7+4fc5413f3e" file="fabric-key-binding-api-v1-4abd26ae-1.1.7+4fc5413f3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-lifecycle-events-v1-4abd26ae" version="2.6.15+4ebb5c083e" file="fabric-lifecycle-events-v1-4abd26ae-2.6.15+4ebb5c083e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-loot-api-v2-4abd26ae" version="3.0.73+3f89f5a53e" file="fabric-loot-api-v2-4abd26ae-3.0.73+3f89f5a53e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-loot-api-v3-4abd26ae" version="2.0.20+78c8b4663e" file="fabric-loot-api-v3-4abd26ae-2.0.20+78c8b4663e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-message-api-v1-4abd26ae" version="6.1.12+4ebb5c083e" file="fabric-message-api-v1-4abd26ae-6.1.12+4ebb5c083e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-model-loading-api-v1-4abd26ae" version="6.0.15+4fc5413f3e" file="fabric-model-loading-api-v1-4abd26ae-6.0.15+4fc5413f3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-networking-api-v1-4abd26ae" version="5.1.6+6b6d71a53e" file="fabric-networking-api-v1-4abd26ae-5.1.6+6b6d71a53e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-object-builder-api-v1-4abd26ae" version="21.1.40+4fc5413f3e" file="fabric-object-builder-api-v1-4abd26ae-21.1.40+4fc5413f3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-particles-v1-4abd26ae" version="4.2.12+4fc5413f3e" file="fabric-particles-v1-4abd26ae-4.2.12+4fc5413f3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-recipe-api-v1-4abd26ae" version="8.2.4+4ebb5c083e" file="fabric-recipe-api-v1-4abd26ae-8.2.4+4ebb5c083e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-registry-sync-v0-4abd26ae" version="6.2.6+1718722b3e" file="fabric-registry-sync-v0-4abd26ae-6.2.6+1718722b3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-renderer-api-v1-4abd26ae" version="8.0.3+f4ffd2e53e" file="fabric-renderer-api-v1-4abd26ae-8.0.3+f4ffd2e53e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-renderer-indigo-4abd26ae" version="5.0.3+f4ffd2e53e" file="fabric-renderer-indigo-4abd26ae-5.0.3+f4ffd2e53e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-rendering-fluids-v1-4abd26ae" version="3.1.43+4ebb5c083e" file="fabric-rendering-fluids-v1-4abd26ae-3.1.43+4ebb5c083e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-rendering-v1-4abd26ae" version="16.2.10+0290ad933e" file="fabric-rendering-v1-4abd26ae-16.2.10+0290ad933e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-resource-conditions-api-v1-4abd26ae" version="5.0.35+4fc5413f3e" file="fabric-resource-conditions-api-v1-4abd26ae-5.0.35+4fc5413f3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-resource-loader-v0-4abd26ae" version="3.3.4+4fc5413f3e" file="fabric-resource-loader-v0-4abd26ae-3.3.4+4fc5413f3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-resource-loader-v1-4abd26ae" version="1.0.10+78c8b4663e" file="fabric-resource-loader-v1-4abd26ae-1.0.10+78c8b4663e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-screen-api-v1-4abd26ae" version="3.1.7+4ebb5c083e" file="fabric-screen-api-v1-4abd26ae-3.1.7+4ebb5c083e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-screen-handler-api-v1-4abd26ae" version="1.3.162+4fc5413f3e" file="fabric-screen-handler-api-v1-4abd26ae-1.3.162+4fc5413f3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-serialization-api-v1-4abd26ae" version="1.0.5+4ebb5c083e" file="fabric-serialization-api-v1-4abd26ae-1.0.5+4ebb5c083e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-sound-api-v1-4abd26ae" version="1.0.51+4fc5413f3e" file="fabric-sound-api-v1-4abd26ae-1.0.51+4fc5413f3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-tag-api-v1-4abd26ae" version="1.2.20+4fc5413f3e" file="fabric-tag-api-v1-4abd26ae-1.2.20+4fc5413f3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-transfer-api-v1-4abd26ae" version="6.0.25+4fc5413f3e" file="fabric-transfer-api-v1-4abd26ae-6.0.25+4fc5413f3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-transitive-access-wideners-v1-4abd26ae" version="7.1.0+014c8cec3e" file="fabric-transitive-access-wideners-v1-4abd26ae-7.1.0+014c8cec3e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="net.minecraft" name="minecraft-merged-8d76583df5" version="1.21.11-loom.mappings.1_21_11.layered+hash.2198-v2" file="minecraft-merged-8d76583df5-1.21.11-loom.mappings.1_21_11.layered+hash.2198-v2.jar" regex="false" reason="Fabric Loom produces this exact local merged Minecraft JAR with non-reproducible bytes"/>
-         <trust group="net.minecraft" name="minecraft-merged-bf69f4ce1c" version="1.18.2-loom.mappings.1_18_2.layered+hash.2198-v2" file="minecraft-merged-bf69f4ce1c-1.18.2-loom.mappings.1_18_2.layered+hash.2198-v2.jar" regex="false" reason="Fabric Loom produces this exact local merged Minecraft JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-api-4abd26ae" version="0.141.5+1.21.11" file="fabric-api-4abd26ae-0.141.5+1.21.11.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-api-51aba2bb" version="0.77.0+1.18.2" file="fabric-api-51aba2bb-0.77.0+1.18.2.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-api-base-51aba2bb" version="0.4.5+64b7c69360" file="fabric-api-base-51aba2bb-0.4.5+64b7c69360.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-api-lookup-api-v1-51aba2bb" version="1.6.3+2373a54560" file="fabric-api-lookup-api-v1-51aba2bb-1.6.3+2373a54560.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-biome-api-v1-51aba2bb" version="8.0.7+e83becad60" file="fabric-biome-api-v1-51aba2bb-8.0.7+e83becad60.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-block-api-v1-51aba2bb" version="1.0.0+ee3621fc60" file="fabric-block-api-v1-51aba2bb-1.0.0+ee3621fc60.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-blockrenderlayer-v1-51aba2bb" version="1.1.13+3ac43d9560" file="fabric-blockrenderlayer-v1-51aba2bb-1.1.13+3ac43d9560.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-command-api-v1-51aba2bb" version="1.1.10+d7c144a860" file="fabric-command-api-v1-51aba2bb-1.1.10+d7c144a860.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-commands-v0-51aba2bb" version="0.2.9+b4f4f6cd60" file="fabric-commands-v0-51aba2bb-0.2.9+b4f4f6cd60.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-containers-v0-51aba2bb" version="0.1.24+d7c144a860" file="fabric-containers-v0-51aba2bb-0.1.24+d7c144a860.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-content-registries-v0-51aba2bb" version="3.1.3+c85f2e3860" file="fabric-content-registries-v0-51aba2bb-3.1.3+c85f2e3860.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-convention-tags-v1-51aba2bb" version="1.1.0+43ce63a460" file="fabric-convention-tags-v1-51aba2bb-1.1.0+43ce63a460.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-crash-report-info-v1-51aba2bb" version="0.2.1+ee261a3e60" file="fabric-crash-report-info-v1-51aba2bb-0.2.1+ee261a3e60.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-data-generation-api-v1-4abd26ae" version="23.5.0+88d7da613e" file="fabric-data-generation-api-v1-4abd26ae-23.5.0+88d7da613e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-data-generation-api-v1-51aba2bb" version="3.1.0+6c70b68e60" file="fabric-data-generation-api-v1-51aba2bb-3.1.0+6c70b68e60.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-dimensions-v1-51aba2bb" version="2.1.21+489d6f8260" file="fabric-dimensions-v1-51aba2bb-2.1.21+489d6f8260.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-entity-events-v1-51aba2bb" version="1.4.9+d7c144a860" file="fabric-entity-events-v1-51aba2bb-1.4.9+d7c144a860.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-events-interaction-v0-51aba2bb" version="0.4.20+d7c144a860" file="fabric-events-interaction-v0-51aba2bb-0.4.20+d7c144a860.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-events-lifecycle-v0-51aba2bb" version="0.2.22+d7c144a860" file="fabric-events-lifecycle-v0-51aba2bb-0.2.22+d7c144a860.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-game-rule-api-v1-51aba2bb" version="1.0.13+d7c144a860" file="fabric-game-rule-api-v1-51aba2bb-1.0.13+d7c144a860.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-gametest-api-v1-51aba2bb" version="1.0.21+91b7aa6660" file="fabric-gametest-api-v1-51aba2bb-1.0.21+91b7aa6660.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-item-api-v1-51aba2bb" version="1.6.2+8165403660" file="fabric-item-api-v1-51aba2bb-1.6.2+8165403660.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-item-groups-v0-51aba2bb" version="0.3.16+91896a4960" file="fabric-item-groups-v0-51aba2bb-0.3.16+91896a4960.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-key-binding-api-v1-51aba2bb" version="1.0.12+54e5b2ec60" file="fabric-key-binding-api-v1-51aba2bb-1.0.12+54e5b2ec60.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-keybindings-v0-51aba2bb" version="0.2.10+b4f4f6cd60" file="fabric-keybindings-v0-51aba2bb-0.2.10+b4f4f6cd60.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-lifecycle-events-v1-51aba2bb" version="2.1.1+cc71601c60" file="fabric-lifecycle-events-v1-51aba2bb-2.1.1+cc71601c60.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-loot-api-v2-51aba2bb" version="1.1.2+1997ad1260" file="fabric-loot-api-v2-51aba2bb-1.1.2+1997ad1260.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-loot-tables-v1-51aba2bb" version="1.1.4+e747827960" file="fabric-loot-tables-v1-51aba2bb-1.1.4+e747827960.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-mining-level-api-v1-51aba2bb" version="2.1.6+cc71601c60" file="fabric-mining-level-api-v1-51aba2bb-2.1.6+cc71601c60.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-models-v0-51aba2bb" version="0.3.7+d7c144a860" file="fabric-models-v0-51aba2bb-0.3.7+d7c144a860.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-networking-api-v1-51aba2bb" version="1.0.24+2d30af4b60" file="fabric-networking-api-v1-51aba2bb-1.0.24+2d30af4b60.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-networking-v0-51aba2bb" version="0.3.11+b4f4f6cd60" file="fabric-networking-v0-51aba2bb-0.3.11+b4f4f6cd60.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-object-builder-api-v1-51aba2bb" version="2.1.5+032c981d60" file="fabric-object-builder-api-v1-51aba2bb-2.1.5+032c981d60.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-particles-v1-51aba2bb" version="0.2.13+526dc1ac60" file="fabric-particles-v1-51aba2bb-0.2.13+526dc1ac60.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-registry-sync-v0-51aba2bb" version="0.9.12+bb2e047760" file="fabric-registry-sync-v0-51aba2bb-0.9.12+bb2e047760.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-renderer-api-v1-51aba2bb" version="0.5.0+bf48649860" file="fabric-renderer-api-v1-51aba2bb-0.5.0+bf48649860.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-renderer-indigo-51aba2bb" version="0.6.1+03e2b68760" file="fabric-renderer-indigo-51aba2bb-0.6.1+03e2b68760.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-renderer-registries-v1-51aba2bb" version="3.2.13+b4f4f6cd60" file="fabric-renderer-registries-v1-51aba2bb-3.2.13+b4f4f6cd60.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-rendering-data-attachment-v1-51aba2bb" version="0.3.9+ee3621fc60" file="fabric-rendering-data-attachment-v1-51aba2bb-0.3.9+ee3621fc60.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-rendering-fluids-v1-51aba2bb" version="2.0.3+54e5b2ec60" file="fabric-rendering-fluids-v1-51aba2bb-2.0.3+54e5b2ec60.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-rendering-v0-51aba2bb" version="1.1.15+b4f4f6cd60" file="fabric-rendering-v0-51aba2bb-1.1.15+b4f4f6cd60.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-rendering-v1-51aba2bb" version="1.11.0+b7f3cf3460" file="fabric-rendering-v1-51aba2bb-1.11.0+b7f3cf3460.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-resource-conditions-api-v1-51aba2bb" version="2.0.3+91b7aa6660" file="fabric-resource-conditions-api-v1-51aba2bb-2.0.3+91b7aa6660.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-resource-loader-v0-51aba2bb" version="0.5.3+047a5ecb60" file="fabric-resource-loader-v0-51aba2bb-0.5.3+047a5ecb60.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-screen-api-v1-51aba2bb" version="1.0.11+d882b91560" file="fabric-screen-api-v1-51aba2bb-1.0.11+d882b91560.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-screen-handler-api-v1-51aba2bb" version="1.2.3+1f6558e860" file="fabric-screen-handler-api-v1-51aba2bb-1.2.3+1f6558e860.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-tag-api-v1-4abd26ae" version="1.3.0+88d7da613e" file="fabric-tag-api-v1-4abd26ae-1.3.0+88d7da613e.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-textures-v0-51aba2bb" version="1.0.13+3ac43d9560" file="fabric-textures-v0-51aba2bb-1.0.13+3ac43d9560.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-transfer-api-v1-51aba2bb" version="1.6.4+f4563ac860" file="fabric-transfer-api-v1-51aba2bb-1.6.4+f4563ac860.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-transitive-access-wideners-v1-51aba2bb" version="1.1.0+e747827960" file="fabric-transitive-access-wideners-v1-51aba2bb-1.1.0+e747827960.jar" regex="false" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
-         <trust group="remapped.mezz.jei" name="jei-1.21.11-common-api-intermediary-4abd26ae" version="27.17.0.50" file="jei-1.21.11-common-api-intermediary-4abd26ae-27.17.0.50.jar" regex="false" reason="Fabric Loom produces this exact local remapped JEI API JAR with non-reproducible bytes"/>
-         <trust group="remapped.mezz.jei" name="jei-1.21.11-common-api-intermediary-4abd26ae" version="27.17.0.50" file="jei-1.21.11-common-api-intermediary-4abd26ae-27.17.0.50-sources.jar" regex="false" reason="Fabric Loom produces this exact local remapped JEI API sources JAR with non-reproducible bytes"/>
-         <trust group="remapped.mezz.jei" name="jei-1.21.11-fabric-api-4abd26ae" version="27.17.0.50" file="jei-1.21.11-fabric-api-4abd26ae-27.17.0.50.jar" regex="false" reason="Fabric Loom produces this exact local remapped JEI API JAR with non-reproducible bytes"/>
-         <trust group="remapped.mezz.jei" name="jei-1.21.11-fabric-api-4abd26ae" version="27.17.0.50" file="jei-1.21.11-fabric-api-4abd26ae-27.17.0.50-sources.jar" regex="false" reason="Fabric Loom produces this exact local remapped JEI API sources JAR with non-reproducible bytes"/>
-         <trust group="remapped.maven.modrinth" name="emi-51aba2bb" version="0.7.3+1.18.2" file="emi-51aba2bb-0.7.3+1.18.2.jar" regex="false" reason="Fabric Loom produces this exact local remapped EMI JAR with non-reproducible bytes"/>
+         <trust group="loom" name="mappings" version="layered+hash.2198" file="mappings-layered+hash.2198.jar" reason="Fabric Loom produces this local layered mappings JAR with non-reproducible bytes"/>
+         <trust group="net.minecraft" name="minecraft-merged-6dd721cd7d" version="1.21.11-loom.mappings.1_21_11.layered+hash.2198-v2" file="minecraft-merged-6dd721cd7d-1.21.11-loom.mappings.1_21_11.layered+hash.2198-v2.jar" reason="Fabric Loom produces this exact local merged Minecraft JAR with non-reproducible bytes"/>
+         <trust group="net.minecraft" name="minecraft-merged-8d76583df5" version="1.21.11-loom.mappings.1_21_11.layered+hash.2198-v2" file="minecraft-merged-8d76583df5-1.21.11-loom.mappings.1_21_11.layered+hash.2198-v2.jar" reason="Fabric Loom produces this exact local merged Minecraft JAR with non-reproducible bytes"/>
+         <trust group="net.minecraft" name="minecraft-merged-bf69f4ce1c" version="1.18.2-loom.mappings.1_18_2.layered+hash.2198-v2" file="minecraft-merged-bf69f4ce1c-1.18.2-loom.mappings.1_18_2.layered+hash.2198-v2.jar" reason="Fabric Loom produces this exact local merged Minecraft JAR with non-reproducible bytes"/>
+         <trust group="remapped.maven.modrinth" name="emi-51aba2bb" version="0.7.3+1.18.2" file="emi-51aba2bb-0.7.3+1.18.2.jar" reason="Fabric Loom produces this exact local remapped EMI JAR with non-reproducible bytes"/>
+         <trust group="remapped.mezz.jei" name="jei-1.21.11-common-api-intermediary-4abd26ae" version="27.17.0.50" file="jei-1.21.11-common-api-intermediary-4abd26ae-27.17.0.50-sources.jar" reason="Fabric Loom produces this exact local remapped JEI API sources JAR with non-reproducible bytes"/>
+         <trust group="remapped.mezz.jei" name="jei-1.21.11-common-api-intermediary-4abd26ae" version="27.17.0.50" file="jei-1.21.11-common-api-intermediary-4abd26ae-27.17.0.50.jar" reason="Fabric Loom produces this exact local remapped JEI API JAR with non-reproducible bytes"/>
+         <trust group="remapped.mezz.jei" name="jei-1.21.11-fabric-api-4abd26ae" version="27.17.0.50" file="jei-1.21.11-fabric-api-4abd26ae-27.17.0.50-sources.jar" reason="Fabric Loom produces this exact local remapped JEI API sources JAR with non-reproducible bytes"/>
+         <trust group="remapped.mezz.jei" name="jei-1.21.11-fabric-api-4abd26ae" version="27.17.0.50" file="jei-1.21.11-fabric-api-4abd26ae-27.17.0.50.jar" reason="Fabric Loom produces this exact local remapped JEI API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-api-4abd26ae" version="0.141.4+1.21.11" file="fabric-api-4abd26ae-0.141.4+1.21.11.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-api-4abd26ae" version="0.141.5+1.21.11" file="fabric-api-4abd26ae-0.141.5+1.21.11.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-api-51aba2bb" version="0.77.0+1.18.2" file="fabric-api-51aba2bb-0.77.0+1.18.2.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-api-base-4abd26ae" version="1.0.5+4ebb5c083e" file="fabric-api-base-4abd26ae-1.0.5+4ebb5c083e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-api-base-51aba2bb" version="0.4.5+64b7c69360" file="fabric-api-base-51aba2bb-0.4.5+64b7c69360.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-api-lookup-api-v1-4abd26ae" version="1.6.114+20dc27073e" file="fabric-api-lookup-api-v1-4abd26ae-1.6.114+20dc27073e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-api-lookup-api-v1-51aba2bb" version="1.6.3+2373a54560" file="fabric-api-lookup-api-v1-51aba2bb-1.6.3+2373a54560.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-biome-api-v1-4abd26ae" version="17.1.1+4fc5413f3e" file="fabric-biome-api-v1-4abd26ae-17.1.1+4fc5413f3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-biome-api-v1-51aba2bb" version="8.0.7+e83becad60" file="fabric-biome-api-v1-51aba2bb-8.0.7+e83becad60.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-block-api-v1-4abd26ae" version="1.1.10+4ebb5c083e" file="fabric-block-api-v1-4abd26ae-1.1.10+4ebb5c083e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-block-api-v1-51aba2bb" version="1.0.0+ee3621fc60" file="fabric-block-api-v1-51aba2bb-1.0.0+ee3621fc60.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-block-view-api-v2-4abd26ae" version="1.0.39+4ebb5c083e" file="fabric-block-view-api-v2-4abd26ae-1.0.39+4ebb5c083e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-blockrenderlayer-v1-51aba2bb" version="1.1.13+3ac43d9560" file="fabric-blockrenderlayer-v1-51aba2bb-1.1.13+3ac43d9560.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-client-gametest-api-v1-4abd26ae" version="4.3.5+bfe9fcf43e" file="fabric-client-gametest-api-v1-4abd26ae-4.3.5+bfe9fcf43e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-command-api-v1-51aba2bb" version="1.1.10+d7c144a860" file="fabric-command-api-v1-51aba2bb-1.1.10+d7c144a860.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-command-api-v2-4abd26ae" version="2.4.7+6b42a6003e" file="fabric-command-api-v2-4abd26ae-2.4.7+6b42a6003e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-commands-v0-51aba2bb" version="0.2.9+b4f4f6cd60" file="fabric-commands-v0-51aba2bb-0.2.9+b4f4f6cd60.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-containers-v0-51aba2bb" version="0.1.24+d7c144a860" file="fabric-containers-v0-51aba2bb-0.1.24+d7c144a860.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-content-registries-v0-4abd26ae" version="10.2.14+4fc5413f3e" file="fabric-content-registries-v0-4abd26ae-10.2.14+4fc5413f3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-content-registries-v0-51aba2bb" version="3.1.3+c85f2e3860" file="fabric-content-registries-v0-51aba2bb-3.1.3+c85f2e3860.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-convention-tags-v1-4abd26ae" version="2.1.55+7f945d5b3e" file="fabric-convention-tags-v1-4abd26ae-2.1.55+7f945d5b3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-convention-tags-v1-51aba2bb" version="1.1.0+43ce63a460" file="fabric-convention-tags-v1-51aba2bb-1.1.0+43ce63a460.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-convention-tags-v2-4abd26ae" version="2.17.3+8ef948ba3e" file="fabric-convention-tags-v2-4abd26ae-2.17.3+8ef948ba3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-crash-report-info-v1-4abd26ae" version="0.3.23+4ebb5c083e" file="fabric-crash-report-info-v1-4abd26ae-0.3.23+4ebb5c083e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-crash-report-info-v1-51aba2bb" version="0.2.1+ee261a3e60" file="fabric-crash-report-info-v1-51aba2bb-0.2.1+ee261a3e60.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-data-attachment-api-v1-4abd26ae" version="1.8.48+eed0806f3e" file="fabric-data-attachment-api-v1-4abd26ae-1.8.48+eed0806f3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-data-generation-api-v1-4abd26ae" version="23.4.1+69974c4e3e" file="fabric-data-generation-api-v1-4abd26ae-23.4.1+69974c4e3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-data-generation-api-v1-4abd26ae" version="23.5.0+88d7da613e" file="fabric-data-generation-api-v1-4abd26ae-23.5.0+88d7da613e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-data-generation-api-v1-51aba2bb" version="3.1.0+6c70b68e60" file="fabric-data-generation-api-v1-51aba2bb-3.1.0+6c70b68e60.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-dimensions-v1-4abd26ae" version="4.0.28+4fc5413f3e" file="fabric-dimensions-v1-4abd26ae-4.0.28+4fc5413f3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-dimensions-v1-51aba2bb" version="2.1.21+489d6f8260" file="fabric-dimensions-v1-51aba2bb-2.1.21+489d6f8260.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-entity-events-v1-4abd26ae" version="3.1.1+1d0ab4303e" file="fabric-entity-events-v1-4abd26ae-3.1.1+1d0ab4303e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-entity-events-v1-51aba2bb" version="1.4.9+d7c144a860" file="fabric-entity-events-v1-51aba2bb-1.4.9+d7c144a860.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-events-interaction-v0-4abd26ae" version="4.1.1+3b89ecf63e" file="fabric-events-interaction-v0-4abd26ae-4.1.1+3b89ecf63e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-events-interaction-v0-51aba2bb" version="0.4.20+d7c144a860" file="fabric-events-interaction-v0-51aba2bb-0.4.20+d7c144a860.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-events-lifecycle-v0-51aba2bb" version="0.2.22+d7c144a860" file="fabric-events-lifecycle-v0-51aba2bb-0.2.22+d7c144a860.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-game-rule-api-v1-4abd26ae" version="2.0.3+4fc5413f3e" file="fabric-game-rule-api-v1-4abd26ae-2.0.3+4fc5413f3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-game-rule-api-v1-51aba2bb" version="1.0.13+d7c144a860" file="fabric-game-rule-api-v1-51aba2bb-1.0.13+d7c144a860.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-gametest-api-v1-4abd26ae" version="3.1.27+4fc5413f3e" file="fabric-gametest-api-v1-4abd26ae-3.1.27+4fc5413f3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-gametest-api-v1-51aba2bb" version="1.0.21+91b7aa6660" file="fabric-gametest-api-v1-51aba2bb-1.0.21+91b7aa6660.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-item-api-v1-4abd26ae" version="11.5.20+d0c46b9e3e" file="fabric-item-api-v1-4abd26ae-11.5.20+d0c46b9e3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-item-api-v1-51aba2bb" version="1.6.2+8165403660" file="fabric-item-api-v1-51aba2bb-1.6.2+8165403660.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-item-group-api-v1-4abd26ae" version="4.2.36+4fc5413f3e" file="fabric-item-group-api-v1-4abd26ae-4.2.36+4fc5413f3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-item-groups-v0-51aba2bb" version="0.3.16+91896a4960" file="fabric-item-groups-v0-51aba2bb-0.3.16+91896a4960.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-key-binding-api-v1-4abd26ae" version="1.1.7+4fc5413f3e" file="fabric-key-binding-api-v1-4abd26ae-1.1.7+4fc5413f3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-key-binding-api-v1-51aba2bb" version="1.0.12+54e5b2ec60" file="fabric-key-binding-api-v1-51aba2bb-1.0.12+54e5b2ec60.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-keybindings-v0-51aba2bb" version="0.2.10+b4f4f6cd60" file="fabric-keybindings-v0-51aba2bb-0.2.10+b4f4f6cd60.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-lifecycle-events-v1-4abd26ae" version="2.6.15+4ebb5c083e" file="fabric-lifecycle-events-v1-4abd26ae-2.6.15+4ebb5c083e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-lifecycle-events-v1-51aba2bb" version="2.1.1+cc71601c60" file="fabric-lifecycle-events-v1-51aba2bb-2.1.1+cc71601c60.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-loot-api-v2-4abd26ae" version="3.0.73+3f89f5a53e" file="fabric-loot-api-v2-4abd26ae-3.0.73+3f89f5a53e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-loot-api-v2-51aba2bb" version="1.1.2+1997ad1260" file="fabric-loot-api-v2-51aba2bb-1.1.2+1997ad1260.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-loot-api-v3-4abd26ae" version="2.0.20+78c8b4663e" file="fabric-loot-api-v3-4abd26ae-2.0.20+78c8b4663e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-loot-tables-v1-51aba2bb" version="1.1.4+e747827960" file="fabric-loot-tables-v1-51aba2bb-1.1.4+e747827960.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-message-api-v1-4abd26ae" version="6.1.12+4ebb5c083e" file="fabric-message-api-v1-4abd26ae-6.1.12+4ebb5c083e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-mining-level-api-v1-51aba2bb" version="2.1.6+cc71601c60" file="fabric-mining-level-api-v1-51aba2bb-2.1.6+cc71601c60.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-model-loading-api-v1-4abd26ae" version="6.0.15+4fc5413f3e" file="fabric-model-loading-api-v1-4abd26ae-6.0.15+4fc5413f3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-models-v0-51aba2bb" version="0.3.7+d7c144a860" file="fabric-models-v0-51aba2bb-0.3.7+d7c144a860.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-networking-api-v1-4abd26ae" version="5.1.6+6b6d71a53e" file="fabric-networking-api-v1-4abd26ae-5.1.6+6b6d71a53e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-networking-api-v1-51aba2bb" version="1.0.24+2d30af4b60" file="fabric-networking-api-v1-51aba2bb-1.0.24+2d30af4b60.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-networking-v0-51aba2bb" version="0.3.11+b4f4f6cd60" file="fabric-networking-v0-51aba2bb-0.3.11+b4f4f6cd60.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-object-builder-api-v1-4abd26ae" version="21.1.40+4fc5413f3e" file="fabric-object-builder-api-v1-4abd26ae-21.1.40+4fc5413f3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-object-builder-api-v1-51aba2bb" version="2.1.5+032c981d60" file="fabric-object-builder-api-v1-51aba2bb-2.1.5+032c981d60.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-particles-v1-4abd26ae" version="4.2.12+4fc5413f3e" file="fabric-particles-v1-4abd26ae-4.2.12+4fc5413f3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-particles-v1-51aba2bb" version="0.2.13+526dc1ac60" file="fabric-particles-v1-51aba2bb-0.2.13+526dc1ac60.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-recipe-api-v1-4abd26ae" version="8.2.4+4ebb5c083e" file="fabric-recipe-api-v1-4abd26ae-8.2.4+4ebb5c083e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-registry-sync-v0-4abd26ae" version="6.2.6+1718722b3e" file="fabric-registry-sync-v0-4abd26ae-6.2.6+1718722b3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-registry-sync-v0-51aba2bb" version="0.9.12+bb2e047760" file="fabric-registry-sync-v0-51aba2bb-0.9.12+bb2e047760.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-renderer-api-v1-4abd26ae" version="8.0.3+f4ffd2e53e" file="fabric-renderer-api-v1-4abd26ae-8.0.3+f4ffd2e53e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-renderer-api-v1-51aba2bb" version="0.5.0+bf48649860" file="fabric-renderer-api-v1-51aba2bb-0.5.0+bf48649860.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-renderer-indigo-4abd26ae" version="5.0.3+f4ffd2e53e" file="fabric-renderer-indigo-4abd26ae-5.0.3+f4ffd2e53e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-renderer-indigo-51aba2bb" version="0.6.1+03e2b68760" file="fabric-renderer-indigo-51aba2bb-0.6.1+03e2b68760.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-renderer-registries-v1-51aba2bb" version="3.2.13+b4f4f6cd60" file="fabric-renderer-registries-v1-51aba2bb-3.2.13+b4f4f6cd60.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-rendering-data-attachment-v1-51aba2bb" version="0.3.9+ee3621fc60" file="fabric-rendering-data-attachment-v1-51aba2bb-0.3.9+ee3621fc60.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-rendering-fluids-v1-4abd26ae" version="3.1.43+4ebb5c083e" file="fabric-rendering-fluids-v1-4abd26ae-3.1.43+4ebb5c083e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-rendering-fluids-v1-51aba2bb" version="2.0.3+54e5b2ec60" file="fabric-rendering-fluids-v1-51aba2bb-2.0.3+54e5b2ec60.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-rendering-v0-51aba2bb" version="1.1.15+b4f4f6cd60" file="fabric-rendering-v0-51aba2bb-1.1.15+b4f4f6cd60.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-rendering-v1-4abd26ae" version="16.2.10+0290ad933e" file="fabric-rendering-v1-4abd26ae-16.2.10+0290ad933e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-rendering-v1-51aba2bb" version="1.11.0+b7f3cf3460" file="fabric-rendering-v1-51aba2bb-1.11.0+b7f3cf3460.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-resource-conditions-api-v1-4abd26ae" version="5.0.35+4fc5413f3e" file="fabric-resource-conditions-api-v1-4abd26ae-5.0.35+4fc5413f3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-resource-conditions-api-v1-51aba2bb" version="2.0.3+91b7aa6660" file="fabric-resource-conditions-api-v1-51aba2bb-2.0.3+91b7aa6660.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-resource-loader-v0-4abd26ae" version="3.3.4+4fc5413f3e" file="fabric-resource-loader-v0-4abd26ae-3.3.4+4fc5413f3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-resource-loader-v0-51aba2bb" version="0.5.3+047a5ecb60" file="fabric-resource-loader-v0-51aba2bb-0.5.3+047a5ecb60.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-resource-loader-v1-4abd26ae" version="1.0.10+78c8b4663e" file="fabric-resource-loader-v1-4abd26ae-1.0.10+78c8b4663e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-screen-api-v1-4abd26ae" version="3.1.7+4ebb5c083e" file="fabric-screen-api-v1-4abd26ae-3.1.7+4ebb5c083e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-screen-api-v1-51aba2bb" version="1.0.11+d882b91560" file="fabric-screen-api-v1-51aba2bb-1.0.11+d882b91560.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-screen-handler-api-v1-4abd26ae" version="1.3.162+4fc5413f3e" file="fabric-screen-handler-api-v1-4abd26ae-1.3.162+4fc5413f3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-screen-handler-api-v1-51aba2bb" version="1.2.3+1f6558e860" file="fabric-screen-handler-api-v1-51aba2bb-1.2.3+1f6558e860.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-serialization-api-v1-4abd26ae" version="1.0.5+4ebb5c083e" file="fabric-serialization-api-v1-4abd26ae-1.0.5+4ebb5c083e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-sound-api-v1-4abd26ae" version="1.0.51+4fc5413f3e" file="fabric-sound-api-v1-4abd26ae-1.0.51+4fc5413f3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-tag-api-v1-4abd26ae" version="1.2.20+4fc5413f3e" file="fabric-tag-api-v1-4abd26ae-1.2.20+4fc5413f3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-tag-api-v1-4abd26ae" version="1.3.0+88d7da613e" file="fabric-tag-api-v1-4abd26ae-1.3.0+88d7da613e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-textures-v0-51aba2bb" version="1.0.13+3ac43d9560" file="fabric-textures-v0-51aba2bb-1.0.13+3ac43d9560.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-transfer-api-v1-4abd26ae" version="6.0.25+4fc5413f3e" file="fabric-transfer-api-v1-4abd26ae-6.0.25+4fc5413f3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-transfer-api-v1-51aba2bb" version="1.6.4+f4563ac860" file="fabric-transfer-api-v1-51aba2bb-1.6.4+f4563ac860.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-transitive-access-wideners-v1-4abd26ae" version="7.1.0+014c8cec3e" file="fabric-transitive-access-wideners-v1-4abd26ae-7.1.0+014c8cec3e.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
+         <trust group="remapped.net.fabricmc.fabric-api" name="fabric-transitive-access-wideners-v1-51aba2bb" version="1.1.0+e747827960" file="fabric-transitive-access-wideners-v1-51aba2bb-1.1.0+e747827960.jar" reason="Fabric Loom produces this exact local remapped Fabric API JAR with non-reproducible bytes"/>
       </trusted-artifacts>
    </configuration>
    <components>
@@ -119,6 +118,14 @@
          </artifact>
          <artifact name="lz4-java-1.8.1.pom">
             <sha256 value="2c0dfc3857c5843590b6f49fa522d1f9665874ff2139f760f40dfa1eb52e6e48" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="blue.endless" name="jankson" version="1.2.3">
+         <artifact name="jankson-1.2.3.jar">
+            <sha256 value="7a71dd9c4ac20cea37ce19c35c4aeda15385a40f31836b0058ff18f9e9554aad" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="jankson-1.2.3.module">
+            <sha256 value="0890892aebbff8e832d4bfda486002115de4378d9e1d1148874e7dd956cac270" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="ca.weblite" name="java-objc-bridge" version="1.0.0">
@@ -238,6 +245,38 @@
          </artifact>
          <artifact name="spotless-plugin-gradle-8.8.0.module">
             <sha256 value="35436f4bda6602e4b5f48d057abddfc1bf3e1d8da4a89c1d5fc6a44ec92465c3" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="com.electronwill.night-config" name="core" version="3.6.4">
+         <artifact name="core-3.6.4.jar">
+            <sha256 value="1bc71c67b54ba9c8e5030b3ddaef7dee16ae43fee6850368f76b0cffef819700" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="core-3.6.4.pom">
+            <sha256 value="f7366f3355a40ec2961483ef786ea07c6dedfd57dccf51eda6b79247a491354b" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="com.electronwill.night-config" name="core" version="3.6.6">
+         <artifact name="core-3.6.6.jar">
+            <sha256 value="d8a2cedd585113347a3b3e5ea7f76a0b3c68f2c38e4e7256293f6f7acc1ba224" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="core-3.6.6.pom">
+            <sha256 value="9330447a1ec7f5b3e78526e938e3637b012efc0606607ac28260fb751c03ef7f" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="com.electronwill.night-config" name="toml" version="3.6.4">
+         <artifact name="toml-3.6.4.jar">
+            <sha256 value="3cb3d0ef3352e204cda68215fbe41afdc7f56425ef4fd8e84006964a656117d4" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="toml-3.6.4.pom">
+            <sha256 value="44a285d185d6dacce96c5cd67f88cce7a3946e447d6133fec22cc31f0c5fff42" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="com.electronwill.night-config" name="toml" version="3.6.6">
+         <artifact name="toml-3.6.6.jar">
+            <sha256 value="2e0efcadbe0ce1000a59afff0c8e9e4820e86353901682ad4f13061358282fb0" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="toml-3.6.6.pom">
+            <sha256 value="9f8046176d7bea5c07d2ea9033b8c787550963b03037ee1d67072dfc02cfd8f9" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="com.ethlo.time" name="itu" version="1.14.0">
@@ -439,6 +478,14 @@
             <sha256 value="41063442c8891b2774536a9b87a5062a7fd20e6f1949974c6da72f49472d6f4d" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="com.github.jponge" name="lzma-java" version="1.3">
+         <artifact name="lzma-java-1.3.jar">
+            <sha256 value="75ccc0e24d37ed5b8916e1bcffad1e067c2b1cfa21b635287f968db5c3c1963a" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="lzma-java-1.3.pom">
+            <sha256 value="fbcba81b21a8bc3c0761e4798fa05285444b43d681c03c9af49f9b2e1ecb0184" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="com.github.oshi" name="oshi-core" version="5.8.5">
          <artifact name="oshi-core-5.8.5.jar">
             <sha256 value="fe16bd8836eecf3d152585c2151322273b68237d13f223e662e0db959dd13680" origin="Generated by Gradle"/>
@@ -510,6 +557,24 @@
             <sha256 value="1fa0122c0e3733192642861c36be4c6f799a795327a23bdd2922691b6e9ba480" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="com.google.code.gson" name="gson" version="2.2.4">
+         <artifact name="gson-2.2.4.pom">
+            <sha256 value="ae984d5d19894ce6dc4689866eaa12f8fc31409113e60ee3b44853b8ac4fd380" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="com.google.code.gson" name="gson" version="2.8.5">
+         <artifact name="gson-2.8.5.pom">
+            <sha256 value="b8308557a7fccc92d9fe7c8cd0599258b361285d2ecde7689eda98843255a092" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="com.google.code.gson" name="gson" version="2.8.6">
+         <artifact name="gson-2.8.6.jar">
+            <sha256 value="c8fb4839054d280b3033f800d1f5a97de2f028eb8ba2eb458ad287e536f3f25f" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="gson-2.8.6.pom">
+            <sha256 value="2174415a647332d30fda04bd1cfc708a3ecc84eaf7517f596188d8244e103911" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="com.google.code.gson" name="gson" version="2.8.9">
          <artifact name="gson-2.8.9.jar">
             <sha256 value="d3999291855de495c94c743761b8ab5176cfeabe281a5ab0d8e8d45326fd703e" origin="Generated by Gradle"/>
@@ -533,9 +598,27 @@
             <sha256 value="82b0f6694c5758ab8bb07e05630208d50f589d4b5e04fd0a046d59cdf7ba3d1d" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="com.google.code.gson" name="gson-parent" version="2.8.5">
+         <artifact name="gson-parent-2.8.5.pom">
+            <sha256 value="8f1fec72b91a71ea39ec39f5f778c4d1124b6b097c6d55b3a50b554a52237b27" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="com.google.code.gson" name="gson-parent" version="2.8.6">
+         <artifact name="gson-parent-2.8.6.pom">
+            <sha256 value="3736463859ec19267295e894940ae82a8f684413031122fe35ce7cff7e30a774" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="com.google.code.gson" name="gson-parent" version="2.8.9">
          <artifact name="gson-parent-2.8.9.pom">
             <sha256 value="b16e026e63427c1972ad0fc68703ec379b1576e411ba49c32fa9a31ab0bbcffb" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="com.google.errorprone" name="error_prone_annotations" version="2.1.3">
+         <artifact name="error_prone_annotations-2.1.3.jar">
+            <sha256 value="03d0329547c13da9e17c634d1049ea2ead093925e290567e1a364fd6b1fc7ff8" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="error_prone_annotations-2.1.3.pom">
+            <sha256 value="958cb81c393cb2996c3c6a9e867a4a4be8ddc43391672a9e4e4eba51ac7237f5" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="com.google.errorprone" name="error_prone_annotations" version="2.21.1">
@@ -584,6 +667,11 @@
          </artifact>
          <artifact name="error_prone_annotations-2.7.1.pom">
             <sha256 value="31a872e1149c5f3a8bc05fb4de455e5ea608ecfad1af222cb7637ca6c762ee25" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="com.google.errorprone" name="error_prone_parent" version="2.1.3">
+         <artifact name="error_prone_parent-2.1.3.pom">
+            <sha256 value="d52a2616a1389fce951de0e97a780b88f1bdf0c947b315a76fd47cd6bbfb239b" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="com.google.errorprone" name="error_prone_parent" version="2.21.1">
@@ -653,6 +741,27 @@
             <sha256 value="c54beff37f6d42d43e14722d54a522c9ad51ef97fc5b79277e62a3ebf882f3bb" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="com.google.guava" name="guava" version="20.0">
+         <artifact name="guava-20.0.jar">
+            <sha256 value="36a666e3b71ae7f0f0dca23654b67e086e6c93d192f60ba5dfd5519db6c288c8" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="guava-20.0.pom">
+            <sha256 value="363cc83767b760d7a564d5301e09467e6d48fc1c1c1664b1e18c50815ce19076" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="com.google.guava" name="guava" version="21.0">
+         <artifact name="guava-21.0.pom">
+            <sha256 value="c0b016a85c784e01ca51e9d64bf8fe80ce402b206fea897b03258d5e6d0ff80d" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="com.google.guava" name="guava" version="25.1-jre">
+         <artifact name="guava-25.1-jre.jar">
+            <sha256 value="6db0c3a244c397429c2e362ea2837c3622d5b68bb95105d37c21c36e5bc70abf" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="guava-25.1-jre.pom">
+            <sha256 value="65f8b46ee148b49a30319d3aed247c195c8c532486da7cf74f1fc1b5892bcadf" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="com.google.guava" name="guava" version="31.0.1-jre">
          <artifact name="guava-31.0.1-jre.jar">
             <sha256 value="d5be94d65e87bd219fb3193ad1517baa55a3b88fc91d21cf735826ab5af087b9" origin="Generated by Gradle"/>
@@ -683,6 +792,21 @@
          </artifact>
          <artifact name="guava-33.5.0-jre.pom">
             <sha256 value="0478fa78a908b3c31fe6d77be9978aaa621e2a181db84007e3d3b37424a2ac61" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="com.google.guava" name="guava-parent" version="20.0">
+         <artifact name="guava-parent-20.0.pom">
+            <sha256 value="f1226fd07fc72af8d6232bdfa70bf31d883a1a01cbc547f23a74e9066c692df1" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="com.google.guava" name="guava-parent" version="21.0">
+         <artifact name="guava-parent-21.0.pom">
+            <sha256 value="acdc6d6f07b346caeb174932788bccc63c035cc5c2b100958c21ffe0f6e19988" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="com.google.guava" name="guava-parent" version="25.1-jre">
+         <artifact name="guava-parent-25.1-jre.pom">
+            <sha256 value="c0d16762dc9bfc77ecc598b8e65907d85b345508a5f7f9556df943c2c47f968e" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="com.google.guava" name="guava-parent" version="26.0-android">
@@ -721,6 +845,14 @@
          </artifact>
          <artifact name="listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.pom">
             <sha256 value="18d4b1db26153d4e55079ce1f76bb1fe05cdb862ef9954a88cbcc4ff38b8679b" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="com.google.j2objc" name="j2objc-annotations" version="1.1">
+         <artifact name="j2objc-annotations-1.1.jar">
+            <sha256 value="2994a7eb78f2710bd3d3bfb639b2c94e219cedac0d4d084d516e78c16dddecf6" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="j2objc-annotations-1.1.pom">
+            <sha256 value="f0c98c571e93a7cb4dd18df0fa308f0963e7a0620ac2d4244e61e709d03ad6be" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="com.google.j2objc" name="j2objc-annotations" version="1.3">
@@ -763,6 +895,14 @@
             <sha256 value="e4ed6c669620366f993920659fe0ac7cbc83d753dbc0dc0eb1e529973af96f23" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="com.ibm.icu" name="icu4j" version="61.1">
+         <artifact name="icu4j-61.1.jar">
+            <sha256 value="55c98eb1838b2a4bb9a07dc36bd378532d64d0cdcb7ceee914236866a7de4464" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="icu4j-61.1.pom">
+            <sha256 value="13b87a4079ceb05515b19ac7a15203947075601d49423f719358a4980098056b" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="com.ibm.icu" name="icu4j" version="70.1">
          <artifact name="icu4j-70.1.jar">
             <sha256 value="2b4d8d4e098e86aa5f905ec81c46751d218b16afd3f7fc02b64f80dd20fffa20" origin="Generated by Gradle"/>
@@ -777,6 +917,14 @@
          </artifact>
          <artifact name="icu4j-77.1.pom">
             <sha256 value="16e54bf6bfa9fb221bb57e133a8373f442110f3dae3710156e92615c82476e18" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="com.machinezoo.noexception" name="noexception" version="1.7.1">
+         <artifact name="noexception-1.7.1.jar">
+            <sha256 value="3d70aaea3904918587a21bdf99ab6ade9ab1dd0eaf6119344ba513f60f575816" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="noexception-1.7.1.pom">
+            <sha256 value="54929708377b26d83271a38e91f9c07d4a992e0c83c1b567f1a2d2599795029d" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="com.microsoft.azure" name="msal4j" version="1.23.1">
@@ -833,6 +981,14 @@
          </artifact>
          <artifact name="datafixerupper-4.1.27.pom">
             <sha256 value="d463cf44c804958484644652d2a1798adcaaa5085bac0251aa750e42da9134b6" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="com.mojang" name="datafixerupper" version="6.0.8">
+         <artifact name="datafixerupper-6.0.8.jar">
+            <sha256 value="6e38e9fc5404be7e45189aa14ca6058bc85df20d6760a212b6d48e666abf0fef" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="datafixerupper-6.0.8.module">
+            <sha256 value="7632ce1c621df15695c9768c41bc1930c8dbb4065d562977712d1fd303aebb09" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="com.mojang" name="datafixerupper" version="9.0.19">
@@ -923,6 +1079,22 @@
          </artifact>
          <artifact name="json-schema-validator-1.5.9.pom">
             <sha256 value="13e4d327d45f3398ebf80f477e2470eb6ac263f423d289023bbb2ad5e69c278c" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="com.nothome" name="javaxdelta" version="2.0.1">
+         <artifact name="javaxdelta-2.0.1.jar">
+            <sha256 value="a661dfcb749053fc26eada2a0a8e619a8ead1ca9eda29e1698687aa2cdd80152" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="javaxdelta-2.0.1.pom">
+            <sha256 value="93bbe8babc70e175d406ac689b90e689f4915c6e39e738eb6406fa5b529ce36c" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="com.opencsv" name="opencsv" version="5.4">
+         <artifact name="opencsv-5.4.jar">
+            <sha256 value="9fde1ef3e544404e34eaee15e4bf7ba74b80355d798093b0524d63a59936242b" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="opencsv-5.4.pom">
+            <sha256 value="b864299a7d0a21020a831699438f7d3f85408ab24a34e911faa99ff684eb76fd" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="com.pinterest.ktlint" name="ktlint-cli" version="1.8.0">
@@ -1066,6 +1238,14 @@
             <sha256 value="b1c2199e1c0cc969ef61cbbe4af2ecaf9b06411bdde01cbaf6fc9134dfe04e8a" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="commons-beanutils" name="commons-beanutils" version="1.9.4">
+         <artifact name="commons-beanutils-1.9.4.jar">
+            <sha256 value="7d938c81789028045c08c065e94be75fc280527620d5bd62b519d5838532368a" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="commons-beanutils-1.9.4.pom">
+            <sha256 value="c35cca7b61d4678d9578cbc0b901b8717b539abf9254441da78b8fe60de064d0" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="commons-codec" name="commons-codec" version="1.15">
          <artifact name="commons-codec-1.15.jar">
             <sha256 value="b3e9f6d63a790109bf0d056611fbed1cf69055826defeb9894a71369d246ed63" origin="Generated by Gradle"/>
@@ -1098,6 +1278,14 @@
             <sha256 value="d9a565d978faa69d2b1195fb1ec27e60f29e7feb09afb85adac78f280068f8fe" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="commons-collections" name="commons-collections" version="3.2.2">
+         <artifact name="commons-collections-3.2.2.jar">
+            <sha256 value="eeeae917917144a68a741d4c0dff66aa5c5c5fd85593ff217bced3fc8ca783b8" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="commons-collections-3.2.2.pom">
+            <sha256 value="d5d81fcc288c0d8c711c302007cada4aa9a226ed1a112d4baa64cb1d6322170b" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="commons-io" name="commons-io" version="2.11.0">
          <artifact name="commons-io-2.11.0.jar">
             <sha256 value="961b2f6d87dbacc5d54abf45ab7a6e2495f89b75598962d8c723cea9bc210908" origin="Generated by Gradle"/>
@@ -1114,12 +1302,150 @@
             <sha256 value="bdbdf81072c190ee9a8b181a5c58f5bd917a750fb13a256debbf53f5dbd33a2a" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="commons-io" name="commons-io" version="2.4">
+         <artifact name="commons-io-2.4.jar">
+            <sha256 value="cc6a41dc3eaacc9e440a6bd0d2890b20d36b4ee408fe2d67122f328bb6e01581" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="commons-io-2.4.pom">
+            <sha256 value="b2b5dd46cf998fa626eb6f8a1c114f6167c8d392694164e62533e5898e9b31f2" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="commons-io" name="commons-io" version="2.5">
+         <artifact name="commons-io-2.5.jar">
+            <sha256 value="a10418348d234968600ccb1d988efcbbd08716e1d96936ccc1880e7d22513474" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="commons-io-2.5.pom">
+            <sha256 value="28ebb2998bc7d7acb25078526971640892000f3413586ff42d611f1043bfec30" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="commons-logging" name="commons-logging" version="1.2">
          <artifact name="commons-logging-1.2.jar">
             <sha256 value="daddea1ea0be0f56978ab3006b8ac92834afeefbd9b7e4e6316fca57df0fa636" origin="Generated by Gradle"/>
          </artifact>
          <artifact name="commons-logging-1.2.pom">
             <sha256 value="c91ab5aa570d86f6fd07cc158ec6bc2c50080402972ee9179fe24100739fbb20" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="cpw.mods" name="bootstraplauncher" version="1.0.0">
+         <artifact name="bootstraplauncher-1.0.0.jar">
+            <sha256 value="bf09102181b8d9b03b536d3388463cc08c4044e4234d233515dae84bd39920e4" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="bootstraplauncher-1.0.0.pom">
+            <sha256 value="d217e4f782ecf94be15d59eb7946bc19eb624f2d2081b6feb491625bcd87515a" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="cpw.mods" name="modlauncher" version="9.0.24">
+         <artifact name="modlauncher-9.0.24.pom">
+            <sha256 value="814466347974cb81579c6fbc8f724a65dbb0f1f5384a007c35b5e4eda53f78fc" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="cpw.mods" name="modlauncher" version="9.1.3">
+         <artifact name="modlauncher-9.1.3.jar">
+            <sha256 value="433c038b505eb37a963e810b105b96b4d073fced389c68cbe332614a6b502c76" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="modlauncher-9.1.3.pom">
+            <sha256 value="238acfbfd7709e1ffaf3c0da7e7c596f36309e1218529ee5e09952688d8a9fd1" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="cpw.mods" name="securejarhandler" version="1.0.8">
+         <artifact name="securejarhandler-1.0.8.jar">
+            <sha256 value="69249634131934d346ba788fd099649b2b9277b002fcb612e86e43e18091f075" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="securejarhandler-1.0.8.pom">
+            <sha256 value="2faf2799714125b31c5e7e0b87a03b046f047b4bba0edae31c1b3b92e348f279" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="de.oceanlabs.mcp" name="mcinjector" version="3.8.0">
+         <artifact name="mcinjector-3.8.0.jar">
+            <sha256 value="c86fd3faaafb167b6af107064980686d0faf5c68a11cd4a1566846466e0ca691" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="mcinjector-3.8.0.pom">
+            <sha256 value="962df2f509981969aecc3dab95a07025c46bfdcbeee2e9a787c880515b15ae82" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="de.oceanlabs.mcp" name="mcp_config" version="1.18.2-20220404.173914">
+         <artifact name="mcp_config-1.18.2-20220404.173914.pom">
+            <sha256 value="727ec67ccab28560073b115018d9f7f6c7c3d39e1d36816fd732aa0f31a793ab" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="mcp_config-1.18.2-20220404.173914.zip">
+            <sha256 value="f60527297dd4e81e3da93dc95981e426a81d3b03457cf2f94af8281e2db5a8f2" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="de.siegmar" name="fastcsv" version="2.0.0">
+         <artifact name="fastcsv-2.0.0.jar">
+            <sha256 value="665d52cb6f35ca236919be9ac81653c208628507f91d6bf13479bc11496db616" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="fastcsv-2.0.0.module">
+            <sha256 value="a6edced6c1a0014e9cdd17f230f1b13c0fdafa164ffec8d22828f31fe166c134" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="dev.architectury" name="architectury-loom" version="1.17.487">
+         <artifact name="architectury-loom-1.17.487.jar">
+            <sha256 value="da8effeb6de42cf0564aad5846f4df451a3bdd6874143fab63a3dd8389ea2003" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="architectury-loom-1.17.487.pom">
+            <sha256 value="209cab27a49ba52fd2ebbe323395bacd37520e862ff56ad3e33e9b7b19adb3ea" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="dev.architectury" name="architectury-mixin-remapper-service" version="2.0.9">
+         <artifact name="architectury-mixin-remapper-service-2.0.9.jar">
+            <sha256 value="51c27c9791f24779786ec68def5dad9c710b18144135e0c79f8f8bdb02c1c6b1" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="architectury-mixin-remapper-service-2.0.9.pom">
+            <sha256 value="8c6de90dc94a9ca44f5148c3b9fb1d947ccc0b40f44678761ddcb3977a4fab5d" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="dev.architectury" name="architectury-naming-service" version="2.0.9">
+         <artifact name="architectury-naming-service-2.0.9.jar">
+            <sha256 value="6e0266d4a1e0900e4b46336b268867d0f51cb2a91155618a377efd80cf280a6f" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="architectury-naming-service-2.0.9.pom">
+            <sha256 value="bd1d135e05f553683585afb6c16e414be87f0ce7fcf1322ac4e7157d389dbee2" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="dev.architectury" name="at" version="1.0.1">
+         <artifact name="at-1.0.1.jar">
+            <sha256 value="df8b69556807b8d75adc55bc5b6827ef2e44ed1345e23d2bca6df150bd4811a3" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="at-1.0.1.module">
+            <sha256 value="55ec6c0de696f860b3a2aed1f6763cb836379badf09cf16421cc42efa0591835" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="dev.architectury" name="mcp-annotations" version="2.0.9">
+         <artifact name="mcp-annotations-2.0.9.jar">
+            <sha256 value="0ed956e09c4a71378393a90042391a2fbfab978247df0c2ff2e406bd0773197e" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="mcp-annotations-2.0.9.pom">
+            <sha256 value="2dcece0ffbe44907c40f95723b0b245a99937b1bee70c6d1a597387189ab9295" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="dev.architectury" name="mercury" version="0.4.3.18">
+         <artifact name="mercury-0.4.3.18.jar">
+            <sha256 value="36d7887523cf30ae3e9413e96335ab54ec1bfe071f72ba9596e315e1844bc4fe" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="mercury-0.4.3.18.pom">
+            <sha256 value="2bafdfaade6c0167079a352bc3e487f71b8a5c5b9d4bbe2d6b57087f2ce48cca" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="dev.architectury" name="mixin-patched" version="0.8.5.12">
+         <artifact name="mixin-patched-0.8.5.12.jar">
+            <sha256 value="936d515ac41de42f5c0c6bb0fedaa470c9c404cae321f730a5c060d5721d41ca" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="mixin-patched-0.8.5.12.pom">
+            <sha256 value="ec5397894481ea9d5a42be8a5d28cf0bbd3b577a2cb2bead4396b6b6385cf050" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="dev.architectury" name="refmap-remapper" version="1.0.5">
+         <artifact name="refmap-remapper-1.0.5.jar">
+            <sha256 value="27d132e4022bbd0876a3b1da8eac2390cf736cced0885013f723815c78b18668" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="refmap-remapper-1.0.5.pom">
+            <sha256 value="9cdbc9b5e85be6abf2242b83f351e57225ca8ffc4208e9a042f4a0cace4c7ac0" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="dev.architectury.loom" name="dev.architectury.loom.gradle.plugin" version="1.17.487">
+         <artifact name="dev.architectury.loom.gradle.plugin-1.17.487.pom">
+            <sha256 value="52122a4c948445dfa851a620b39f986bdfa6abd2aed64f2946be7fa2419815e1" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="dev.drewhamilton.poko" name="poko-annotations" version="0.20.1">
@@ -1162,6 +1488,22 @@
          </artifact>
          <artifact name="java-json-canonicalization-1.1.pom">
             <sha256 value="37114938a89def00596ff5541b794abc6be626b4c73e988d5a5bd457a3f38477" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="io.github.juuxel" name="unprotect" version="2.0.2">
+         <artifact name="unprotect-2.0.2.jar">
+            <sha256 value="8599e4a56278a52c51b198169d0f4d276444de12efd919d75b8d85d04f2cd59a" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="unprotect-2.0.2.module">
+            <sha256 value="f42e97c50468851221e026b01aec2c8bdfcd405a6b41fd33b98021ab62b775d0" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="io.github.juuxel" name="unprotect-modlauncher" version="2.0.2">
+         <artifact name="unprotect-modlauncher-2.0.2.jar">
+            <sha256 value="8987f29edaaeb8826eaf482cf47acbf287d828ec57fa12503aa8cec434118392" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="unprotect-modlauncher-2.0.2.module">
+            <sha256 value="be3d17e14a62d03b1fc1cb0033450e2f0f4b2cf620be3b6c098894532cae24d4" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="io.github.llamalad7" name="mixinextras-fabric" version="0.5.4">
@@ -1324,6 +1666,11 @@
             <sha256 value="cc6f86c850e5199decac1364fc6110f32c4fe7df31a68700438eeaaa190b38ae" origin="Paper API 1.21.11 snapshot 20260511.115010-91"/>
          </artifact>
       </component>
+      <component group="it.unimi.dsi" name="fastutil" version="8.3.1">
+         <artifact name="fastutil-8.3.1.pom">
+            <sha256 value="7d795db0ceb8fe69f8acbfef65353e8530dcda52b52fb61080e40c98677f0db4" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="it.unimi.dsi" name="fastutil" version="8.5.15">
          <artifact name="fastutil-8.5.15.jar">
             <sha256 value="cffeb6673bdf1e6e4377d684df2f55ac359cf5cf6df613e05e62deeea500936a" origin="Generated by Gradle"/>
@@ -1367,11 +1714,117 @@
          </artifact>
       </component>
       <component group="loom" name="mappings" version="layered+hash.2198">
+         <artifact name="mappings-layered+hash.2198.jar">
+            <sha256 value="46a7c5073dbe4ff0396827dee717003039540fd05685476becbdc1cef8afed69" origin="Generated by Gradle"/>
+         </artifact>
          <artifact name="mappings-layered+hash.2198.pom">
             <sha256 value="b23b60cf890246e42926cb6e8e30e647b86aac8bafaa66124538297d73fa854e" origin="Generated by Gradle"/>
          </artifact>
-         <artifact name="mappings-layered+hash.2198.jar">
-            <sha256 value="46a7c5073dbe4ff0396827dee717003039540fd05685476becbdc1cef8afed69" origin="Generated by Gradle"/>
+      </component>
+      <component group="loom" name="mappings" version="layered+hash.40359">
+         <artifact name="mappings-layered+hash.40359.jar">
+            <sha256 value="2efbdc0f310ab360567f42985f46dbffac68dc76b7f7aa263f25fdfd04cb51a6" origin="Generated by Gradle">
+               <also-trust value="c511ca2fedfaccfe8d985342eb13e870053062cc15e71e092dee1ef281536e3b"/>
+            </sha256>
+         </artifact>
+         <artifact name="mappings-layered+hash.40359.pom">
+            <sha256 value="593e7ec8e6114268886450bd4f98edec5f0087e28e12801374bed4a3417afe3e" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="maven.modrinth" name="emi" version="0.7.3+1.18.2">
+         <artifact name="emi-0.7.3+1.18.2.jar">
+            <sha256 value="63a1d4fb29847a00a6ef7720211920f277673b7674b7c7136309adb828f679d2" origin="Modrinth release DDkCVTmY"/>
+         </artifact>
+         <artifact name="emi-0.7.3+1.18.2.pom">
+            <sha256 value="abd717c17418326bd2db68564a09e68a1fa647e8ee53221f54a868e8e105a7b5" origin="Downloaded from Modrinth Maven"/>
+         </artifact>
+      </component>
+      <component group="mezz.jei" name="jei-1.18.2-common" version="10.2.1.1010">
+         <artifact name="jei-1.18.2-common-10.2.1.1010-sources.jar">
+            <sha256 value="b25dbeb9ec4810f6b2a1f102b91662a127b40977ceafe70855d942f997119542" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="jei-1.18.2-common-10.2.1.1010.jar">
+            <sha256 value="c6f4eeee358e111361dcb2f833606b3dd687104df70835ce759d7e187e0d7dc3" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="jei-1.18.2-common-10.2.1.1010.pom">
+            <sha256 value="a7b5a3ae2f258f32c86d38261158d80e454cc5a818b1199d64eee436c5d0f711" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="mezz.jei" name="jei-1.18.2-common-api" version="10.2.1.1010">
+         <artifact name="jei-1.18.2-common-api-10.2.1.1010-sources.jar">
+            <sha256 value="e445478fe29be2fdcd02b53213d20429c224380f90225e34e201e5a239e37115" origin="BlameJared Maven"/>
+         </artifact>
+         <artifact name="jei-1.18.2-common-api-10.2.1.1010.jar">
+            <sha256 value="42bbad53056114c4cda2b43e8654c5cee7617b73edd4a9065177b21db401683e" origin="BlameJared Maven"/>
+         </artifact>
+         <artifact name="jei-1.18.2-common-api-10.2.1.1010.pom">
+            <sha256 value="c17855ff1c88b896400f3a89796798ae6d215fff8d7a2d8a0125392bc6420bdf" origin="BlameJared Maven"/>
+         </artifact>
+      </component>
+      <component group="mezz.jei" name="jei-1.18.2-core" version="10.2.1.1010">
+         <artifact name="jei-1.18.2-core-10.2.1.1010-sources.jar">
+            <sha256 value="db924e5aa904ca39cd8634e4ead1d7270efd1d96efac4d360f03a5477fd8ef87" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="jei-1.18.2-core-10.2.1.1010.jar">
+            <sha256 value="4e41a8f9693d9d2bf6a3eb60c6a5a02c8bc145414ccaba1caaf78c8559870c0a" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="jei-1.18.2-core-10.2.1.1010.pom">
+            <sha256 value="054f53b670550f20c7e60bb43788498ea7f2ad99365758cc9542b1c744f30a14" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="mezz.jei" name="jei-1.18.2-fabric-api" version="10.2.1.1010">
+         <artifact name="jei-1.18.2-fabric-api-10.2.1.1010-sources.jar">
+            <sha256 value="0a354e5eed4e92d7b2e120af9b48061c1e9b3f36c978bbf697005f483224715d" origin="BlameJared Maven"/>
+         </artifact>
+         <artifact name="jei-1.18.2-fabric-api-10.2.1.1010.jar">
+            <sha256 value="d9c03956f719a9b627da15375d9cd2764642a8d8c2c84b2eab12103c01ac36da" origin="Official BlameJared Maven SHA-256"/>
+         </artifact>
+         <artifact name="jei-1.18.2-fabric-api-10.2.1.1010.pom">
+            <sha256 value="f5bcf338ddfef0312c108260bc818f75885cbeba09dcdf89b57ca47958885800" origin="BlameJared Maven"/>
+         </artifact>
+      </component>
+      <component group="mezz.jei" name="jei-1.18.2-forge" version="10.2.1.1010">
+         <artifact name="jei-1.18.2-forge-10.2.1.1010-sources.jar">
+            <sha256 value="2268f8801b214f5fe73f5d8291d8dff1114729a67da639e2a09a8aa21ddd2e4d" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="jei-1.18.2-forge-10.2.1.1010.jar">
+            <sha256 value="7c181d0c44e357985cce6c82f6e9634b3f3ba7afda1d30bce5d16a3eb3a38424" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="jei-1.18.2-forge-10.2.1.1010.pom">
+            <sha256 value="64a93cec147ccadbdf90aa50241e894c6c2c501b989d3f8daa63b4a295b053cc" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="mezz.jei" name="jei-1.18.2-forge-api" version="10.2.1.1010">
+         <artifact name="jei-1.18.2-forge-api-10.2.1.1010-sources.jar">
+            <sha256 value="525e01a90bc41664cf6f2468fc8ae050798028345ddf59741badbae7536944fe" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="jei-1.18.2-forge-api-10.2.1.1010.jar">
+            <sha256 value="e72d8377adc2b62d8fe85c0df468d9cc9f1ec31fd8ef8eba0849a2c36b820d11" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="jei-1.18.2-forge-api-10.2.1.1010.pom">
+            <sha256 value="2ddbc7c116b3ca2ddb1dabad5dd56350b24516bb0e7be4530d07573f27f77d39" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="mezz.jei" name="jei-1.21.11-common-api-intermediary" version="27.17.0.50">
+         <artifact name="jei-1.21.11-common-api-intermediary-27.17.0.50-sources.jar">
+            <sha256 value="972983c4eeafd8eeea1e41139e4e8895d5f264b7e7b9eabc368a9310301c97d2" origin="BlameJared Maven"/>
+         </artifact>
+         <artifact name="jei-1.21.11-common-api-intermediary-27.17.0.50.jar">
+            <sha256 value="90d481faae773b9d5a5382d0609dd1eb2ca042101c82153a6cbaf45b2a2c3529" origin="BlameJared Maven"/>
+         </artifact>
+         <artifact name="jei-1.21.11-common-api-intermediary-27.17.0.50.pom">
+            <sha256 value="e7b0e45e8274cccbac1eed6318586abbd52300e11a6958fc09b461dab81728cd" origin="BlameJared Maven"/>
+         </artifact>
+      </component>
+      <component group="mezz.jei" name="jei-1.21.11-fabric-api" version="27.17.0.50">
+         <artifact name="jei-1.21.11-fabric-api-27.17.0.50-sources.jar">
+            <sha256 value="be4bed1501128334651d128acbfa0b72bbba3d9fa3c30a311fe784c776b574d9" origin="BlameJared Maven"/>
+         </artifact>
+         <artifact name="jei-1.21.11-fabric-api-27.17.0.50.jar">
+            <sha256 value="b1b48e58d5f4d9c363ea8581cfa578ab0a6cfcc6ac5bad9d1d0379938ca04751" origin="Official BlameJared Maven SHA-256"/>
+         </artifact>
+         <artifact name="jei-1.21.11-fabric-api-27.17.0.50.pom">
+            <sha256 value="836e3d707c77edb00a6a89d619a4f442e0139b93f8a5807dcbb87a96e62fd400" origin="BlameJared Maven"/>
          </artifact>
       </component>
       <component group="net.bytebuddy" name="byte-buddy" version="1.17.5">
@@ -1508,6 +1961,14 @@
          </artifact>
          <artifact name="mapping-io-0.8.0.pom">
             <sha256 value="0c385751afa23d2a85c00771e02c08f1b712252ad0271fba4475babb768ab628" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.fabricmc" name="mercury" version="0.4.2">
+         <artifact name="mercury-0.4.2.jar">
+            <sha256 value="cef38b402ab4a2afd4d6a00d2f3366a66b4ea4121046a728a788d544b492ef6d" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="mercury-0.4.2.pom">
+            <sha256 value="c916fdc160be8bdd3c2b3802c03eab8e6d418abecb0aa5804714e8fb35398b48" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="net.fabricmc" name="mercury" version="0.4.3">
@@ -2645,12 +3106,25 @@
             <sha256 value="27675ce7e6dc3d71b36eb26aae2be5d56329c904309def192484b6bd338eea46" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="net.java" name="jvnet-parent" version="3">
+         <artifact name="jvnet-parent-3.pom">
+            <sha256 value="30f5789efa39ddbf96095aada3fc1260c4561faf2f714686717cb2dc5049475a" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="net.java.dev.jna" name="jna" version="5.10.0">
          <artifact name="jna-5.10.0.jar">
             <sha256 value="e335c10679f743207d822c5f7948e930319835492575a9dba6b94f8a3b96fcc8" origin="Generated by Gradle"/>
          </artifact>
          <artifact name="jna-5.10.0.pom">
             <sha256 value="0773dd3bbaf5305e4c0c82fe345cc5d4c8e9fad62302a555118023f5e3eae316" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.java.dev.jna" name="jna" version="5.12.1">
+         <artifact name="jna-5.12.1.jar">
+            <sha256 value="91a814ac4f40d60dee91d842e1a8ad874c62197984403d0e3c30d39e55cf53b3" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="jna-5.12.1.pom">
+            <sha256 value="65ff25849bad859554b50317792f5689adb4529ae4031e9a5246319cb2b85356" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="net.java.dev.jna" name="jna" version="5.14.0">
@@ -2677,12 +3151,28 @@
             <sha256 value="e4a868f75f69d9542fc399dccdcb399b10c1ffc849525509be824e33b21b0295" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="net.java.dev.jna" name="jna-platform" version="5.12.1">
+         <artifact name="jna-platform-5.12.1.jar">
+            <sha256 value="8ce969116cac95bd61b07a8d5e07174b352e63301473caac72c395e3c08488d2" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="jna-platform-5.12.1.pom">
+            <sha256 value="c279ffa3b5168e2203087231c638919a7cec7458006b1cda66959747860fb457" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="net.java.dev.jna" name="jna-platform" version="5.17.0">
          <artifact name="jna-platform-5.17.0.jar">
             <sha256 value="b7e3d46c87bad2eb409b0e704916bcd81206168e357312dfddd0e253679cd9e0" origin="Generated by Gradle"/>
          </artifact>
          <artifact name="jna-platform-5.17.0.pom">
             <sha256 value="0a30b797adb6822147ef98cb249ef3fbf4a243542aa86bf9f42fad9e68305a44" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.jodah" name="typetools" version="0.8.3">
+         <artifact name="typetools-0.8.3.jar">
+            <sha256 value="f853e21f7de6bd192f0ce09e64a6c8b0e154c9cf9f34e62f08d5e26f73ce3b19" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="typetools-0.8.3.pom">
+            <sha256 value="86de7f0197fa656d4a7723a0113afccd9f3e8307f07e944e336e3bc6b128cb71" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="net.kyori" name="adventure-api" version="4.26.1">
@@ -2839,12 +3329,30 @@
             <sha256 value="36d9f9d59a1fcc609367aaccaa249319603e5247f6a8fe112b73bab921ac70d8" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="net.md-5" name="SpecialSource" version="1.8.5">
+         <artifact name="SpecialSource-1.8.5.jar">
+            <sha256 value="0ac4b7acac8d927e75cf47061b0c067130dd3bd713c493205ea7607241df2813" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="SpecialSource-1.8.5.pom">
+            <sha256 value="e039768b6e5151ac3e6f77fa05c1fae8313b1347b3dca7259ffd4210e35f12fc" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="net.md-5" name="bungeecord-chat" version="1.21-R0.2-deprecated+build.21">
          <artifact name="bungeecord-chat-1.21-R0.2-deprecated+build.21.jar">
             <sha256 value="ce930b3ee048520a0ab538eb8d1627b301367fc1b300837235387aded6d89ba1" origin="Generated by Gradle"/>
          </artifact>
          <artifact name="bungeecord-chat-1.21-R0.2-deprecated+build.21.module">
             <sha256 value="72a987109d1e1faf039e0d4cecbff369a9ea5fa87b3d1df19ae692706101c649" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraft" name="forge-1.18.2-40.3.12-minecraft-merged" version="1.18.2-loom.mappings.1_18_2.layered+hash.40359-v2-forge-1.18.2-40.3.12">
+         <artifact name="forge-1.18.2-40.3.12-minecraft-merged-1.18.2-loom.mappings.1_18_2.layered+hash.40359-v2-forge-1.18.2-40.3.12.jar">
+            <sha256 value="507aa119fbfd98cbe1f733c2e830f8e4321088b164d1c3a74273975f78ab523f" origin="Generated by Gradle">
+               <also-trust value="6c2fd4dce4cb61118f8610db62959a0a3a79a0ef846b115a4ae3474dc5f15330"/>
+            </sha256>
+         </artifact>
+         <artifact name="forge-1.18.2-40.3.12-minecraft-merged-1.18.2-loom.mappings.1_18_2.layered+hash.40359-v2-forge-1.18.2-40.3.12.pom">
+            <sha256 value="919d9e7a16798ac20110367f62ac491a5bb03389c524d1e7b582ee10f597e0db" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="net.minecraft" name="minecraft-merged-6dd721cd7d" version="1.21.11-loom.mappings.1_21_11.layered+hash.2198-v2">
@@ -2873,6 +3381,198 @@
             <sha256 value="6af79dfbf4d6f9bbdf26199622e04ad5be813cca55768d066f79c1a97e0b40f7" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="net.minecraftforge" name="DiffPatch" version="2.0.7">
+         <artifact name="DiffPatch-2.0.7.jar">
+            <sha256 value="756eac6054e2d39824ff6f8d33af95ace20a73b310f408fe0a77009352283833" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="DiffPatch-2.0.7.module">
+            <sha256 value="3b0fcf32a14eeb09b5aa728b525f27bced030746ea699c1c056f3db0a24cbd66" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="JarJarFileSystems" version="0.3.19">
+         <artifact name="JarJarFileSystems-0.3.19.jar">
+            <sha256 value="beaa1875dd433f2dd152395c3e3c52ef2bb99f20b74860a07d70f7c4626e56d4" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="JarJarFileSystems-0.3.19.pom">
+            <sha256 value="aa5db05bbe3a8298cfb0d969ab2c6307ca559447695968922836533e80e30aaa" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="JarJarMetadata" version="0.3.19">
+         <artifact name="JarJarMetadata-0.3.19.jar">
+            <sha256 value="6141c710b5b7b673bd544740a31339f0754d7a794cc46b952b7ef7897b7ce265" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="JarJarMetadata-0.3.19.pom">
+            <sha256 value="fbdad98cbcd35923e67b267d5fa05893baac9fe94d5bd0490d3ebbb7bee0f765" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="JarJarSelector" version="0.3.19">
+         <artifact name="JarJarSelector-0.3.19.jar">
+            <sha256 value="f7acfbafc9a715ee7d7ce2d539815b3ebccebc5064e0a7252c4a6a1c71d1e740" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="JarJarSelector-0.3.19.pom">
+            <sha256 value="77d82f6fe5a7a5245550103bc87b511a490c2a4596eba09002e3783e77a84f3c" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="accesstransformers" version="8.0.4">
+         <artifact name="accesstransformers-8.0.4.jar">
+            <sha256 value="3225e2a513f658df686fe8b2ae5b4808525851a2c238ce65e38847cc4ffc6441" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="accesstransformers-8.0.4.pom">
+            <sha256 value="d29cc89bafe21c719788d6b3602e4e23b94e76d63260db1cb911899a089d063b" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="accesstransformers" version="8.0.5">
+         <artifact name="accesstransformers-8.0.5.jar">
+            <sha256 value="43500e64b587bf843764d7e03ae7b84fb76d344a5d4b1303e8470e65379b2844" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="accesstransformers-8.0.5.pom">
+            <sha256 value="5b036de01c8ad7bc561610f9bccfce12b83530dac6e940e3152a3ac3c67df5d7" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="binarypatcher" version="1.0.12">
+         <artifact name="binarypatcher-1.0.12-fatjar.jar">
+            <sha256 value="16454ff27db627d408d58d267e64fc9c48bcf9f691a71c2e65bbd65a61f0a627" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="binarypatcher-1.0.12.pom">
+            <sha256 value="1bd67082ac82664f238dbc2a0f01a26749ecee7848c18cca4656dd2713fd061d" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="coremods" version="5.0.3">
+         <artifact name="coremods-5.0.3.pom">
+            <sha256 value="05c6264cde11c6972d754b43f4b8fc9e616c9dc35b9add89a4d6bc1bb290b9dd" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="coremods" version="5.2.5">
+         <artifact name="coremods-5.2.5.jar">
+            <sha256 value="b5d195d6b012e45abfdf196d339256900513a484ecd3e086a478c514d2cd7df7" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="coremods-5.2.5.pom">
+            <sha256 value="3c35998c3c0c5468dd12241beed45c4081b2240495d90facdfc285c45f41fbcd" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="eventbus" version="5.0.3">
+         <artifact name="eventbus-5.0.3.pom">
+            <sha256 value="d93d279bf32c17e2b302800c650e494535bc431f5b918ccaf3d4cacb95d8d181" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="eventbus" version="5.0.7">
+         <artifact name="eventbus-5.0.7.jar">
+            <sha256 value="e0c43041a745f8d1d7fbf29e4e1853a312f48ef56c95339b603ea9a8cd0b40a4" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="eventbus-5.0.7.pom">
+            <sha256 value="284af61b9618d6c10b1e7c82ab25193e114d82e8456c131baf506537df1a3f70" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="fmlcore" version="1.18.2-40.3.12">
+         <artifact name="fmlcore-1.18.2-40.3.12.jar">
+            <sha256 value="2e06569e085a15df7832edd2358f702003169d1479fbe1623d98adf7a6111435" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="fmlcore-1.18.2-40.3.12.pom">
+            <sha256 value="90c660e560e875beabde6aa4a9f268168ce8f91fb582f321256d6c94cc88fde9" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="fmlloader" version="1.18.2-40.3.12">
+         <artifact name="fmlloader-1.18.2-40.3.12-sources.jar">
+            <sha256 value="81d36201bb206255cb91466f124b15082e10d5c5c7ac58ad9a72720e13ca85e7" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="fmlloader-1.18.2-40.3.12.jar">
+            <sha256 value="594934a6de66087d1c2c19294ae7b4b14a10ed65ffa52f9ecb15d186aaee561f" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="fmlloader-1.18.2-40.3.12.pom">
+            <sha256 value="c7b087f53afecf246eea5190384b347a3342df3362b24cb30c38b7a44be6874e" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="forge" version="1.18.2-40.3.12">
+         <artifact name="forge-1.18.2-40.3.12-installer.jar">
+            <sha256 value="dcff493f6c2212bdf6ae087f98029cd317a79759ab1009dce23e63e7dba0e216" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="forge-1.18.2-40.3.12-universal.jar">
+            <sha256 value="d699e54a6a7bbe31efb40d39c21cc2425dc0648590350bcc85a39943ff729da0" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="forge-1.18.2-40.3.12-userdev.jar">
+            <sha256 value="20d72b0c2847a99aadace09b00f7f3958526008a907bc19da16751de64a96e80" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="forge-1.18.2-40.3.12.pom">
+            <sha256 value="b4fc20d3364badbba65ebe584573ea48858e331d657e5ead42ced661501294b2" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="forgespi" version="4.0.15-4.x">
+         <artifact name="forgespi-4.0.15-4.x.jar">
+            <sha256 value="afbea13adeb1def87a358ad529acb157506b34c3ec62d02033d584ea6a28bf14" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="forgespi-4.0.15-4.x.pom">
+            <sha256 value="21f919998cf7318cf0e5f67ff8680a9789d65c7436dc61203eee6536a55c25b5" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="installertools" version="1.2.0">
+         <artifact name="installertools-1.2.0.jar">
+            <sha256 value="e1f31d6e2272f29dfb08739721c150b0021d789a580b821515c1a8a782f42fcc" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="installertools-1.2.0.pom">
+            <sha256 value="ae90308ff1841f88aaba178ee4350131052ec6bdce32d8ef7ea7f31673265d8c" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="javafmllanguage" version="1.18.2-40.3.12">
+         <artifact name="javafmllanguage-1.18.2-40.3.12.jar">
+            <sha256 value="55b99fa20957e8a7b51983036c902e853db9e66324a2092d58d59bff471d6e61" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="javafmllanguage-1.18.2-40.3.12.pom">
+            <sha256 value="fdd257d4214240b554ce61bc2b3aa6dd7e95bac986a3fc78fdb1d2e3d2731351" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="lowcodelanguage" version="1.18.2-40.3.12">
+         <artifact name="lowcodelanguage-1.18.2-40.3.12.jar">
+            <sha256 value="5a8c0e701e64a398ba785dbf91355e81138deb6b613b09b2c587a893e2ee924d" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="lowcodelanguage-1.18.2-40.3.12.pom">
+            <sha256 value="5e384acb0e779858172d30478d828191646d332d634e19abd3e18db25688ac34" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="mclanguage" version="1.18.2-40.3.12">
+         <artifact name="mclanguage-1.18.2-40.3.12.jar">
+            <sha256 value="71db1a38ceb2ef254a326ae5550beaa9c8931d3ccf645161ffd22909053592c8" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="mclanguage-1.18.2-40.3.12.pom">
+            <sha256 value="ed93cf0c4250b288c85ae6a834ca4c872f0ccb12cfe846910129ae55b5e0ccb4" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="srgutils" version="0.4.1">
+         <artifact name="srgutils-0.4.1.jar">
+            <sha256 value="3220118e079567ff7ae42f55b9396aadc3840a6022a0d0550afb08af584e8d86" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="srgutils-0.4.1.pom">
+            <sha256 value="702e63ccdd92a2ab3b450aeaa608a66d20271b8c9a236c0ea4ad277c7a022278" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="unsafe" version="0.2.0">
+         <artifact name="unsafe-0.2.0.jar">
+            <sha256 value="946937e182ab3b518b5b88264f367e1f35ac12bc83abed220490c60c717be239" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="unsafe-0.2.0.pom">
+            <sha256 value="c4b8ce2d2649dc0bfe03f581a0611b72db98ee7b62edaa08fd8439e1d22ed065" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge.72ddc588e5a3534371d7571a91bc136290d77b96de9073dd5ea36593cfe1e13d" name="fmlloader" version="1.18.2-40.3.12">
+         <artifact name="fmlloader-1.18.2-40.3.12.jar">
+            <sha256 value="dc577234ecb683a63f439f3331c4217b0af8a0b15fbde6021c5cbfa834c8c767" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="fmlloader-1.18.2-40.3.12.pom">
+            <sha256 value="d788c7a81554bb9e0776197af695227e274211ae51af5eb691a9c93cda44952e" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecrell" name="terminalconsoleappender" version="1.2.0">
+         <artifact name="terminalconsoleappender-1.2.0.jar">
+            <sha256 value="912e432c9355c4b2025d788ed87fd72bb95542e2fc967ad6875fbbeb6e1c7a1c" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="terminalconsoleappender-1.2.0.pom">
+            <sha256 value="4b185cc626af5bd5219a5f7d73b0a68cd174ebc8d382b88afa17cdc19a9a1b9d" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.sf.jopt-simple" name="jopt-simple" version="4.9">
+         <artifact name="jopt-simple-4.9.pom">
+            <sha256 value="7af7e2d8b24b4798f04c2b7da24c9fbd1b7557b4e017c2054481565916079092" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="net.sf.jopt-simple" name="jopt-simple" version="5.0.4">
          <artifact name="jopt-simple-5.0.4.jar">
             <sha256 value="df26cc58f235f477db07f753ba5a3ab243ebe5789d9f89ecf68dd62ea9a66c28" origin="Generated by Gradle"/>
@@ -2881,9 +3581,77 @@
             <sha256 value="6a67763b76afcd9c80b95e5c5e24782d18cc1b0e3d9b454ad3f8754c76b76815" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="net.sf.opencsv" name="opencsv" version="2.3">
+         <artifact name="opencsv-2.3.jar">
+            <sha256 value="dc0ba5bff6140dc92339973026a0ecbddc2a3b01bdd46ed9d16becc2f6d78de6" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="opencsv-2.3.pom">
+            <sha256 value="57f5607565d6a90dee6722801d4524813d9d2785046f2954a18861dfbf4a2149" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.abego.treelayout" name="org.abego.treelayout.core" version="1.0.3">
+         <artifact name="org.abego.treelayout.core-1.0.3.jar">
+            <sha256 value="fa5e31395c39c2e7d46aca0f81f72060931607b2fa41bd36038eb2cb6fb93326" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="org.abego.treelayout.core-1.0.3.pom">
+            <sha256 value="a3b2b223794370355e792433af012fc993667c0331be2bacad84dbc09ace4a0c" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.antlr" name="ST4" version="4.3">
+         <artifact name="ST4-4.3.jar">
+            <sha256 value="28547dba48cfceb77b6efbfe069aebe9ed3324ae60dbd52093d13a1d636ed069" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="ST4-4.3.pom">
+            <sha256 value="2f3f42c3e4d20eca62a1b4e6d8414ef0cb973838084999e5e2703c64e5840acf" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.antlr" name="antlr-master" version="3.5.2">
+         <artifact name="antlr-master-3.5.2.pom">
+            <sha256 value="42d91a531ea5100eb09b541aa002c3b908e8f282bd73b6e2f52f371ef1331bd6" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.antlr" name="antlr-runtime" version="3.5.2">
+         <artifact name="antlr-runtime-3.5.2.jar">
+            <sha256 value="ce3fc8ecb10f39e9a3cddcbb2ce350d272d9cd3d0b1e18e6fe73c3b9389c8734" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="antlr-runtime-3.5.2.pom">
+            <sha256 value="46a9c2200bb8b12bd7124aa7a5097ff49099908329c851a04cb2051420aa7f25" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.antlr" name="antlr4" version="4.9.1">
+         <artifact name="antlr4-4.9.1.jar">
+            <sha256 value="e6bd18f14126ab85a42dcb80ba5f67da2f35ba164ec5a64d40024bd0e7436584" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="antlr4-4.9.1.pom">
+            <sha256 value="b4e23b77191d10ed9847450087a3a63e20d2afd7dfbd90b813d0583bddac7ef7" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.antlr" name="antlr4-master" version="4.9.1">
+         <artifact name="antlr4-master-4.9.1.pom">
+            <sha256 value="030c212761e3b24542d3146c338976963bc95e841656ebcd8307a80fd6aabbf4" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.antlr" name="antlr4-runtime" version="4.9.1">
+         <artifact name="antlr4-runtime-4.9.1.jar">
+            <sha256 value="a80502c3140ae7acfbb1f57847c8eb1c101461a969215ec38c3f1ebdff61ac29" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="antlr4-runtime-4.9.1.pom">
+            <sha256 value="93f0142f7a26a799196220eea37f7e1f1a23e994f7617f2006e2804dfba9b3c4" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.apache" name="apache" version="13">
          <artifact name="apache-13.pom">
             <sha256 value="ff513db0361fd41237bef4784968bc15aae478d4ec0a9496f811072ccaf3841d" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.apache" name="apache" version="16">
+         <artifact name="apache-16.pom">
+            <sha256 value="9f85ff2fd7d6cb3097aa47fb419ee7f0ebe869109f98aba9f4eca3f49e74a40e" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.apache" name="apache" version="19">
+         <artifact name="apache-19.pom">
+            <sha256 value="91f7a33096ea69bac2cbaf6d01feb934cac002c48d8c8cfa9c240b40f1ec21df" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.apache" name="apache" version="21">
@@ -2926,6 +3694,27 @@
             <sha256 value="524ec4787aff73af6b3a9fafa154c7f1881b648299b663fdbfcadda1286f2353" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.apache" name="apache" version="9">
+         <artifact name="apache-9.pom">
+            <sha256 value="4946e60a547c8eda69f3bc23c5b6f0dadcf8469ea49b1d1da7de34aecfcf18dd" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.apache.commons" name="commons-collections4" version="4.4">
+         <artifact name="commons-collections4-4.4.jar">
+            <sha256 value="1df8b9430b5c8ed143d7815e403e33ef5371b2400aadbe9bda0883762e0846d1" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="commons-collections4-4.4.pom">
+            <sha256 value="271bd673839af46e73aff957e2918d4bf96f5ac4f6c6cf4d5be93fd1f1271c4d" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.apache.commons" name="commons-compress" version="1.18">
+         <artifact name="commons-compress-1.18.jar">
+            <sha256 value="5f2df1e467825e4cac5996d44890c4201c000b43c0b23cffc0782d28a0beb9b0" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="commons-compress-1.18.pom">
+            <sha256 value="672c5fe92bd3eab43e8d53338cad5ca073b6529de4eb2b38859a3eaa6c9e8119" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.apache.commons" name="commons-compress" version="1.21">
          <artifact name="commons-compress-1.21.jar">
             <sha256 value="6aecfd5459728a595601cfa07258d131972ffc39b492eb48bdd596577a2f244a" origin="Generated by Gradle"/>
@@ -2940,6 +3729,11 @@
          </artifact>
          <artifact name="commons-compress-1.28.0.pom">
             <sha256 value="033f4c78d632da88d0eb8ead974fc14a264392cebf12ab6c68d6cea7adf0c64a" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.apache.commons" name="commons-lang3" version="3.11">
+         <artifact name="commons-lang3-3.11.pom">
+            <sha256 value="980d665d83fed04665134f0578e507442a0e750691073784391b0a7988724a75" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.apache.commons" name="commons-lang3" version="3.12.0">
@@ -2958,9 +3752,34 @@
             <sha256 value="d7463906ab3081ff42cf3531eb793b240fb0ca3f1c26fd58fc84fb23032a72b7" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.apache.commons" name="commons-parent" version="25">
+         <artifact name="commons-parent-25.pom">
+            <sha256 value="467ae650442e876867379094e7518dfdd67d22c5352ebd39808c84259e9790ba" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.apache.commons" name="commons-parent" version="34">
          <artifact name="commons-parent-34.pom">
             <sha256 value="3a2e69d06d641d1f3b293126dc9e2e4ea6563bf8c36c87e0ab6fa4292d04b79c" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.apache.commons" name="commons-parent" version="39">
+         <artifact name="commons-parent-39.pom">
+            <sha256 value="87cd27e1a02a5c3eb6d85059ce98696bb1b44c2b8b650f0567c86df60fa61da7" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.apache.commons" name="commons-parent" version="47">
+         <artifact name="commons-parent-47.pom">
+            <sha256 value="8a8ecb570553bf9f1ffae211a8d4ca9ee630c17afe59293368fba7bd9b42fcb7" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.apache.commons" name="commons-parent" version="48">
+         <artifact name="commons-parent-48.pom">
+            <sha256 value="1e1f7de9370a7b7901f128f1dacd1422be74e3f47f9558b0f79e04c0637ca0b4" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.apache.commons" name="commons-parent" version="51">
+         <artifact name="commons-parent-51.pom">
+            <sha256 value="9b779d18b22d8de559605558e7bb0a0a31b3f00c2abb9c878117c398aacabeca" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.apache.commons" name="commons-parent" version="52">
@@ -2986,6 +3805,14 @@
       <component group="org.apache.commons" name="commons-parent" version="98">
          <artifact name="commons-parent-98.pom">
             <sha256 value="d40318527f56033e0ff0789971cc38c856aa99a685eea11270814e7f1eda9fba" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.apache.commons" name="commons-text" version="1.9">
+         <artifact name="commons-text-1.9.jar">
+            <sha256 value="0812f284ac5dd0d617461d9a2ab6ac6811137f25122dfffd4788a4871e732d00" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="commons-text-1.9.pom">
+            <sha256 value="9f9216cfc944dca782e6311d62757fd77164fe67da29b58f015687fa09f44050" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.apache.groovy" name="groovy-bom" version="4.0.22">
@@ -3071,9 +3898,24 @@
             <sha256 value="763a2ec2b8094d4161deb6c264b1262085b9be30bf3a31c2ce137242e57722a7" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.apache.logging.log4j" name="log4j" version="2.11.2">
+         <artifact name="log4j-2.11.2.pom">
+            <sha256 value="a3d10c4a07ffb384cad0dc518f53afba732a6eb4786ccbccb6b03b744a543bd1" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.apache.logging.log4j" name="log4j" version="2.14.1">
+         <artifact name="log4j-2.14.1.pom">
+            <sha256 value="972d7e467fd0f36f05e8ff72730d363cb04d56add01681d19e243f5341eff0b2" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.apache.logging.log4j" name="log4j" version="2.17.0">
          <artifact name="log4j-2.17.0.pom">
             <sha256 value="8704606faeb779d6d2904f02ca616e0b981fe389d9fe9b89ec84a1e42aee81d2" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.apache.logging.log4j" name="log4j" version="2.17.1">
+         <artifact name="log4j-2.17.1.pom">
+            <sha256 value="967abc024443a9cb096935559af5e9ad6f0ff61375f84b27d440d2fa70806b09" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.apache.logging.log4j" name="log4j" version="2.24.1">
@@ -3086,12 +3928,30 @@
             <sha256 value="1d8057058d0b05c8f7725ca1adba68739cbeac75898eca06a48ca611546c03ec" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.apache.logging.log4j" name="log4j-api" version="2.11.2">
+         <artifact name="log4j-api-2.11.2.pom">
+            <sha256 value="a8d00d185bf1b236c18f98331de8c33f12fd477c4f1552f575616576e199024c" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.apache.logging.log4j" name="log4j-api" version="2.14.1">
+         <artifact name="log4j-api-2.14.1.pom">
+            <sha256 value="909fa83ac088e70c8ba0dfb0fbd5b3027d03262edaafcca1250cc6aec46f0ad4" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.apache.logging.log4j" name="log4j-api" version="2.17.0">
          <artifact name="log4j-api-2.17.0.jar">
             <sha256 value="ab9cadc80e234580e3f3c8c18644314fccd4b3cd3f7085d4e934866cb561b95d" origin="Generated by Gradle"/>
          </artifact>
          <artifact name="log4j-api-2.17.0.pom">
             <sha256 value="6422d9af59acb0077e8a91c7c34a4062ff56a9731c34836a72427084e27aa479" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.apache.logging.log4j" name="log4j-api" version="2.17.1">
+         <artifact name="log4j-api-2.17.1.jar">
+            <sha256 value="b0d8a4c8ab4fb8b1888d0095822703b0e6d4793c419550203da9e69196161de4" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="log4j-api-2.17.1.pom">
+            <sha256 value="1e2acef3220b29be10ae099728b158b18d943f91a193cc4501bb42f929c1e88a" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.apache.logging.log4j" name="log4j-api" version="2.24.1">
@@ -3110,6 +3970,11 @@
             <sha256 value="0956096a2502408c958a83174f2b6a57dcb2e5b07bb914c848732b44b8abbdc3" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.apache.logging.log4j" name="log4j-bom" version="2.17.1">
+         <artifact name="log4j-bom-2.17.1.pom">
+            <sha256 value="8383b5f109c3c603b971c428d6024e02ba9aabcf426584478342e5f75995df86" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.apache.logging.log4j" name="log4j-bom" version="2.24.1">
          <artifact name="log4j-bom-2.24.1.pom">
             <sha256 value="bc63cfb2b4b96db4bd730c962e824fb6928cb84902c1416e477ab5cb72b0b0d3" origin="Generated by Gradle"/>
@@ -3120,12 +3985,25 @@
             <sha256 value="4f29b7d9c2d970fd2a6697176bf7dddc415089f60d696d28bfdf31b24e92f11c" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.apache.logging.log4j" name="log4j-core" version="2.11.2">
+         <artifact name="log4j-core-2.11.2.pom">
+            <sha256 value="25ebc94ca06409fb48444e037186e8d1af37d4fb7429d0ed43b1a86d26f69631" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.apache.logging.log4j" name="log4j-core" version="2.17.0">
          <artifact name="log4j-core-2.17.0.jar">
             <sha256 value="65c33dc9b24a5e5f6cacae62680641582894749c7bf16c951032ef92f3e12a60" origin="Generated by Gradle"/>
          </artifact>
          <artifact name="log4j-core-2.17.0.pom">
             <sha256 value="5944274eb95590ace7c26201d9725b4ab1c7654d2953ae7cc26d73ffde4068be" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.apache.logging.log4j" name="log4j-core" version="2.17.1">
+         <artifact name="log4j-core-2.17.1.jar">
+            <sha256 value="c967f223487980b9364e94a7c7f9a8a01fd3ee7c19bdbf0b0f9f8cb8511f3d41" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="log4j-core-2.17.1.pom">
+            <sha256 value="0bbb3bf6d4d22a1bfa3c3c0927c29410af14a0fb26e3b02b93726f5c7e98aafd" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.apache.logging.log4j" name="log4j-core" version="2.25.2">
@@ -3152,6 +4030,16 @@
             <sha256 value="f7ba8a5dd4e69e1130822170ab7d23e02791075d68a035227519ea370572e15b" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.apache.maven" name="maven" version="3.6.3">
+         <artifact name="maven-3.6.3.pom">
+            <sha256 value="d2d86245ea66149bc14d2dd72bbb961f964dd658b809a0573252c06531eeec16" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.apache.maven" name="maven" version="3.8.1">
+         <artifact name="maven-3.8.1.pom">
+            <sha256 value="e9dbb367e6f03378fb2be3b78ba6748806b678a771164390d8fd5d49d47f42c9" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.apache.maven" name="maven" version="3.8.5">
          <artifact name="maven-3.8.5.pom">
             <sha256 value="62cfa52d5364d21e7cfff6b5e0bff1b8ce264ed362b0a64abb162cff1dc19073" origin="Generated by Gradle"/>
@@ -3160,6 +4048,19 @@
       <component group="org.apache.maven" name="maven" version="3.9.6">
          <artifact name="maven-3.9.6.pom">
             <sha256 value="ba0bf325c52954058e9a7029e40273a1fe06be4a50530f6a4eba46c558a1e4ac" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.apache.maven" name="maven-artifact" version="3.6.3">
+         <artifact name="maven-artifact-3.6.3.pom">
+            <sha256 value="47a615f91a888503a17859cadcbe6e8641976f8c08bf9b7b2ac508910f1a7471" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.apache.maven" name="maven-artifact" version="3.8.1">
+         <artifact name="maven-artifact-3.8.1.jar">
+            <sha256 value="9dbd3db15ac4816471e72981cb06ef90f3ffa8be6628dddf7135f7bd69bee0c0" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="maven-artifact-3.8.1.pom">
+            <sha256 value="76a5c708af9636318328e894bcf76b107fa203a15a4cb07fc5fb5a9a8b20529d" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.apache.maven" name="maven-artifact" version="3.9.6">
@@ -3192,6 +4093,11 @@
          </artifact>
          <artifact name="maven-model-builder-3.9.6.pom">
             <sha256 value="c8c2b71b708398fa0779c348474e0effe47791bfcc80f9229219f30b3a2a452c" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.apache.maven" name="maven-parent" version="33">
+         <artifact name="maven-parent-33.pom">
+            <sha256 value="3856e3fcd169502d5f12fe2452604ebf6c7c025f15656bfa558ea99ed29d73ea" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.apache.maven" name="maven-parent" version="35">
@@ -3310,6 +4216,11 @@
             <sha256 value="d31320cc1ddc633819ec586cab28b61af53bb99e6c90cce46bb73d5ec94251df" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.cadixdev" name="lorenz" version="0.5.3">
+         <artifact name="lorenz-0.5.3.pom">
+            <sha256 value="ee70f46266ba3e04c21fe0b368e172bbd81c31888c07fd0d0dbb9f50ee4c9543" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.cadixdev" name="lorenz" version="0.5.7">
          <artifact name="lorenz-0.5.7.jar">
             <sha256 value="223022f33fef6d5d88903b7c4fc8d7096ad6fd869acbc0fd241b0fcf8391d031" origin="Generated by Gradle"/>
@@ -3318,9 +4229,20 @@
             <sha256 value="fb03759717a3acb9098849d918d660393944f9318bc327c90f07d745438d888c" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.checkerframework" name="checker-qual" version="2.0.0">
+         <artifact name="checker-qual-2.0.0.jar">
+            <sha256 value="fc8441632f5fa5537492c9f026d1c8b1adb6a7796f46031b04b4cc0622427995" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="checker-qual-2.0.0.pom">
+            <sha256 value="deb10353dd2b1bee0e548b74014d80a1179a8faaf8d0d886c01b4d6ca9300068" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.checkerframework" name="checker-qual" version="3.12.0">
          <artifact name="checker-qual-3.12.0.jar">
             <sha256 value="ff10785ac2a357ec5de9c293cb982a2cbb605c0309ea4cc1cb9b9bc6dbe7f3cb" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="checker-qual-3.12.0.module">
+            <sha256 value="d047949c1b81091c2c3913771fac2f32a2fa549ba3d5d548cc8c0b6dfa493777" origin="Generated by Gradle"/>
          </artifact>
          <artifact name="checker-qual-3.12.0.pom">
             <sha256 value="775b7ae36e62820b3b86dc1aa39af37c0ac4b85ff48f7fe485a922a2790f46b9" origin="Generated by Gradle"/>
@@ -3350,6 +4272,29 @@
             <sha256 value="daa319aaa31efc485d16e3ab630e3cb8fe4f413cfdd44622b10049c5445d1904" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.codehaus" name="codehaus-parent" version="4">
+         <artifact name="codehaus-parent-4.pom">
+            <sha256 value="6b87237de8c2e1740cf80627c7f3ce3e15de1930bb250c55a1eca94fa3e014df" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.codehaus.mojo" name="animal-sniffer-annotations" version="1.14">
+         <artifact name="animal-sniffer-annotations-1.14.jar">
+            <sha256 value="2068320bd6bad744c3673ab048f67e30bef8f518996fa380033556600669905d" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="animal-sniffer-annotations-1.14.pom">
+            <sha256 value="1879f19a05991e3ed95910b96689333396b0c467a215dc4d1f90018404b72a26" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.codehaus.mojo" name="animal-sniffer-parent" version="1.14">
+         <artifact name="animal-sniffer-parent-1.14.pom">
+            <sha256 value="f51550a06b1410bd4962cb0e71df0b921a60a7ef47bfa9c4825a14be72316eea" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.codehaus.mojo" name="mojo-parent" version="34">
+         <artifact name="mojo-parent-34.pom">
+            <sha256 value="3e395d6fbc43c09a3774cac8694ce527398305ea3fd5492d80e25af27d382a9c" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.codehaus.plexus" name="plexus" version="10">
          <artifact name="plexus-10.pom">
             <sha256 value="bba9c521064b9ca132ce97cc1cc7eb4afc2dbe32bc88cb872c88e99f6162301f" origin="Generated by Gradle"/>
@@ -3366,6 +4311,14 @@
          </artifact>
          <artifact name="plexus-interpolation-1.26.pom">
             <sha256 value="e1c10b3a6335641eb74a668daa9ee86ae4ab06610174e59ba07c8c68042327f7" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.codehaus.plexus" name="plexus-utils" version="3.2.1">
+         <artifact name="plexus-utils-3.2.1.jar">
+            <sha256 value="8d07b497bb8deb167ee5329cae87ef2043833bf52e4f15a5a9379cec447a5b2b" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="plexus-utils-3.2.1.pom">
+            <sha256 value="7a5001ab88105b4f37c4fab3b62d977316290a13f8b14c6684f25f2a32efdef1" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.codehaus.plexus" name="plexus-utils" version="3.5.1">
@@ -3426,6 +4379,19 @@
       <component group="org.eclipse.sisu" name="sisu-inject" version="0.9.0.M2">
          <artifact name="sisu-inject-0.9.0.M2.pom">
             <sha256 value="7630f4cd4d1620067fa83e1d748b012cffa0655e5380cc0e4a5e283d3b441fdb" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.glassfish" name="javax.json" version="1.0.4">
+         <artifact name="javax.json-1.0.4.jar">
+            <sha256 value="0e1dec40a1ede965941251eda968aeee052cc4f50378bc316cc48e8159bdbeb4" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="javax.json-1.0.4.pom">
+            <sha256 value="6baf8383ffa98b66ea96cd5bfc1ec7f2d79463bb98ac98052964b121c2212d54" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.glassfish" name="json" version="1.0.4">
+         <artifact name="json-1.0.4.pom">
+            <sha256 value="6d7c68423115f921718d944f859924b4c685217ec03a49f70455a8b2caa972e6" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.hamcrest" name="hamcrest" version="3.0">
@@ -3634,6 +4600,27 @@
          </artifact>
          <artifact name="kotlinx-serialization-json-jvm-1.4.1.module">
             <sha256 value="c8fbfde4b5ee1e41a69175165e839991d1501665a7590e23162326501ac6122c" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.jline" name="jline-parent" version="3.12.1">
+         <artifact name="jline-parent-3.12.1.pom">
+            <sha256 value="a1ece09d136b474e0a59511ffc7f4f5321b22d6415022d49a24e9d9ac10ca40c" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.jline" name="jline-reader" version="3.12.1">
+         <artifact name="jline-reader-3.12.1.jar">
+            <sha256 value="4d1037c7110027ed64816c510fad2afa0a5aa9bbc38fb9f0e772870823fcad2a" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="jline-reader-3.12.1.pom">
+            <sha256 value="b82a13ae94c8ccbb78913bfbd45a4a761289c928b37031835788f4e5c969da79" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.jline" name="jline-terminal" version="3.12.1">
+         <artifact name="jline-terminal-3.12.1.jar">
+            <sha256 value="eb6115680f732562f0e8e6777f127dece81e23b25015925f3c4a2a900d48cc9e" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="jline-terminal-3.12.1.pom">
+            <sha256 value="6f8e6d82510f8b993d5d3519313fc251c9c5d6ec8c3fd1fad9ba6213e25743ee" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.joml" name="joml" version="1.10.8">
@@ -4296,6 +5283,14 @@
             <sha256 value="305c384aa2f1e1c7fe53a96da41c3ec35243b97d428d24a8f779818cc10be4ff" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.openjdk.nashorn" name="nashorn-core" version="15.4">
+         <artifact name="nashorn-core-15.4.jar">
+            <sha256 value="6f816e84dfd63a81d4eaa7829c08337bbaff3ec683ff3bf6bbd90d017a00dc6f" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="nashorn-core-15.4.pom">
+            <sha256 value="69a9f7b9e47eccf47bbcee721ad4fb039ca7d9b650174e6d8602aadb77e5ac23" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.opentest4j" name="opentest4j" version="1.3.0">
          <artifact name="opentest4j-1.3.0.jar">
             <sha256 value="48e2df636cab6563ced64dcdff8abb2355627cb236ef0bf37598682ddf742f1b" origin="Generated by Gradle"/>
@@ -4304,9 +5299,22 @@
             <sha256 value="48bf1d6c8b5dc94f74652bd17900f654deb714350248cf5e8fca27b9090c8e0d" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.ow2" name="ow2" version="1.5">
+         <artifact name="ow2-1.5.pom">
+            <sha256 value="0f8a1b116e760b8fe6389c51b84e4b07a70fc11082d4f936e453b583dd50b43b" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.ow2" name="ow2" version="1.5.1">
          <artifact name="ow2-1.5.1.pom">
             <sha256 value="321ddbb7ee6fe4f53dea6b4cd6db74154d6bfa42391c1f763b361b9f485acf05" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.ow2.asm" name="asm" version="6.1.1">
+         <artifact name="asm-6.1.1.jar">
+            <sha256 value="dd3b546415dd4bade2ebe3b47c7828ab0623ee2336604068e2d81023f9f8d833" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="asm-6.1.1.pom">
+            <sha256 value="3600b7c74d24512ee377eab08e01201fcf2179d540181824a5b591fa7b36770d" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.ow2.asm" name="asm" version="9.10.1">
@@ -4317,12 +5325,68 @@
             <sha256 value="e1b1c3832ca3ac0a9e563c405f4c760118b5556a4920daee14058886197e094d" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.ow2.asm" name="asm" version="9.7.1">
+         <artifact name="asm-9.7.1.jar">
+            <sha256 value="8cadd43ac5eb6d09de05faecca38b917a040bb9139c7edeb4cc81c740b713281" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="asm-9.7.1.pom">
+            <sha256 value="7229b03b30a73ee91008072d9e4569a51d8547fae8c50f527841aef4c1b0baa8" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.ow2.asm" name="asm" version="9.9.1">
+         <artifact name="asm-9.9.1.jar">
+            <sha256 value="6f3828a215c920059a5efa2fb55c233d6c54ec5cadca99ce1b1bdd10077c7ddd" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="asm-9.9.1.pom">
+            <sha256 value="aca68dee9ba2f6cd90ffde728efdc7e3ebfcf59f3f41fbfe248d2d01d5b866af" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.ow2.asm" name="asm-analysis" version="6.1.1">
+         <artifact name="asm-analysis-6.1.1.jar">
+            <sha256 value="6fd259e813624975cc76eaa8033316574f91f2ac2264881aff792eea2cf0d323" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="asm-analysis-6.1.1.pom">
+            <sha256 value="9e376bfa497ed8cae19263b337138e9b510224cfa07a15e689fb2068cf57fc02" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.ow2.asm" name="asm-analysis" version="9.1">
+         <artifact name="asm-analysis-9.1.jar">
+            <sha256 value="81a88041b1b8beda5a8a99646098046c48709538270c49def68abff25ac3be34" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="asm-analysis-9.1.pom">
+            <sha256 value="ac5454c11b03431ca951df71fb4e86c8c4c80df6979f95b757caed3ab0f47156" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.ow2.asm" name="asm-analysis" version="9.10.1">
          <artifact name="asm-analysis-9.10.1.jar">
             <sha256 value="dede75a21306b65974ecd8f87114ff6970f09fb794157a4ca09ab25c888c2bfc" origin="Generated by Gradle"/>
          </artifact>
          <artifact name="asm-analysis-9.10.1.pom">
             <sha256 value="534fbb85f643c2330691e92652ec40dd497b4f279ef13d829d85858905d33ba3" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.ow2.asm" name="asm-analysis" version="9.7.1">
+         <artifact name="asm-analysis-9.7.1.jar">
+            <sha256 value="85b29371884ba31bb76edf22323c2c24e172c3267a67152eba3d1ccc2e041ef2" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="asm-analysis-9.7.1.pom">
+            <sha256 value="25c2379f2bfc2a1e64e62c39e2b93cfb0e489707852b08d6fc470b1c6a52b9ee" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.ow2.asm" name="asm-commons" version="6.1.1">
+         <artifact name="asm-commons-6.1.1.jar">
+            <sha256 value="86f56d3f9f33090bbdfcf66302789a735eca75fa25eae89d3fb13f4eb13b56d1" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="asm-commons-6.1.1.pom">
+            <sha256 value="41de7af16525aeab2708e0c1a4e0576d998e437800f14053faf9ff7c118e7499" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.ow2.asm" name="asm-commons" version="9.1">
+         <artifact name="asm-commons-9.1.jar">
+            <sha256 value="afcb26dc1fc12c0c4a99ada670908dd82e18dfc488caf5ee92546996b470c00c" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="asm-commons-9.1.pom">
+            <sha256 value="a0f651b27b8afe9c0e612d7a0266eacb5f7b1c787bc4b5ac8245f3d7a1181b7f" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.ow2.asm" name="asm-commons" version="9.10.1">
@@ -4333,12 +5397,44 @@
             <sha256 value="ceb2c43f3a273db88af8652d89ed6312f3e91a1a1e0ffc6f7823169278cf795c" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.ow2.asm" name="asm-commons" version="9.7.1">
+         <artifact name="asm-commons-9.7.1.jar">
+            <sha256 value="9a579b54d292ad9be171d4313fd4739c635592c2b5ac3a459bbd1049cddec6a0" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="asm-commons-9.7.1.pom">
+            <sha256 value="0bf1d31da0c9f9d8edc2f27dbbfdbbf73f1a715b72cd2fa28f3f195994d74ad1" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.ow2.asm" name="asm-tree" version="6.1.1">
+         <artifact name="asm-tree-6.1.1.jar">
+            <sha256 value="e801f53bffc2a9e6ff92840355d35a7c315c36fad63c3070b34141f3efb48832" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="asm-tree-6.1.1.pom">
+            <sha256 value="527b1b3c4aa416919b6964008bd5e4faf3cb20b5b71f178106d31fc507e754e2" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.ow2.asm" name="asm-tree" version="9.1">
+         <artifact name="asm-tree-9.1.jar">
+            <sha256 value="fd00afa49e9595d7646205b09cecb4a776a8ff0ba06f2d59b8f7bf9c704b4a73" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="asm-tree-9.1.pom">
+            <sha256 value="b6a00d9207c035460f81c7d70ed41253f0d216652bed45fa1a3052ffcd50b94c" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.ow2.asm" name="asm-tree" version="9.10.1">
          <artifact name="asm-tree-9.10.1.jar">
             <sha256 value="3dfb0d5b6a106cd40b5b250e39935fbf2f927f4477546a5369a3ac609cf0506b" origin="Generated by Gradle"/>
          </artifact>
          <artifact name="asm-tree-9.10.1.pom">
             <sha256 value="963eebdea6e2e1ff25c9068b64a238e1585c99f8acd455595ac159a7f52b6c41" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.ow2.asm" name="asm-tree" version="9.7.1">
+         <artifact name="asm-tree-9.7.1.jar">
+            <sha256 value="9929881f59eb6b840e86d54570c77b59ce721d104e6dfd7a40978991c2d3b41f" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="asm-tree-9.7.1.pom">
+            <sha256 value="13b905f65e7fd43ca7674f40cdaa37679ba4858c6c9d9fb8f17a7afd9baabc9e" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.ow2.asm" name="asm-util" version="9.10.1">
@@ -4349,12 +5445,25 @@
             <sha256 value="fcea2bad7868ed18949a2e71c40cf26de1516d16440e63f585c3e05d285c0d2b" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.ow2.asm" name="asm-util" version="9.7.1">
+         <artifact name="asm-util-9.7.1.jar">
+            <sha256 value="f885be71b5c90556f5f1ad1c4f9276b29b96057c497d46666fe4ddbec3cb43c6" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="asm-util-9.7.1.pom">
+            <sha256 value="7fb5e63362b2d52d77dca3b754aebad635751d3fc520191e9500ece9e2345b71" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.slf4j" name="jcl-over-slf4j" version="1.7.36">
          <artifact name="jcl-over-slf4j-1.7.36.jar">
             <sha256 value="ab57ca8fd223772c17365d121f59e94ecbf0ae59d08c03a3cb5b81071c019195" origin="Generated by Gradle"/>
          </artifact>
          <artifact name="jcl-over-slf4j-1.7.36.pom">
             <sha256 value="bd96243d7d4218cd7cc7d45c0e30fa13480a1a4f91d356edd7dfe93f1ffb68e6" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.slf4j" name="slf4j-api" version="1.7.30">
+         <artifact name="slf4j-api-1.7.30.pom">
+            <sha256 value="7e0747751e9b67e19dcb5206f04ea22cc03d250c422426402eadd03513f2c314" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.slf4j" name="slf4j-api" version="1.8.0-beta4">
@@ -4422,6 +5531,11 @@
             <sha256 value="9219aab601575126c4e66e1331eb2b0c6c17a330ac4d5a07e3cd11d580a0c12d" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.slf4j" name="slf4j-parent" version="1.7.30">
+         <artifact name="slf4j-parent-1.7.30.pom">
+            <sha256 value="11647956e48a0c5bfb3ac33f6da7e83f341002b6857efd335a505b687be34b75" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.slf4j" name="slf4j-parent" version="1.7.36">
          <artifact name="slf4j-parent-1.7.36.pom">
             <sha256 value="bb388d37fbcdd3cde64c3cede21838693218dc451f04040c5df360a78ed7e812" origin="Generated by Gradle"/>
@@ -4457,6 +5571,14 @@
             <sha256 value="c182bb36cd3af1c93c1603cdfefe7889157db30ba8b584f4a44535fcd22e45e7" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.slf4j" name="slf4j-simple" version="1.7.30">
+         <artifact name="slf4j-simple-1.7.30.jar">
+            <sha256 value="8b9279cbff6b9f88594efae3cf02039b6995030eec023ed43928748c41670fee" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="slf4j-simple-1.7.30.pom">
+            <sha256 value="471316b19d6769ec96b835d62ccaaea1f71a8f2ee5124f544615d577a0f0070d" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.sonatype.oss" name="oss-parent" version="5">
          <artifact name="oss-parent-5.pom">
             <sha256 value="1678d4120a585d8a630131aeec4c524d928398583b7eab616ee7d5a87f520d3d" origin="Generated by Gradle"/>
@@ -4478,6 +5600,14 @@
          </artifact>
          <artifact name="spring-framework-bom-5.3.39.pom">
             <sha256 value="f6d481093e75767cba1ac7e1db38f8f692cbe3e38744693371a75aeb21c6148b" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.tukaani" name="xz" version="1.8">
+         <artifact name="xz-1.8.jar">
+            <sha256 value="8c7964b36fe3f0cbe644b04fcbff84e491ce81917db2f5bfa0cba8e9548aff5d" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="xz-1.8.pom">
+            <sha256 value="f29e75cb88eb4acbf7e5aa5c09ed55eac2cbae601d63a9f375231f45452c1013" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.tukaani" name="xz" version="1.9">
@@ -4510,6 +5640,65 @@
          </artifact>
          <artifact name="snakeyaml-2.3.pom">
             <sha256 value="0f5a265a06331b0049e352be32ca322de18b17f3d4dbb70635d40da692e3582f" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="remapped.maven.modrinth" name="emi-51aba2bb" version="0.7.3+1.18.2">
+         <artifact name="emi-51aba2bb-0.7.3+1.18.2.pom">
+            <sha256 value="2da06f9c6308cc4237a0ec0fe41566e186268282c7f8a995486b12954cc5a517" origin="Fabric Loom local deterministic metadata"/>
+         </artifact>
+      </component>
+      <component group="remapped.mezz.jei" name="jei-1.18.2-common-api-d0ec961b" version="10.2.1.1010">
+         <artifact name="jei-1.18.2-common-api-d0ec961b-10.2.1.1010.jar">
+            <sha256 value="b288f3dc9d44e1d4a90a89cfea24ac3ce780adb3c89367c4f9a730d3a6ace8ac" origin="Generated by Gradle">
+               <also-trust value="06a73852412834cf524a37150f9d9ec71c21589349134e7c2332f3b473de9738"/>
+            </sha256>
+         </artifact>
+         <artifact name="jei-1.18.2-common-api-d0ec961b-10.2.1.1010.pom">
+            <sha256 value="ee4fe13140adb9722559a479a1cff141bce9b794dfa5d93fd715c409af9c3acf" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="remapped.mezz.jei" name="jei-1.18.2-common-d0ec961b" version="10.2.1.1010">
+         <artifact name="jei-1.18.2-common-d0ec961b-10.2.1.1010.jar">
+            <sha256 value="cc37fccf30b7c5f6e79287eecccea2fa1545e789b7309fd81828d3758a69a95b" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="jei-1.18.2-common-d0ec961b-10.2.1.1010.pom">
+            <sha256 value="85296d7e46a0b73d1051b1ffca33e4c245fefec3f891897b8a2edb4655f20cc4" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="remapped.mezz.jei" name="jei-1.18.2-core-d0ec961b" version="10.2.1.1010">
+         <artifact name="jei-1.18.2-core-d0ec961b-10.2.1.1010.jar">
+            <sha256 value="19e54daf61f847d216422ced4c47a361d5416dd0daefad4bb01ee78a66a296f1" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="jei-1.18.2-core-d0ec961b-10.2.1.1010.pom">
+            <sha256 value="bc0f3c7c8aa6507b20cd61a4bfa9cd27bac275e5eecb90838163ce7496f5463f" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="remapped.mezz.jei" name="jei-1.18.2-forge-api-d0ec961b" version="10.2.1.1010">
+         <artifact name="jei-1.18.2-forge-api-d0ec961b-10.2.1.1010.jar">
+            <sha256 value="43a18c37b8745d585b6d972e5bff1c81672cf4c6424cbc253a0186ab98864a33" origin="Generated by Gradle">
+               <also-trust value="448c0941a6cbfb3a4369c46fdc9e778facefcdc28e996bc2920cabe3d62289b7"/>
+            </sha256>
+         </artifact>
+         <artifact name="jei-1.18.2-forge-api-d0ec961b-10.2.1.1010.pom">
+            <sha256 value="f48c38ae7569b34578677dc6e680e813568a3ee5ecc18cee353e57213b572126" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="remapped.mezz.jei" name="jei-1.18.2-forge-d0ec961b" version="10.2.1.1010">
+         <artifact name="jei-1.18.2-forge-d0ec961b-10.2.1.1010.jar">
+            <sha256 value="e17508d3c22d8473e2c4a526d53e27904ebb281a4aeeaa7375ba001ddaa90d19" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="jei-1.18.2-forge-d0ec961b-10.2.1.1010.pom">
+            <sha256 value="af2aaae0679bb9a944e337e4229e5fff2c22e21f904ce833a782bbbd9b03e959" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="remapped.mezz.jei" name="jei-1.21.11-common-api-intermediary-4abd26ae" version="27.17.0.50">
+         <artifact name="jei-1.21.11-common-api-intermediary-4abd26ae-27.17.0.50.pom">
+            <sha256 value="4a71cd177bb5a12189b01527948455c0e80aacff3956b63030ed3ee46d90f30c" origin="Fabric Loom local deterministic metadata"/>
+         </artifact>
+      </component>
+      <component group="remapped.mezz.jei" name="jei-1.21.11-fabric-api-4abd26ae" version="27.17.0.50">
+         <artifact name="jei-1.21.11-fabric-api-4abd26ae-27.17.0.50.pom">
+            <sha256 value="04c32cbd80d3364f1937f2c3aea461d3cfdbdaac6a9eef3c584753bc943b64e0" origin="Fabric Loom local deterministic metadata"/>
          </artifact>
       </component>
       <component group="remapped.net.fabricmc.fabric-api" name="fabric-api-4abd26ae" version="0.141.4+1.21.11">
@@ -5372,71 +6561,12 @@
             <sha256 value="0c35c5c4ea6d2a4cde5b1d995ca37891a0a51316a276fb96c3395a960d108c3a" origin="Generated by Gradle"/>
          </artifact>
       </component>
-      <component group="maven.modrinth" name="emi" version="0.7.3+1.18.2">
-         <artifact name="emi-0.7.3+1.18.2.jar">
-            <sha256 value="63a1d4fb29847a00a6ef7720211920f277673b7674b7c7136309adb828f679d2" origin="Modrinth release DDkCVTmY"/>
+      <component group="trove" name="trove" version="1.0.2">
+         <artifact name="trove-1.0.2.jar">
+            <sha256 value="ad68a86cfd0255a2bc0525ce11ec49640caea7e34ff91eb89c3193dcccd77f05" origin="Generated by Gradle"/>
          </artifact>
-         <artifact name="emi-0.7.3+1.18.2.pom">
-            <sha256 value="abd717c17418326bd2db68564a09e68a1fa647e8ee53221f54a868e8e105a7b5" origin="Downloaded from Modrinth Maven"/>
-         </artifact>
-      </component>
-      <component group="mezz.jei" name="jei-1.18.2-common-api" version="10.2.1.1010">
-         <artifact name="jei-1.18.2-common-api-10.2.1.1010.jar">
-            <sha256 value="42bbad53056114c4cda2b43e8654c5cee7617b73edd4a9065177b21db401683e" origin="BlameJared Maven"/>
-         </artifact>
-         <artifact name="jei-1.18.2-common-api-10.2.1.1010-sources.jar">
-            <sha256 value="e445478fe29be2fdcd02b53213d20429c224380f90225e34e201e5a239e37115" origin="BlameJared Maven"/>
-         </artifact>
-         <artifact name="jei-1.18.2-common-api-10.2.1.1010.pom">
-            <sha256 value="c17855ff1c88b896400f3a89796798ae6d215fff8d7a2d8a0125392bc6420bdf" origin="BlameJared Maven"/>
-         </artifact>
-      </component>
-      <component group="mezz.jei" name="jei-1.18.2-fabric-api" version="10.2.1.1010">
-         <artifact name="jei-1.18.2-fabric-api-10.2.1.1010.jar">
-            <sha256 value="d9c03956f719a9b627da15375d9cd2764642a8d8c2c84b2eab12103c01ac36da" origin="Official BlameJared Maven SHA-256"/>
-         </artifact>
-         <artifact name="jei-1.18.2-fabric-api-10.2.1.1010-sources.jar">
-            <sha256 value="0a354e5eed4e92d7b2e120af9b48061c1e9b3f36c978bbf697005f483224715d" origin="BlameJared Maven"/>
-         </artifact>
-         <artifact name="jei-1.18.2-fabric-api-10.2.1.1010.pom">
-            <sha256 value="f5bcf338ddfef0312c108260bc818f75885cbeba09dcdf89b57ca47958885800" origin="BlameJared Maven"/>
-         </artifact>
-      </component>
-      <component group="mezz.jei" name="jei-1.21.11-common-api-intermediary" version="27.17.0.50">
-         <artifact name="jei-1.21.11-common-api-intermediary-27.17.0.50.jar">
-            <sha256 value="90d481faae773b9d5a5382d0609dd1eb2ca042101c82153a6cbaf45b2a2c3529" origin="BlameJared Maven"/>
-         </artifact>
-         <artifact name="jei-1.21.11-common-api-intermediary-27.17.0.50-sources.jar">
-            <sha256 value="972983c4eeafd8eeea1e41139e4e8895d5f264b7e7b9eabc368a9310301c97d2" origin="BlameJared Maven"/>
-         </artifact>
-         <artifact name="jei-1.21.11-common-api-intermediary-27.17.0.50.pom">
-            <sha256 value="e7b0e45e8274cccbac1eed6318586abbd52300e11a6958fc09b461dab81728cd" origin="BlameJared Maven"/>
-         </artifact>
-      </component>
-      <component group="mezz.jei" name="jei-1.21.11-fabric-api" version="27.17.0.50">
-         <artifact name="jei-1.21.11-fabric-api-27.17.0.50.jar">
-            <sha256 value="b1b48e58d5f4d9c363ea8581cfa578ab0a6cfcc6ac5bad9d1d0379938ca04751" origin="Official BlameJared Maven SHA-256"/>
-         </artifact>
-         <artifact name="jei-1.21.11-fabric-api-27.17.0.50-sources.jar">
-            <sha256 value="be4bed1501128334651d128acbfa0b72bbba3d9fa3c30a311fe784c776b574d9" origin="BlameJared Maven"/>
-         </artifact>
-         <artifact name="jei-1.21.11-fabric-api-27.17.0.50.pom">
-            <sha256 value="836e3d707c77edb00a6a89d619a4f442e0139b93f8a5807dcbb87a96e62fd400" origin="BlameJared Maven"/>
-         </artifact>
-      </component>
-      <component group="remapped.maven.modrinth" name="emi-51aba2bb" version="0.7.3+1.18.2">
-         <artifact name="emi-51aba2bb-0.7.3+1.18.2.pom">
-            <sha256 value="2da06f9c6308cc4237a0ec0fe41566e186268282c7f8a995486b12954cc5a517" origin="Fabric Loom local deterministic metadata"/>
-         </artifact>
-      </component>
-      <component group="remapped.mezz.jei" name="jei-1.21.11-common-api-intermediary-4abd26ae" version="27.17.0.50">
-         <artifact name="jei-1.21.11-common-api-intermediary-4abd26ae-27.17.0.50.pom">
-            <sha256 value="4a71cd177bb5a12189b01527948455c0e80aacff3956b63030ed3ee46d90f30c" origin="Fabric Loom local deterministic metadata"/>
-         </artifact>
-      </component>
-      <component group="remapped.mezz.jei" name="jei-1.21.11-fabric-api-4abd26ae" version="27.17.0.50">
-         <artifact name="jei-1.21.11-fabric-api-4abd26ae-27.17.0.50.pom">
-            <sha256 value="04c32cbd80d3364f1937f2c3aea461d3cfdbdaac6a9eef3c584753bc943b64e0" origin="Fabric Loom local deterministic metadata"/>
+         <artifact name="trove-1.0.2.pom">
+            <sha256 value="83f2682bd3ded1fe417b7e98e7ac86510cd747378eae7e3a5d1d35c7c7f0d2ea" origin="Generated by Gradle"/>
          </artifact>
       </component>
    </components>

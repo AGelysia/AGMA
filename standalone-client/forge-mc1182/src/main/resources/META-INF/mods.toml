@@ -1,0 +1,28 @@
+modLoader = "javafml"
+loaderVersion = "[40,)"
+license = "Apache-2.0"
+clientSideOnly = true
+showAsResourcePack = true
+
+[[mods]]
+modId = "agma_standalone"
+version = "${version}"
+displayName = "AGMA Standalone Client"
+authors = "AGMA contributors"
+description = '''
+Pure client AGMA shell with an authenticated local Runtime boundary.
+'''
+
+[[dependencies.agma_standalone]]
+modId = "forge"
+mandatory = true
+versionRange = "[${forgeVersion},41)"
+ordering = "NONE"
+side = "CLIENT"
+
+[[dependencies.agma_standalone]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[${minecraftVersion},1.18.3)"
+ordering = "NONE"
+side = "CLIENT"

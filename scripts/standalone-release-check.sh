@@ -12,7 +12,7 @@ fail() {
 }
 
 [[ "$#" -le 1 ]] || fail "usage: [new-output-directory]"
-for program in cmp find git grep realpath sort; do
+for program in cmp find git grep node realpath sort; do
   command -v "$program" >/dev/null 2>&1 \
     || fail "required release-check program is unavailable: $program"
 done
@@ -42,10 +42,23 @@ find "$WORK/second" -mindepth 1 -maxdepth 1 -type f -printf '%f\n' \
   | sort >"$WORK/second.paths"
 cmp "$WORK/first.paths" "$WORK/second.paths" \
   || fail "standalone release builds produced different file sets"
+VERSION="$(node -p "require('$ROOT/standalone-client/version.json').version")"
+printf '%s\n' \
+  "AGMA-Client-Standalone-${VERSION}-mc1.18.2-fabric-linux-x86_64.jar" \
+  "AGMA-Client-Standalone-${VERSION}-mc1.18.2-fabric-windows-x86_64.jar" \
+  "AGMA-Client-Standalone-${VERSION}-mc1.18.2-forge-linux-x86_64.jar" \
+  "AGMA-Client-Standalone-${VERSION}-mc1.18.2-forge-windows-x86_64.jar" \
+  "AGMA-Client-Standalone-${VERSION}-mc1.21.11-fabric-linux-x86_64.jar" \
+  "AGMA-Client-Standalone-${VERSION}-mc1.21.11-fabric-windows-x86_64.jar" \
+  "AGMA-Client-Standalone-${VERSION}-SBOM.cdx.json" \
+  "AGMA-Client-Standalone-${VERSION}-SHA256SUMS" \
+  | sort >"$WORK/expected.paths"
+cmp "$WORK/expected.paths" "$WORK/first.paths" \
+  || fail "standalone release produced an unexpected eight-asset inventory"
 while IFS= read -r path; do
   cmp "$WORK/first/$path" "$WORK/second/$path" \
     || fail "standalone release asset is not reproducible: $path"
 done <"$WORK/first.paths"
 
 mv "$WORK/first" "$OUTPUT"
-printf 'standalone-release-check assets=5 reproducible=yes result=%s\n' "$OUTPUT"
+printf 'standalone-release-check assets=8 jars=6 reproducible=yes result=%s\n' "$OUTPUT"
