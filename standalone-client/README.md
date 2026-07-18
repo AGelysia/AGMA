@@ -1,4 +1,4 @@
-# AGMA Standalone Client 0.3.0
+# AGMA Standalone Client 0.3.1
 
 AGMA Standalone Client is a pure client mod for Fabric and Forge. It works in singleplayer and on
 ordinary multiplayer servers without an AGMA Paper plugin. The mod builds a bounded catalog from
@@ -10,18 +10,18 @@ source archives, integrated JARs, and release assets.
 
 ## Release Assets
 
-The `standalone-v0.3.0` release contains six runnable JARs. Choose the JAR matching Minecraft, mod
+The `standalone-v0.3.1` release contains six runnable JARs. Choose the JAR matching Minecraft, mod
 loader, and the operating system running the game:
 
 | Minecraft | Loader | Java | Linux x86_64 | Windows x86_64 |
 | --- | --- | --- | --- | --- |
-| 1.21.11 | Fabric | 21+ | `AGMA-Client-Standalone-0.3.0-mc1.21.11-fabric-linux-x86_64.jar` | `AGMA-Client-Standalone-0.3.0-mc1.21.11-fabric-windows-x86_64.jar` |
-| 1.18.2 | Fabric | 17+ | `AGMA-Client-Standalone-0.3.0-mc1.18.2-fabric-linux-x86_64.jar` | `AGMA-Client-Standalone-0.3.0-mc1.18.2-fabric-windows-x86_64.jar` |
-| 1.18.2 | Forge | 17+ | `AGMA-Client-Standalone-0.3.0-mc1.18.2-forge-linux-x86_64.jar` | `AGMA-Client-Standalone-0.3.0-mc1.18.2-forge-windows-x86_64.jar` |
+| 1.21.11 | Fabric | 21+ | `AGMA-Client-Standalone-0.3.1-mc1.21.11-fabric-linux-x86_64.jar` | `AGMA-Client-Standalone-0.3.1-mc1.21.11-fabric-windows-x86_64.jar` |
+| 1.18.2 | Fabric | 17+ | `AGMA-Client-Standalone-0.3.1-mc1.18.2-fabric-linux-x86_64.jar` | `AGMA-Client-Standalone-0.3.1-mc1.18.2-fabric-windows-x86_64.jar` |
+| 1.18.2 | Forge | 17+ | `AGMA-Client-Standalone-0.3.1-mc1.18.2-forge-linux-x86_64.jar` | `AGMA-Client-Standalone-0.3.1-mc1.18.2-forge-windows-x86_64.jar` |
 
 Every JAR contains the platform-specific Node.js 22.23.1 Runtime. A system Node installation is not
-required. The other two release assets are `AGMA-Client-Standalone-0.3.0-SBOM.cdx.json` and
-`AGMA-Client-Standalone-0.3.0-SHA256SUMS`; the checksum manifest covers all six JARs and the SBOM.
+required. The other two release assets are `AGMA-Client-Standalone-0.3.1-SBOM.cdx.json` and
+`AGMA-Client-Standalone-0.3.1-SHA256SUMS`; the checksum manifest covers all six JARs and the SBOM.
 
 ## Install And Use
 
@@ -30,7 +30,7 @@ directory:
 
 - Minecraft 1.21.11 Fabric: Fabric Loader 0.19.3 and Fabric API 0.141.5+1.21.11.
 - Minecraft 1.18.2 Fabric: Fabric Loader 0.19.3 and Fabric API 0.77.0+1.18.2.
-- Minecraft 1.18.2 Forge: Forge 40.3.12; do not install Fabric API for this target.
+- Minecraft 1.18.2 Forge: Forge 40.2.21 or newer 40.x; do not install Fabric API for this target.
 
 Open a world, then press `G`. The Catalog tab searches client-visible resources and displays local
 Materials, Workstations, Steps, Catalysts, Energy, Conditions, unresolved nodes, and up to three

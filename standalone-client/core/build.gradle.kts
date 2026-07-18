@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.spotless)
 }
 
-version = providers.gradleProperty("standaloneVersion").orElse("0.3.0").get()
+version = providers.gradleProperty("standaloneVersion").orElse("0.3.1").get()
 
 base {
     archivesName = "AGMA-Standalone-Client-Core"

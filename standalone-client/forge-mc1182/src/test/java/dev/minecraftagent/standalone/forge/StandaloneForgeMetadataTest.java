@@ -34,12 +34,13 @@ class StandaloneForgeMetadataTest {
     var mod = mods.get(0);
     assertEquals("agma_standalone", mod.get("modId"));
     assertEquals("AGMA Standalone Client", mod.get("displayName"));
+    assertEquals("IGNORE_ALL_VERSION", mod.get("displayTest"));
     assertEquals(System.getProperty("agma.expectedVersion"), mod.get("version"));
 
     List<? extends UnmodifiableConfig> dependencies =
         descriptor.get(List.of("dependencies", "agma_standalone"));
     assertEquals(2, dependencies.size());
-    assertDependency(dependencies.get(0), "forge", "[40.3.12,41)");
+    assertDependency(dependencies.get(0), "forge", "[40.2.21,41)");
     assertDependency(dependencies.get(1), "minecraft", "[1.18.2,1.18.3)");
     assertFalse(descriptor.toString().contains("fabric"));
     assertFalse(descriptor.toString().contains("paper"));
@@ -49,16 +50,34 @@ class StandaloneForgeMetadataTest {
   void primaryClassesLoadWithoutViewerApisAndDoNotLinkThem() throws Exception {
     assertNotNull(StandaloneForgeMod.class.getDeclaredConstructor());
     assertNotNull(StandaloneCatalogService.class.getDeclaredConstructor());
-    for (var type : List.of(StandaloneForgeMod.class, StandaloneCatalogService.class)) {
-      var path = "/" + type.getName().replace('.', '/') + ".class";
-      try (var input = type.getResourceAsStream(path)) {
-        assertNotNull(input);
-        var constants = new String(input.readAllBytes(), StandardCharsets.ISO_8859_1);
-        assertFalse(constants.contains("mezz/jei"));
-        assertFalse(constants.contains("dev/emi"));
-        assertFalse(constants.contains("net/fabricmc"));
-        assertTrue(constants.contains("agma"));
-      }
+    for (var type :
+        List.of(
+            StandaloneForgeMod.class,
+            StandaloneForgeClient.class,
+            StandaloneCatalogService.class)) {
+      var constants = classConstants(type);
+      assertFalse(constants.contains("mezz/jei"));
+      assertFalse(constants.contains("dev/emi"));
+      assertFalse(constants.contains("net/fabricmc"));
+      assertTrue(constants.contains("agma"));
+    }
+  }
+
+  @Test
+  void commonBootstrapDoesNotLinkClientOnlyApis() throws Exception {
+    var constants = classConstants(StandaloneForgeMod.class);
+    assertFalse(constants.contains("net/minecraft/client"));
+    assertFalse(constants.contains("net/minecraftforge/client"));
+    assertFalse(constants.contains("org/lwjgl"));
+    assertTrue(constants.contains("net/minecraftforge/fml/DistExecutor"));
+    assertTrue(constants.contains("StandaloneForgeClient"));
+  }
+
+  private static String classConstants(Class<?> type) throws Exception {
+    var path = "/" + type.getName().replace('.', '/') + ".class";
+    try (var input = type.getResourceAsStream(path)) {
+      assertNotNull(input);
+      return new String(input.readAllBytes(), StandardCharsets.ISO_8859_1);
     }
   }
 

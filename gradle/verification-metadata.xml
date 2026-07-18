@@ -8,16 +8,21 @@
          <trust group="loom" name="mappings" version="layered+hash.2198" file="mappings-layered+hash.2198.jar" regex="false" reason="Fabric Loom produces this local layered mappings JAR with non-reproducible bytes"/>
          <trust group="loom" name="mappings" version="layered+hash.40359" file="mappings-layered+hash.40359.jar" regex="false" reason="Architectury Loom produces this local layered mappings JAR with non-reproducible bytes"/>
          <trust group="net.minecraft" name="forge-1.18.2-40.3.12-minecraft-merged" version="1.18.2-loom.mappings.1_18_2.layered+hash.40359-v2-forge-1.18.2-40.3.12" file="forge-1.18.2-40.3.12-minecraft-merged-1.18.2-loom.mappings.1_18_2.layered+hash.40359-v2-forge-1.18.2-40.3.12.jar" regex="false" reason="Architectury Loom produces this exact local merged Forge Minecraft JAR with non-reproducible bytes"/>
+         <trust group="net.minecraft" name="forge-1.18.2-40.2.21-minecraft-merged" version="1.18.2-loom.mappings.1_18_2.layered+hash.40359-v2-forge-1.18.2-40.2.21" file="forge-1.18.2-40.2.21-minecraft-merged-1.18.2-loom.mappings.1_18_2.layered+hash.40359-v2-forge-1.18.2-40.2.21.jar" regex="false" reason="Architectury Loom produces this exact local merged Forge Minecraft JAR with non-reproducible bytes"/>
          <trust group="net.minecraft" name="minecraft-merged-6dd721cd7d" version="1.21.11-loom.mappings.1_21_11.layered+hash.2198-v2" file="minecraft-merged-6dd721cd7d-1.21.11-loom.mappings.1_21_11.layered+hash.2198-v2.jar" regex="false" reason="Fabric Loom produces this exact local merged Minecraft JAR with non-reproducible bytes"/>
          <trust group="net.minecraft" name="minecraft-merged-8d76583df5" version="1.21.11-loom.mappings.1_21_11.layered+hash.2198-v2" file="minecraft-merged-8d76583df5-1.21.11-loom.mappings.1_21_11.layered+hash.2198-v2.jar" regex="false" reason="Fabric Loom produces this exact local merged Minecraft JAR with non-reproducible bytes"/>
          <trust group="net.minecraft" name="minecraft-merged-bf69f4ce1c" version="1.18.2-loom.mappings.1_18_2.layered+hash.2198-v2" file="minecraft-merged-bf69f4ce1c-1.18.2-loom.mappings.1_18_2.layered+hash.2198-v2.jar" regex="false" reason="Fabric Loom produces this exact local merged Minecraft JAR with non-reproducible bytes"/>
          <trust group="net.minecraftforge.72ddc588e5a3534371d7571a91bc136290d77b96de9073dd5ea36593cfe1e13d" name="fmlloader" version="1.18.2-40.3.12" file="fmlloader-1.18.2-40.3.12.jar" regex="false" reason="Architectury Loom produces this exact local transformed Forge loader JAR with non-reproducible bytes"/>
+         <trust group="net.minecraftforge.d858b865652815e312c810c302eded807ea84aa92c49627bb335829669c543ab" name="fmlloader" version="1.18.2-40.2.21" file="fmlloader-1.18.2-40.2.21.jar" regex="false" reason="Architectury Loom produces this exact local transformed Forge loader JAR with non-reproducible bytes"/>
          <trust group="remapped.maven.modrinth" name="emi-51aba2bb" version="0.7.3+1.18.2" file="emi-51aba2bb-0.7.3+1.18.2.jar" regex="false" reason="Fabric Loom produces this exact local remapped EMI JAR with non-reproducible bytes"/>
          <trust group="remapped.mezz.jei" name="jei-1.18.2-common-api-d0ec961b" version="10.2.1.1010" file="jei-1.18.2-common-api-d0ec961b-10.2.1.1010.jar" regex="false" reason="Architectury Loom produces this exact local remapped Forge JEI JAR with non-reproducible bytes"/>
          <trust group="remapped.mezz.jei" name="jei-1.18.2-common-d0ec961b" version="10.2.1.1010" file="jei-1.18.2-common-d0ec961b-10.2.1.1010.jar" regex="false" reason="Architectury Loom produces this exact local remapped Forge JEI JAR with non-reproducible bytes"/>
          <trust group="remapped.mezz.jei" name="jei-1.18.2-core-d0ec961b" version="10.2.1.1010" file="jei-1.18.2-core-d0ec961b-10.2.1.1010.jar" regex="false" reason="Architectury Loom produces this exact local remapped Forge JEI JAR with non-reproducible bytes"/>
          <trust group="remapped.mezz.jei" name="jei-1.18.2-forge-api-d0ec961b" version="10.2.1.1010" file="jei-1.18.2-forge-api-d0ec961b-10.2.1.1010.jar" regex="false" reason="Architectury Loom produces this exact local remapped Forge JEI JAR with non-reproducible bytes"/>
          <trust group="remapped.mezz.jei" name="jei-1.18.2-forge-d0ec961b" version="10.2.1.1010" file="jei-1.18.2-forge-d0ec961b-10.2.1.1010.jar" regex="false" reason="Architectury Loom produces this exact local remapped Forge JEI JAR with non-reproducible bytes"/>
+         <trust group="remapped.mezz.jei" name="jei-1.18.2-common-api-8dec99c8" version="10.2.1.1010" file="jei-1.18.2-common-api-8dec99c8-10.2.1.1010.jar" regex="false" reason="Architectury Loom produces this exact local remapped Forge JEI JAR with non-reproducible bytes"/>
+         <trust group="remapped.mezz.jei" name="jei-1.18.2-forge-8dec99c8" version="10.2.1.1010" file="jei-1.18.2-forge-8dec99c8-10.2.1.1010.jar" regex="false" reason="Architectury Loom produces this exact local remapped Forge JEI JAR with non-reproducible bytes"/>
+         <trust group="remapped.mezz.jei" name="jei-1.18.2-forge-api-8dec99c8" version="10.2.1.1010" file="jei-1.18.2-forge-api-8dec99c8-10.2.1.1010.jar" regex="false" reason="Architectury Loom produces this exact local remapped Forge JEI JAR with non-reproducible bytes"/>
          <trust group="remapped.mezz.jei" name="jei-1.21.11-common-api-intermediary-4abd26ae" version="27.17.0.50" file="jei-1.21.11-common-api-intermediary-4abd26ae-27.17.0.50-sources.jar" regex="false" reason="Fabric Loom produces this exact local remapped JEI API sources JAR with non-reproducible bytes"/>
          <trust group="remapped.mezz.jei" name="jei-1.21.11-common-api-intermediary-4abd26ae" version="27.17.0.50" file="jei-1.21.11-common-api-intermediary-4abd26ae-27.17.0.50.jar" regex="false" reason="Fabric Loom produces this exact local remapped JEI API JAR with non-reproducible bytes"/>
          <trust group="remapped.mezz.jei" name="jei-1.21.11-fabric-api-4abd26ae" version="27.17.0.50" file="jei-1.21.11-fabric-api-4abd26ae-27.17.0.50-sources.jar" regex="false" reason="Fabric Loom produces this exact local remapped JEI API sources JAR with non-reproducible bytes"/>
@@ -3447,6 +3452,9 @@
          </artifact>
       </component>
       <component group="net.minecraftforge" name="coremods" version="5.0.3">
+         <artifact name="coremods-5.0.3.jar">
+            <sha256 value="317e53d049ba3b57d383ae0542e8cd853256a73861f595c8014e816e1de0b5a9" origin="Generated by Gradle"/>
+         </artifact>
          <artifact name="coremods-5.0.3.pom">
             <sha256 value="05c6264cde11c6972d754b43f4b8fc9e616c9dc35b9add89a4d6bc1bb290b9dd" origin="Generated by Gradle"/>
          </artifact>
@@ -6576,6 +6584,156 @@
          </artifact>
          <artifact name="trove-1.0.2.pom">
             <sha256 value="83f2682bd3ded1fe417b7e98e7ac86510cd747378eae7e3a5d1d35c7c7f0d2ea" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraft" name="forge-1.18.2-40.2.21-minecraft-merged" version="1.18.2-loom.mappings.1_18_2.layered+hash.40359-v2-forge-1.18.2-40.2.21">
+         <artifact name="forge-1.18.2-40.2.21-minecraft-merged-1.18.2-loom.mappings.1_18_2.layered+hash.40359-v2-forge-1.18.2-40.2.21.jar">
+            <sha256 value="b2b6af3793ace1d1c32bfe3c87a094f6a0f011d50c865ca3a77c64c44c7df0d9" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="forge-1.18.2-40.2.21-minecraft-merged-1.18.2-loom.mappings.1_18_2.layered+hash.40359-v2-forge-1.18.2-40.2.21.pom">
+            <sha256 value="a0656ece814d3b7d955cc51169f6d29f1338f2482efb9f2ce5cb4bd48e4cf01e" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="coremods" version="5.0.1">
+         <artifact name="coremods-5.0.1.pom">
+            <sha256 value="ee10a1d85aaf69e27afdb329d73f9831d682c88d22815d92401cfbd01cf82c97" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="fmlcore" version="1.18.2-40.2.21">
+         <artifact name="fmlcore-1.18.2-40.2.21.jar">
+            <sha256 value="7cf3f40a57a43e9e7e85d54f4b1e4c9e09522022977d43ed253bacff5e19adb9" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="fmlcore-1.18.2-40.2.21.pom">
+            <sha256 value="d26cc7b29d2df10fb73bf9286a757f457f7cfd70e250da852d412c6840020fb7" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="fmlloader" version="1.18.2-40.2.21">
+         <artifact name="fmlloader-1.18.2-40.2.21-sources.jar">
+            <sha256 value="ae4b6a59adaa980350c8a636fd4e954b9201e5fe8c7fb30566786004f7f30c87" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="fmlloader-1.18.2-40.2.21.jar">
+            <sha256 value="dcd0485a763ad3afd0dc2fba2ffe9fa78bfd4c3b38ff9f2feed3682b00e888b6" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="fmlloader-1.18.2-40.2.21.pom">
+            <sha256 value="ecfe38caee68f607c2a9846214f42caebb8b6a7c4274974b9e89a34ff484ccf9" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="forge" version="1.18.2-40.2.21">
+         <artifact name="forge-1.18.2-40.2.21-installer.jar">
+            <sha256 value="099f3aa2740b4976dd8e5359f566671149dac87796dbc8fb60ad5f94da19ee9a" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="forge-1.18.2-40.2.21-universal.jar">
+            <sha256 value="4fb4f21279285488c5903ea4c867fb4e48662cd9ba8564960e8e972e6dc30557" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="forge-1.18.2-40.2.21-userdev.jar">
+            <sha256 value="f2baa2b0a60944bed863affb283b0ac6387437a124ade29029210fae73485728" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="forge-1.18.2-40.2.21.pom">
+            <sha256 value="f15dd182b61bef6507d281dd71e087ce0e734eb69a78866506cea9eaaaa46c34" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="javafmllanguage" version="1.18.2-40.2.21">
+         <artifact name="javafmllanguage-1.18.2-40.2.21.jar">
+            <sha256 value="f00e9aebead532055b275c1612b4e9f2af0915faefce49bd97f0cf528888f8da" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="javafmllanguage-1.18.2-40.2.21.pom">
+            <sha256 value="035df8e157cc54d21851b10e474c6e8404037976bad4140d7d8e0e3015739840" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="lowcodelanguage" version="1.18.2-40.2.21">
+         <artifact name="lowcodelanguage-1.18.2-40.2.21.jar">
+            <sha256 value="e5ccd7e8ae36ecbc4feb58de25530bb9113d1588b6b7279ed18dedacb182a8ba" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="lowcodelanguage-1.18.2-40.2.21.pom">
+            <sha256 value="cee5eda29b298e88928a92511f8d78f8ec99ece08ca7a1cd8d4fed2fdf008720" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge" name="mclanguage" version="1.18.2-40.2.21">
+         <artifact name="mclanguage-1.18.2-40.2.21.jar">
+            <sha256 value="5de3d7c65752fc6f64c3826886c4e4b597fb07eb66b68d49482cfd02e300d92f" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="mclanguage-1.18.2-40.2.21.pom">
+            <sha256 value="42854287c5c036b6920907d538c36c51b10de1a58d1981c493d505fe33565125" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="net.minecraftforge.d858b865652815e312c810c302eded807ea84aa92c49627bb335829669c543ab" name="fmlloader" version="1.18.2-40.2.21">
+         <artifact name="fmlloader-1.18.2-40.2.21.jar">
+            <sha256 value="ef74369d2f8aa84c3457dbcdce51a0ec13fd316af3057979c46bb02cd80fe91a" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="fmlloader-1.18.2-40.2.21.pom">
+            <sha256 value="76e1c3ad3f2b3a1c42beffd72433a8da6085100d63f60498d3658c44310c858e" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.openjdk.nashorn" name="nashorn-core" version="15.3">
+         <artifact name="nashorn-core-15.3.jar">
+            <sha256 value="efc4f1e6164377a6a347dae255cf764fb3e5461cafd859abbdfb39e2dc831b62" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="nashorn-core-15.3.pom">
+            <sha256 value="fbd85330061630cbc011cd9d2210daa5de9b6875281dd60cce15ce7adacf3024" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.ow2.asm" name="asm" version="9.7">
+         <artifact name="asm-9.7.jar">
+            <sha256 value="adf46d5e34940bdf148ecdd26a9ee8eea94496a72034ff7141066b3eea5c4e9d" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="asm-9.7.pom">
+            <sha256 value="de00115f1d84f3a0b2ee3a4b6f6192d066f86d185d67b9d1522f2c80feac5f00" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.ow2.asm" name="asm-analysis" version="9.7">
+         <artifact name="asm-analysis-9.7.jar">
+            <sha256 value="7bc6bcbc21379948a0c8c467fb0f864206e5b818f6bc0b546872f5c9f941556f" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="asm-analysis-9.7.pom">
+            <sha256 value="9c33080ebcb631ae4f77eb62ed67bfc40cb872e8cfd058ac863e445c1dd973df" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.ow2.asm" name="asm-commons" version="9.7">
+         <artifact name="asm-commons-9.7.jar">
+            <sha256 value="389bc247958e049fc9a0408d398c92c6d370c18035120395d4cba1d9d9304b7a" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="asm-commons-9.7.pom">
+            <sha256 value="5acee3ee7252ed90b8074c755d022787499a95fafff98ac4a685107c4da409b4" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.ow2.asm" name="asm-tree" version="9.7">
+         <artifact name="asm-tree-9.7.jar">
+            <sha256 value="62f4b3bc436045c1acb5c3ba2d8ec556ec3369093d7f5d06c747eb04b56d52b1" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="asm-tree-9.7.pom">
+            <sha256 value="a34ea1e3e4128c01038db43c6976e88c779cf5af84b0505da266dfe6965668ec" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.ow2.asm" name="asm-util" version="9.7">
+         <artifact name="asm-util-9.7.jar">
+            <sha256 value="37a6414d36641973f1af104937c95d6d921b2ddb4d612c66c5a9f2b13fc14211" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="asm-util-9.7.pom">
+            <sha256 value="5d014d8c870d4871825bd2ddb5567b21ef6dac8ec48bbb8dbb465b0b3a2bf452" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="remapped.mezz.jei" name="jei-1.18.2-common-api-8dec99c8" version="10.2.1.1010">
+         <artifact name="jei-1.18.2-common-api-8dec99c8-10.2.1.1010.jar">
+            <sha256 value="e11511f58b1760ffaa2b6273bdad74b1f3be30f054f02b1eaab2fe8bffc78c3a" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="jei-1.18.2-common-api-8dec99c8-10.2.1.1010.pom">
+            <sha256 value="238a52ad67699a8c99153c20d100bfd4c35ccb06e7a70553da3df2f19bdb7c9a" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="remapped.mezz.jei" name="jei-1.18.2-forge-8dec99c8" version="10.2.1.1010">
+         <artifact name="jei-1.18.2-forge-8dec99c8-10.2.1.1010.jar">
+            <sha256 value="1beda6c94de435c9762492c07844d725e9971cb8fddc9bbbcaf59c97ea0e683d" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="jei-1.18.2-forge-8dec99c8-10.2.1.1010.pom">
+            <sha256 value="f67612e46a4ed3c9e5a104ee09361004240ff8e4b3db43a2e814a938781a5037" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="remapped.mezz.jei" name="jei-1.18.2-forge-api-8dec99c8" version="10.2.1.1010">
+         <artifact name="jei-1.18.2-forge-api-8dec99c8-10.2.1.1010.jar">
+            <sha256 value="71d3302324066308629cc42ab5706ced2d5e18d629cd1ae10ad50452a5c5238c" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="jei-1.18.2-forge-api-8dec99c8-10.2.1.1010.pom">
+            <sha256 value="cb3e80644f62367dbaeae3957d5c311e6ec380e7d2d87f3f59170bbf82ce9308" origin="Generated by Gradle"/>
          </artifact>
       </component>
    </components>

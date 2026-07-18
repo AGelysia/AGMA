@@ -105,6 +105,7 @@ make_forge_base() {
     'modId = "agma_standalone"' \
     "version = \"${CLIENT_VERSION}\"" \
     'displayName = "AGMA Standalone Client"' \
+    'displayTest = "IGNORE_ALL_VERSION"' \
     'authors = "AGMA contributors"' \
     "description = '''" \
     'Pure client AGMA shell with an authenticated local Runtime boundary.' \
@@ -113,7 +114,7 @@ make_forge_base() {
     '[[dependencies.agma_standalone]]' \
     'modId = "forge"' \
     'mandatory = true' \
-    'versionRange = "[40.3.12,41)"' \
+    'versionRange = "[40.2.21,41)"' \
     'ordering = "NONE"' \
     'side = "CLIENT"' \
     '' \

@@ -354,6 +354,7 @@ showAsResourcePack = true
 modId = "agma_standalone"
 version = "${clientVersion}"
 displayName = "AGMA Standalone Client"
+displayTest = "IGNORE_ALL_VERSION"
 authors = "AGMA contributors"
 description = '''
 Pure client AGMA shell with an authenticated local Runtime boundary.
@@ -362,7 +363,7 @@ Pure client AGMA shell with an authenticated local Runtime boundary.
 [[dependencies.agma_standalone]]
 modId = "forge"
 mandatory = true
-versionRange = "[40.3.12,41)"
+versionRange = "[40.2.21,41)"
 ordering = "NONE"
 side = "CLIENT"
 

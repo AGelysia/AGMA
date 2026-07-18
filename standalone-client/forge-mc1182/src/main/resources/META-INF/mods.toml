@@ -8,6 +8,7 @@ showAsResourcePack = true
 modId = "agma_standalone"
 version = "${version}"
 displayName = "AGMA Standalone Client"
+displayTest = "IGNORE_ALL_VERSION"
 authors = "AGMA contributors"
 description = '''
 Pure client AGMA shell with an authenticated local Runtime boundary.

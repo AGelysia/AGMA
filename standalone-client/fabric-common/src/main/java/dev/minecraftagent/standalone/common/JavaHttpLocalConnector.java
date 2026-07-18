@@ -47,7 +47,7 @@ public final class JavaHttpLocalConnector implements LocalConnector {
   private volatile boolean closed;
 
   public JavaHttpLocalConnector() {
-    this("0.3.0");
+    this("0.3.1");
   }
 
   public JavaHttpLocalConnector(String componentVersion) {

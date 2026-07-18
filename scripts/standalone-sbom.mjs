@@ -397,12 +397,14 @@ function validateForgeMetadata(jar, entries, name, version, minecraft) {
       "modId",
       "version",
       "displayName",
+      "displayTest",
       "authors",
       "description",
     ]) ||
     mod.modId !== "agma_standalone" ||
     mod.version !== version ||
     mod.displayName !== "AGMA Standalone Client" ||
+    mod.displayTest !== "IGNORE_ALL_VERSION" ||
     mod.authors !== "AGMA contributors" ||
     typeof mod.description !== "string" ||
     mod.description.length < 1 ||
@@ -433,7 +435,7 @@ function validateForgeMetadata(jar, entries, name, version, minecraft) {
   const minecraftDependency = dependencies.get("minecraft");
   if (
     forgeDependency?.mandatory !== true ||
-    forgeDependency?.versionRange !== "[40.3.12,41)" ||
+    forgeDependency?.versionRange !== "[40.2.21,41)" ||
     forgeDependency?.ordering !== "NONE" ||
     forgeDependency?.side !== "CLIENT" ||
     minecraftDependency?.mandatory !== true ||

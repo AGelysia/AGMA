@@ -3,16 +3,16 @@
 AGMA client support is deliberately narrow. The server always provides a private text fallback, so
 the 0.1.0 Fabric companion and projection mods are optional.
 
-## Standalone Client 0.3.0
+## Standalone Client 0.3.1
 
 The standalone product is independent of the 0.1.0 Paper/server companion. Install exactly one JAR
 matching the Minecraft, loader, and operating-system column:
 
 | Component | Minecraft 1.21.11 Fabric | Minecraft 1.18.2 Fabric | Minecraft 1.18.2 Forge |
 | --- | --- | --- | --- |
-| AGMA standalone | 0.3.0 | 0.3.0 | 0.3.0 |
+| AGMA standalone | 0.3.1 | 0.3.1 | 0.3.1 |
 | Java | 21+ | 17+ | 17+ |
-| Loader | Fabric Loader 0.19.3 | Fabric Loader 0.19.3 | Forge 40.3.12 |
+| Loader | Fabric Loader 0.19.3 | Fabric Loader 0.19.3 | Forge 40.2.21 or newer 40.x |
 | Fabric API | 0.141.5+1.21.11 | 0.77.0+1.18.2 | Not used |
 | JEI, optional | 27.17.0.50 | 10.2.1.1010 | 10.2.1.1010 |
 | EMI, optional | Unavailable; no older substitution | 0.7.3+1.18.2 hover context only; recipe enumeration fails closed | Unavailable; no Forge integration |

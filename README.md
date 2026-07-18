@@ -1,6 +1,6 @@
 # AGMA
 
-AGMA (AG Minecraft Agent) provides both the 0.1.0 Paper deployment and a separate 0.3.0 pure-client
+AGMA (AG Minecraft Agent) provides both the 0.1.0 Paper deployment and a separate 0.3.1 pure-client
 standalone mod for Fabric and Forge. The standalone client works in singleplayer and on ordinary
 multiplayer servers without an AGMA server.
 
@@ -23,9 +23,9 @@ The integrated JAR supports glibc Linux x86_64 only. The separated package suppo
 on which Java 21, Paper 1.21.11, and Node.js 22.16-22.x are available.
 
 The `AGMA-Client-0.1.0` JAR remains a server companion. It is distinct from the six
-`AGMA-Client-Standalone-0.3.0` JARs: Minecraft 1.18.2 is released for Fabric and Forge, while
+`AGMA-Client-Standalone-0.3.1` JARs: Minecraft 1.18.2 is released for Fabric and Forge, while
 Minecraft 1.21.11 is released for Fabric. Each target has a Linux x86_64 and Windows x86_64 JAR
-with a pinned local Runtime. The `standalone-v0.3.0` release also contains one CycloneDX SBOM and
+with a pinned local Runtime. The `standalone-v0.3.1` release also contains one CycloneDX SBOM and
 one SHA-256 checksum manifest, for eight assets total. See
 [standalone-client/README.md](standalone-client/README.md) for standalone installation, privacy,
 cost, viewer, and data-completeness details.
@@ -170,7 +170,7 @@ Repository layout:
 - `paper-plugin/`: authoritative Paper boundary and managed Runtime supervisor
 - `agent-runtime/`: provider adapters, sessions, storage, and model/tool loop
 - `client-mod/`: optional Fabric presentation layer
-- `standalone-client/`: released 0.3.0 pure-client source, contracts, Fabric and Forge shells, local
+- `standalone-client/`: released 0.3.1 pure-client source, contracts, Fabric and Forge shells, local
   planner, Runtime supervisor, fixtures, and packaging
 - `protocol/`: locally loaded JSON Schema contracts and fixtures
 - `capability-packs/`: declarative, permission-gated capability examples
