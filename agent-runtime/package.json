@@ -19,9 +19,10 @@
     "version": "node scripts/version.mjs",
     "test": "vitest run",
     "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.test.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run format:check && npm run lint && npm run build && npm test"
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run build && npm test"
   },
   "dependencies": {
     "@fastify/websocket": "11.3.0",
