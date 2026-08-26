@@ -1,65 +1,75 @@
 package dev.minecraftagent.paper.client;
 
-import com.google.gson.JsonObject;
 import dev.minecraftagent.paper.client.ClientTransferManager.TransferChunk;
 import dev.minecraftagent.paper.client.ClientTransferManager.TransferPlan;
-import dev.minecraftagent.paper.transport.RuntimeConnectionFailure;
-import dev.minecraftagent.paper.transport.StrictJson;
-import java.math.BigDecimal;
-import java.nio.ByteBuffer;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.CodingErrorAction;
-import java.nio.charset.StandardCharsets;
+import dev.minecraftagent.protocol.ClientChannelContract;
+import dev.minecraftagent.protocol.ClientPayloadFields;
+import dev.minecraftagent.protocol.ClientPayloadFrames;
+import dev.minecraftagent.protocol.ClientPayloadLimits;
+import dev.minecraftagent.protocol.ProtocolViolationException;
+import dev.minecraftagent.protocol.WireJson;
 import java.util.Base64;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
-/** Strict raw-UTF-8 JSON codec for the single Bukkit/Fabric custom payload channel. */
+/**
+ * Strict raw-UTF-8 JSON codec for the single Bukkit/Fabric custom payload channel.
+ *
+ * <p>The framing grammar, the strict parse budgets and the typed field access live in the shared
+ * {@code protocol:jvm} module so the Paper plugin and the Fabric client mod cannot drift; this
+ * class keeps only what is server specific, namely which messages the server accepts and how it
+ * builds the ones it sends.
+ */
 public final class ClientPayloadCodec {
-  public static final String CHANNEL = "minecraftagent:client";
-  public static final String PAYLOAD_VERSION = "1.0";
-  public static final int MAX_INBOUND_BYTES = 16 * 1024;
-  public static final int MAX_OUTBOUND_FRAME_BYTES = 40 * 1024;
+  public static final String CHANNEL = ClientChannelContract.CHANNEL;
+  public static final String PAYLOAD_VERSION = ClientChannelContract.PAYLOAD_VERSION;
+  public static final int MAX_INBOUND_BYTES = ClientPayloadLimits.MAX_CLIENT_TO_SERVER_FRAME_BYTES;
+  public static final int MAX_OUTBOUND_FRAME_BYTES =
+      ClientPayloadLimits.MAX_SERVER_TO_CLIENT_FRAME_BYTES;
 
-  private static final Set<String> ENVELOPE_FIELDS =
-      Set.of("clientPayloadVersion", "messageId", "type", "payload");
-  private static final Set<String> LEGACY_HELLO_FIELDS =
-      Set.of("clientProtocolVersion", "modVersion", "capabilities", "dependencies");
-  private static final Set<String> CURRENT_HELLO_FIELDS =
-      Set.of("clientProtocolVersion", "modVersion", "capabilities", "dependencies", "diagnostics");
-  private static final Set<String> CAPABILITY_FIELDS =
-      Set.of("overlay", "itemIcons", "recipeView", "litematicaPreview", "litematicaMaterialList");
-  private static final Set<String> DEPENDENCY_FIELDS = Set.of("litematica", "malilib");
-  private static final Set<String> DIAGNOSTIC_FIELDS = Set.of("litematicaAdapter");
-  private static final Set<String> LITEMATICA_ADAPTER_FIELDS =
-      Set.of(
-          "status",
-          "minecraftVersion",
-          "fabricLoaderVersion",
-          "litematicaVersion",
-          "malilibVersion",
-          "adapterId");
-  private static final Set<String> ACK_FIELDS =
-      Set.of("transferId", "generation", "status", "code");
-  private static final Set<String> ERROR_FIELDS = Set.of("transferId", "generation", "code");
+  private static final String FIELD_INVALID = "CLIENT_MESSAGE_INVALID";
+
+  /**
+   * The stable codes the server already publishes for the shared grammar, mapped onto the shared
+   * failure vocabulary so no wire-observable code is renamed.
+   */
+  private static final ClientPayloadFrames FRAMES =
+      new ClientPayloadFrames(
+          new ClientPayloadFrames.Codes(
+              "CLIENT_MESSAGE_TOO_LARGE",
+              FIELD_INVALID,
+              FIELD_INVALID,
+              FIELD_INVALID,
+              FIELD_INVALID,
+              "CLIENT_ENVELOPE_INVALID",
+              FIELD_INVALID,
+              FIELD_INVALID,
+              "CLIENT_PROTOCOL_INCOMPATIBLE",
+              "CLIENT_OUTBOUND_FRAME_TOO_LARGE"));
 
   public ClientInboundMessage decodeInbound(byte[] bytes) {
-    var envelope = parse(bytes);
-    requireFields(envelope, ENVELOPE_FIELDS, "CLIENT_ENVELOPE_INVALID");
-    if (!PAYLOAD_VERSION.equals(string(envelope, "clientPayloadVersion"))) {
-      throw new ClientProtocolException("CLIENT_PROTOCOL_INCOMPATIBLE");
+    try {
+      return decodeFrame(bytes);
+    } catch (ProtocolViolationException failure) {
+      // The shared grammar carries this server's codes; re-surface them as the plugin's own
+      // rejection type so channel listeners keep seeing ClientProtocolException.
+      throw new ClientProtocolException(failure.code());
     }
-    var messageId = uuid(envelope, "messageId", false);
-    var type = string(envelope, "type");
-    var payload = object(envelope, "payload");
-    return switch (type) {
-      case "client.hello" -> decodeHello(messageId, payload);
-      case "client.ack" -> decodeAck(messageId, payload);
-      case "client.error" -> decodeError(messageId, payload);
+  }
+
+  private static ClientInboundMessage decodeFrame(byte[] bytes) {
+    var frame = FRAMES.decode(bytes, MAX_INBOUND_BYTES);
+    return switch (frame.type()) {
+      case ClientChannelContract.MESSAGE_CLIENT_HELLO ->
+          decodeHello(frame.messageId(), frame.payload());
+      case ClientChannelContract.MESSAGE_CLIENT_ACK ->
+          decodeAck(frame.messageId(), frame.payload());
+      case ClientChannelContract.MESSAGE_CLIENT_ERROR ->
+          decodeError(frame.messageId(), frame.payload());
       default -> throw new ClientProtocolException("CLIENT_MESSAGE_DIRECTION_INVALID");
     };
   }
@@ -69,125 +79,151 @@ public final class ClientPayloadCodec {
   }
 
   public byte[] encodeServerHello(UUID messageId, long generation, boolean accepted) {
-    if (generation < 1 || generation > Integer.MAX_VALUE) {
+    if (generation < ClientPayloadLimits.GENERATION_MIN
+        || generation > ClientPayloadLimits.GENERATION_MAX) {
       throw new IllegalArgumentException("generation must be positive");
     }
-    var payload = new JsonObject();
-    payload.addProperty("generation", generation);
-    payload.addProperty("accepted", accepted);
+    var payload = new WireJson.ObjectNode();
+    payload.putLong("generation", generation);
+    payload.putBoolean("accepted", accepted);
     if (accepted) {
-      payload.addProperty("viewSchemaVersion", ClientViewSchemaRegistry.VIEW_SCHEMA_V1);
+      payload.putString("viewSchemaVersion", ClientViewSchemaRegistry.VIEW_SCHEMA_V1);
     } else {
-      payload.add("viewSchemaVersion", com.google.gson.JsonNull.INSTANCE);
+      payload.putNull("viewSchemaVersion");
     }
-    return encode(messageId, "server.hello", payload);
+    return FRAMES.encode(
+        messageId, ClientChannelContract.MESSAGE_SERVER_HELLO, payload, MAX_OUTBOUND_FRAME_BYTES);
   }
 
   public byte[] encodeViewBegin(UUID messageId, TransferPlan plan) {
     Objects.requireNonNull(plan);
-    var payload = new JsonObject();
-    payload.addProperty("transferId", plan.transferId().toString());
-    payload.addProperty("generation", plan.generation());
-    payload.addProperty("viewId", plan.viewId().toString());
-    payload.addProperty("requestId", plan.requestId().toString());
-    payload.addProperty("revision", plan.revision());
-    payload.addProperty("mode", plan.mode().wireName());
-    payload.addProperty("encoding", plan.encoding().wireName());
-    payload.addProperty("compressedBytes", plan.compressedBytes());
-    payload.addProperty("uncompressedBytes", plan.uncompressedBytes());
-    payload.addProperty("chunkCount", plan.chunkCount());
-    payload.addProperty("contentSha256", plan.contentSha256());
-    return encode(messageId, "view.begin", payload);
+    var payload = new WireJson.ObjectNode();
+    payload.putString("transferId", plan.transferId().toString());
+    payload.putLong("generation", plan.generation());
+    payload.putString("viewId", plan.viewId().toString());
+    payload.putString("requestId", plan.requestId().toString());
+    payload.putLong("revision", plan.revision());
+    payload.putString("mode", plan.mode().wireName());
+    payload.putString("encoding", plan.encoding().wireName());
+    payload.putLong("compressedBytes", plan.compressedBytes());
+    payload.putLong("uncompressedBytes", plan.uncompressedBytes());
+    payload.putLong("chunkCount", plan.chunkCount());
+    payload.putString("contentSha256", plan.contentSha256());
+    return FRAMES.encode(
+        messageId, ClientChannelContract.MESSAGE_VIEW_BEGIN, payload, MAX_OUTBOUND_FRAME_BYTES);
   }
 
   public byte[] encodeViewChunk(UUID messageId, long generation, TransferChunk chunk) {
     Objects.requireNonNull(chunk);
-    if (generation < 1
-        || generation > Integer.MAX_VALUE
-        || chunk.bytes().length > 24 * 1024
-        || chunk.bytes().length == 0) {
+    if (generation < ClientPayloadLimits.GENERATION_MIN
+        || generation > ClientPayloadLimits.GENERATION_MAX
+        || chunk.bytes().length > ClientPayloadLimits.MAX_CHUNK_BYTES
+        || chunk.bytes().length < ClientPayloadLimits.CHUNK_BYTES_MIN) {
       throw new ClientProtocolException("CLIENT_TRANSFER_CHUNK_INVALID");
     }
-    var payload = new JsonObject();
-    payload.addProperty("transferId", chunk.transferId().toString());
-    payload.addProperty("generation", generation);
-    payload.addProperty("index", chunk.index());
-    payload.addProperty("byteLength", chunk.bytes().length);
-    payload.addProperty("sha256", chunk.sha256());
-    payload.addProperty("data", Base64.getEncoder().encodeToString(chunk.bytes()));
-    return encode(messageId, "view.chunk", payload);
+    var payload = new WireJson.ObjectNode();
+    payload.putString("transferId", chunk.transferId().toString());
+    payload.putLong("generation", generation);
+    payload.putLong("index", chunk.index());
+    payload.putLong("byteLength", chunk.bytes().length);
+    payload.putString("sha256", chunk.sha256());
+    payload.putString("data", Base64.getEncoder().encodeToString(chunk.bytes()));
+    return FRAMES.encode(
+        messageId, ClientChannelContract.MESSAGE_VIEW_CHUNK, payload, MAX_OUTBOUND_FRAME_BYTES);
   }
 
   public byte[] encodeViewClear(UUID messageId, long generation, UUID viewId) {
-    if (generation < 1 || generation > Integer.MAX_VALUE) {
+    if (generation < ClientPayloadLimits.GENERATION_MIN
+        || generation > ClientPayloadLimits.GENERATION_MAX) {
       throw new IllegalArgumentException("generation must be positive");
     }
-    var payload = new JsonObject();
-    payload.addProperty("generation", generation);
+    var payload = new WireJson.ObjectNode();
+    payload.putLong("generation", generation);
     if (viewId == null) {
-      payload.add("viewId", com.google.gson.JsonNull.INSTANCE);
+      payload.putNull("viewId");
     } else {
-      payload.addProperty("viewId", viewId.toString());
+      payload.putString("viewId", viewId.toString());
     }
-    return encode(messageId, "view.clear", payload);
+    return FRAMES.encode(
+        messageId, ClientChannelContract.MESSAGE_VIEW_CLEAR, payload, MAX_OUTBOUND_FRAME_BYTES);
   }
 
   public byte[] encodeUiControl(UUID messageId, ClientUiCommandGateway.Control control) {
     Objects.requireNonNull(control);
-    var payload = new JsonObject();
-    payload.addProperty("generation", control.generation());
-    payload.addProperty("action", control.action().wireName());
+    var payload = new WireJson.ObjectNode();
+    payload.putLong("generation", control.generation());
+    payload.putString("action", control.action().wireName());
     if (control.viewId() == null) {
-      payload.add("viewId", com.google.gson.JsonNull.INSTANCE);
+      payload.putNull("viewId");
     } else {
-      payload.addProperty("viewId", control.viewId().toString());
+      payload.putString("viewId", control.viewId().toString());
     }
-    return encode(messageId, "ui.control", payload);
+    return FRAMES.encode(
+        messageId, ClientChannelContract.MESSAGE_UI_CONTROL, payload, MAX_OUTBOUND_FRAME_BYTES);
   }
 
-  private static ClientInboundMessage decodeHello(UUID messageId, JsonObject payload) {
-    String protocolVersion = string(payload, "clientProtocolVersion");
+  private static ClientInboundMessage decodeHello(UUID messageId, WireJson.ObjectNode payload) {
+    var protocolVersion = string(payload, "clientProtocolVersion");
     boolean legacy = ClientHandshake.LEGACY_PROTOCOL_VERSION.equals(protocolVersion);
     if (legacy) {
-      requireFields(payload, LEGACY_HELLO_FIELDS, "CLIENT_HELLO_INVALID");
+      ClientPayloadFields.requireFields(
+          payload, ClientChannelContract.LEGACY_HELLO_FIELDS, "CLIENT_HELLO_INVALID");
     } else if (ClientHandshake.CURRENT_PROTOCOL_VERSION.equals(protocolVersion)) {
-      requireFields(payload, CURRENT_HELLO_FIELDS, "CLIENT_HELLO_INVALID");
+      ClientPayloadFields.requireFields(
+          payload, ClientChannelContract.CURRENT_HELLO_FIELDS, "CLIENT_HELLO_INVALID");
     } else {
       throw new ClientProtocolException("CLIENT_PROTOCOL_INCOMPATIBLE");
     }
-    var capabilitiesObject = object(payload, "capabilities");
-    requireFields(capabilitiesObject, CAPABILITY_FIELDS, "CLIENT_HELLO_INVALID");
+    var capabilitiesObject = ClientPayloadFields.object(payload, "capabilities", FIELD_INVALID);
+    ClientPayloadFields.requireFields(
+        capabilitiesObject, ClientChannelContract.CAPABILITY_FIELDS, "CLIENT_HELLO_INVALID");
     var versions = new EnumMap<ClientFeature, Integer>(ClientFeature.class);
     for (var feature : ClientFeature.values()) {
       versions.put(
-          feature, integer(capabilitiesObject, feature.wireName(), 0, feature.maximumVersion()));
+          feature,
+          ClientPayloadFields.integer(
+              capabilitiesObject, feature.wireName(), 0, feature.maximumVersion(), FIELD_INVALID));
     }
 
-    var dependencyObject = object(payload, "dependencies");
-    requireFields(dependencyObject, DEPENDENCY_FIELDS, "CLIENT_HELLO_INVALID");
+    var dependencyObject = ClientPayloadFields.object(payload, "dependencies", FIELD_INVALID);
+    ClientPayloadFields.requireFields(
+        dependencyObject, ClientChannelContract.DEPENDENCY_FIELDS, "CLIENT_HELLO_INVALID");
     var dependencies = new LinkedHashMap<String, String>();
-    for (var name : java.util.List.of("litematica", "malilib")) {
-      dependencies.put(name, nullableString(dependencyObject, name));
+    for (var name :
+        List.of(
+            ClientChannelContract.DEPENDENCY_LITEMATICA,
+            ClientChannelContract.DEPENDENCY_MALILIB)) {
+      dependencies.put(
+          name, ClientPayloadFields.nullableString(dependencyObject, name, 1, 64, FIELD_INVALID));
     }
     ClientLitematicaDiagnostic adapterDiagnostic;
     if (legacy) {
       adapterDiagnostic =
           ClientLitematicaDiagnostic.legacy(
-              Optional.ofNullable(dependencies.get("litematica")),
-              Optional.ofNullable(dependencies.get("malilib")));
+              Optional.ofNullable(dependencies.get(ClientChannelContract.DEPENDENCY_LITEMATICA)),
+              Optional.ofNullable(dependencies.get(ClientChannelContract.DEPENDENCY_MALILIB)));
     } else {
-      var diagnosticsObject = object(payload, "diagnostics");
-      requireFields(diagnosticsObject, DIAGNOSTIC_FIELDS, "CLIENT_HELLO_INVALID");
-      var adapterObject = object(diagnosticsObject, "litematicaAdapter");
-      requireFields(adapterObject, LITEMATICA_ADAPTER_FIELDS, "CLIENT_HELLO_INVALID");
+      var diagnosticsObject = ClientPayloadFields.object(payload, "diagnostics", FIELD_INVALID);
+      ClientPayloadFields.requireFields(
+          diagnosticsObject, ClientChannelContract.DIAGNOSTIC_FIELDS, "CLIENT_HELLO_INVALID");
+      var adapterObject =
+          ClientPayloadFields.object(diagnosticsObject, "litematicaAdapter", FIELD_INVALID);
+      ClientPayloadFields.requireFields(
+          adapterObject, ClientChannelContract.LITEMATICA_ADAPTER_FIELDS, "CLIENT_HELLO_INVALID");
       adapterDiagnostic =
           new ClientLitematicaDiagnostic(
               ClientLitematicaDiagnostic.Status.fromWireName(string(adapterObject, "status")),
               string(adapterObject, "minecraftVersion"),
               string(adapterObject, "fabricLoaderVersion"),
-              Optional.ofNullable(nullableString(adapterObject, "litematicaVersion")),
-              Optional.ofNullable(nullableString(adapterObject, "malilibVersion")),
-              Optional.ofNullable(nullableString(adapterObject, "adapterId")));
+              Optional.ofNullable(
+                  ClientPayloadFields.nullableString(
+                      adapterObject, "litematicaVersion", 1, 64, FIELD_INVALID)),
+              Optional.ofNullable(
+                  ClientPayloadFields.nullableString(
+                      adapterObject, "malilibVersion", 1, 64, FIELD_INVALID)),
+              Optional.ofNullable(
+                  ClientPayloadFields.nullableString(
+                      adapterObject, "adapterId", 1, 64, FIELD_INVALID)));
     }
     return new ClientInboundMessage.Hello(
         messageId,
@@ -199,125 +235,38 @@ public final class ClientPayloadCodec {
             adapterDiagnostic));
   }
 
-  private static ClientInboundMessage decodeAck(UUID messageId, JsonObject payload) {
-    requireFields(payload, ACK_FIELDS, "CLIENT_ACK_INVALID");
+  private static ClientInboundMessage decodeAck(UUID messageId, WireJson.ObjectNode payload) {
+    ClientPayloadFields.requireFields(
+        payload, ClientChannelContract.CLIENT_ACK_FIELDS, "CLIENT_ACK_INVALID");
     return new ClientInboundMessage.Ack(
         messageId,
-        uuid(payload, "transferId", false),
-        longValue(payload, "generation", 1, Integer.MAX_VALUE),
+        ClientPayloadFields.uuid(payload, "transferId", false, FIELD_INVALID),
+        ClientPayloadFields.longValue(
+            payload,
+            "generation",
+            ClientPayloadLimits.GENERATION_MIN,
+            ClientPayloadLimits.GENERATION_MAX,
+            FIELD_INVALID),
         ClientInboundMessage.Ack.Status.fromWireName(string(payload, "status")),
-        nullableString(payload, "code"));
+        ClientPayloadFields.nullableString(payload, "code", 1, 64, FIELD_INVALID));
   }
 
-  private static ClientInboundMessage decodeError(UUID messageId, JsonObject payload) {
-    requireFields(payload, ERROR_FIELDS, "CLIENT_ERROR_INVALID");
+  private static ClientInboundMessage decodeError(UUID messageId, WireJson.ObjectNode payload) {
+    ClientPayloadFields.requireFields(
+        payload, ClientChannelContract.CLIENT_ERROR_FIELDS, "CLIENT_ERROR_INVALID");
     return new ClientInboundMessage.Error(
         messageId,
-        uuid(payload, "transferId", true),
-        longValue(payload, "generation", 1, Integer.MAX_VALUE),
+        ClientPayloadFields.uuid(payload, "transferId", true, FIELD_INVALID),
+        ClientPayloadFields.longValue(
+            payload,
+            "generation",
+            ClientPayloadLimits.GENERATION_MIN,
+            ClientPayloadLimits.GENERATION_MAX,
+            FIELD_INVALID),
         string(payload, "code"));
   }
 
-  private static JsonObject parse(byte[] bytes) {
-    Objects.requireNonNull(bytes);
-    if (bytes.length == 0 || bytes.length > MAX_INBOUND_BYTES) {
-      throw new ClientProtocolException("CLIENT_MESSAGE_TOO_LARGE");
-    }
-    try {
-      var decoder = StandardCharsets.UTF_8.newDecoder();
-      decoder.onMalformedInput(CodingErrorAction.REPORT);
-      decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
-      var text = decoder.decode(ByteBuffer.wrap(bytes)).toString();
-      return StrictJson.parseObject(text, "CLIENT_MESSAGE_INVALID", "client-channel");
-    } catch (CharacterCodingException | RuntimeConnectionFailure error) {
-      throw new ClientProtocolException("CLIENT_MESSAGE_INVALID");
-    }
-  }
-
-  private static byte[] encode(UUID messageId, String type, JsonObject payload) {
-    var envelope = new JsonObject();
-    envelope.addProperty("clientPayloadVersion", PAYLOAD_VERSION);
-    envelope.addProperty("messageId", Objects.requireNonNull(messageId).toString());
-    envelope.addProperty("type", type);
-    envelope.add("payload", Objects.requireNonNull(payload));
-    var bytes = envelope.toString().getBytes(StandardCharsets.UTF_8);
-    if (bytes.length > MAX_OUTBOUND_FRAME_BYTES) {
-      throw new ClientProtocolException("CLIENT_OUTBOUND_FRAME_TOO_LARGE");
-    }
-    return bytes;
-  }
-
-  private static JsonObject object(JsonObject parent, String name) {
-    var value = parent.get(name);
-    if (value == null || !value.isJsonObject()) {
-      throw new ClientProtocolException("CLIENT_MESSAGE_INVALID");
-    }
-    return value.getAsJsonObject();
-  }
-
-  private static String string(JsonObject parent, String name) {
-    var value = parent.get(name);
-    if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) {
-      throw new ClientProtocolException("CLIENT_MESSAGE_INVALID");
-    }
-    var result = value.getAsString();
-    if (result.chars().anyMatch(character -> character == 0)) {
-      throw new ClientProtocolException("CLIENT_MESSAGE_INVALID");
-    }
-    return result;
-  }
-
-  private static String nullableString(JsonObject parent, String name) {
-    var value = parent.get(name);
-    if (value == null) {
-      throw new ClientProtocolException("CLIENT_MESSAGE_INVALID");
-    }
-    if (value.isJsonNull()) {
-      return null;
-    }
-    return string(parent, name);
-  }
-
-  private static UUID uuid(JsonObject parent, String name, boolean nullable) {
-    var value = parent.get(name);
-    if (nullable && value != null && value.isJsonNull()) {
-      return null;
-    }
-    try {
-      var source = string(parent, name);
-      var parsed = UUID.fromString(source);
-      if (!parsed.toString().equals(source)) {
-        throw new IllegalArgumentException("UUID is not canonical lowercase");
-      }
-      return parsed;
-    } catch (IllegalArgumentException error) {
-      throw new ClientProtocolException("CLIENT_MESSAGE_INVALID");
-    }
-  }
-
-  private static int integer(JsonObject parent, String name, int minimum, int maximum) {
-    return Math.toIntExact(longValue(parent, name, minimum, maximum));
-  }
-
-  private static long longValue(JsonObject parent, String name, long minimum, long maximum) {
-    var value = parent.get(name);
-    if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()) {
-      throw new ClientProtocolException("CLIENT_MESSAGE_INVALID");
-    }
-    try {
-      var number = new BigDecimal(value.getAsString()).longValueExact();
-      if (number < minimum || number > maximum) {
-        throw new ClientProtocolException("CLIENT_MESSAGE_INVALID");
-      }
-      return number;
-    } catch (NumberFormatException | ArithmeticException error) {
-      throw new ClientProtocolException("CLIENT_MESSAGE_INVALID");
-    }
-  }
-
-  private static void requireFields(JsonObject object, Set<String> fields, String code) {
-    if (!object.keySet().equals(fields)) {
-      throw new ClientProtocolException(code);
-    }
+  private static String string(WireJson.ObjectNode parent, String name) {
+    return ClientPayloadFields.string(parent, name, 1, 64, FIELD_INVALID);
   }
 }

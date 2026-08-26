@@ -1,5 +1,6 @@
 package dev.minecraftagent.paper.client;
 
+import dev.minecraftagent.protocol.ClientChannelContract;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -29,8 +30,8 @@ public sealed interface ClientInboundMessage {
     }
 
     public enum Status {
-      DISPLAYED("DISPLAYED"),
-      REJECTED("REJECTED");
+      DISPLAYED(ClientChannelContract.ACK_STATUS_DISPLAYED),
+      REJECTED(ClientChannelContract.ACK_STATUS_REJECTED);
 
       private final String wireName;
 
@@ -44,8 +45,8 @@ public sealed interface ClientInboundMessage {
 
       public static Status fromWireName(String wireName) {
         return switch (wireName) {
-          case "DISPLAYED" -> DISPLAYED;
-          case "REJECTED" -> REJECTED;
+          case ClientChannelContract.ACK_STATUS_DISPLAYED -> DISPLAYED;
+          case ClientChannelContract.ACK_STATUS_REJECTED -> REJECTED;
           default -> throw new ClientProtocolException("CLIENT_ACK_STATUS_INVALID");
         };
       }

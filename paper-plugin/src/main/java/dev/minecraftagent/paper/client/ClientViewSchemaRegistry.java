@@ -1,5 +1,6 @@
 package dev.minecraftagent.paper.client;
 
+import dev.minecraftagent.protocol.StructuredViewContract;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;
@@ -7,7 +8,7 @@ import java.util.Set;
 
 /** Server-owned compatibility table; client claims cannot add schema versions to it. */
 public final class ClientViewSchemaRegistry {
-  public static final String VIEW_SCHEMA_V1 = "1.0";
+  public static final String VIEW_SCHEMA_V1 = StructuredViewContract.VIEW_SCHEMA_VERSION;
 
   private final Map<ClientViewType, Set<String>> versions;
 

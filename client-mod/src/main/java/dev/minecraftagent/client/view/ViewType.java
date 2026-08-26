@@ -1,11 +1,13 @@
 package dev.minecraftagent.client.view;
 
+import dev.minecraftagent.protocol.StructuredViewContract;
+
 public enum ViewType {
-  TEXT("text"),
-  ITEM_STACK("item_stack"),
-  ITEM_LIST("item_list"),
-  RECIPE("recipe"),
-  BUILD_PREVIEW("build_preview");
+  TEXT(StructuredViewContract.VIEW_TYPE_TEXT),
+  ITEM_STACK(StructuredViewContract.VIEW_TYPE_ITEM_STACK),
+  ITEM_LIST(StructuredViewContract.VIEW_TYPE_ITEM_LIST),
+  RECIPE(StructuredViewContract.VIEW_TYPE_RECIPE),
+  BUILD_PREVIEW(StructuredViewContract.VIEW_TYPE_BUILD_PREVIEW);
 
   private final String wireName;
 

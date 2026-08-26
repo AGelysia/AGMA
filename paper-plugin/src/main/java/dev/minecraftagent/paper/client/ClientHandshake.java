@@ -1,5 +1,6 @@
 package dev.minecraftagent.paper.client;
 
+import dev.minecraftagent.protocol.ClientChannelContract;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -12,8 +13,11 @@ public record ClientHandshake(
     ClientCapabilities capabilities,
     Map<String, String> dependencies,
     ClientLitematicaDiagnostic litematicaAdapterDiagnostic) {
-  public static final String LEGACY_PROTOCOL_VERSION = "1.0";
-  public static final String CURRENT_PROTOCOL_VERSION = "1.1";
+  public static final String LEGACY_PROTOCOL_VERSION =
+      ClientChannelContract.HELLO_PROTOCOL_VERSION_LEGACY;
+
+  public static final String CURRENT_PROTOCOL_VERSION =
+      ClientChannelContract.HELLO_PROTOCOL_VERSION_CURRENT;
 
   private static final Pattern MOD_VERSION =
       Pattern.compile("[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?");

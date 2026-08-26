@@ -77,6 +77,8 @@ if command -v pwsh >/dev/null 2>&1; then
   pwsh -NoLogo -NoProfile -File "$ROOT/scripts/check-powershell.ps1"
 fi
 
+"$ROOT/scripts/check-versions.sh"
+
 mapfile -d '' JSON_FILES < <(
   rg --files -0 \
     -g '*.json' \
@@ -94,6 +96,7 @@ node -e '
 mkdir -p "$TEST_RESULTS"
 MINECRAFT_AGENT_VITEST_JUNIT="$TEST_RESULTS/runtime.xml" \
   "$ROOT/scripts/package.sh"
+cp -R "$ROOT/protocol/jvm/build/test-results/test" "$TEST_RESULTS/protocol-jvm"
 cp -R "$ROOT/paper-plugin/build/test-results/test" "$TEST_RESULTS/paper"
 cp -R "$ROOT/client-mod/build/test-results/test" "$TEST_RESULTS/client"
 cp -R "$ROOT/standalone-client/core/build/test-results/test" "$TEST_RESULTS/standalone-core"
@@ -109,6 +112,7 @@ cp -R "$ROOT/standalone-client/forge-mc1182/build/test-results/test" \
   "$TEST_RESULTS/standalone-forge-mc1182"
 java "$ROOT/scripts/VerifyTestResults.java" \
   "$TEST_RESULTS/runtime.xml" \
+  "$TEST_RESULTS/protocol-jvm" \
   "$TEST_RESULTS/paper" \
   "$TEST_RESULTS/client" \
   "$TEST_RESULTS/standalone-core" \

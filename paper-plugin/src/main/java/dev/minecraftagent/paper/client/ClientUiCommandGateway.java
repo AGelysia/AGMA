@@ -1,5 +1,6 @@
 package dev.minecraftagent.paper.client;
 
+import dev.minecraftagent.protocol.ClientChannelContract;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -38,13 +39,17 @@ public final class ClientUiCommandGateway {
   }
 
   public enum Action {
-    PIN("pin", ClientFeature.OVERLAY),
-    UNPIN("unpin", ClientFeature.OVERLAY),
-    CLEAR("clear", ClientFeature.OVERLAY),
-    LITEMATICA_PREVIEW_LOAD("litematica.preview.load", ClientFeature.LITEMATICA_PREVIEW),
-    LITEMATICA_PREVIEW_REMOVE("litematica.preview.remove", ClientFeature.LITEMATICA_PREVIEW),
+    PIN(ClientChannelContract.UI_ACTION_PIN, ClientFeature.OVERLAY),
+    UNPIN(ClientChannelContract.UI_ACTION_UNPIN, ClientFeature.OVERLAY),
+    CLEAR(ClientChannelContract.UI_ACTION_CLEAR, ClientFeature.OVERLAY),
+    LITEMATICA_PREVIEW_LOAD(
+        ClientChannelContract.UI_ACTION_LITEMATICA_PREVIEW_LOAD, ClientFeature.LITEMATICA_PREVIEW),
+    LITEMATICA_PREVIEW_REMOVE(
+        ClientChannelContract.UI_ACTION_LITEMATICA_PREVIEW_REMOVE,
+        ClientFeature.LITEMATICA_PREVIEW),
     LITEMATICA_MATERIAL_LIST_OPEN(
-        "litematica.material_list.open", ClientFeature.LITEMATICA_MATERIAL_LIST);
+        ClientChannelContract.UI_ACTION_LITEMATICA_MATERIAL_LIST_OPEN,
+        ClientFeature.LITEMATICA_MATERIAL_LIST);
 
     private final String wireName;
     private final ClientFeature requiredFeature;

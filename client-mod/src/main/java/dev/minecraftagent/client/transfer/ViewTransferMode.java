@@ -1,10 +1,11 @@
 package dev.minecraftagent.client.transfer;
 
+import dev.minecraftagent.protocol.ClientChannelContract;
 import java.util.Optional;
 
 public enum ViewTransferMode {
-  SHOW("show"),
-  UPDATE("update");
+  SHOW(ClientChannelContract.VIEW_MODE_SHOW),
+  UPDATE(ClientChannelContract.VIEW_MODE_UPDATE);
 
   private final String wireName;
 

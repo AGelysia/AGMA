@@ -1,5 +1,7 @@
 package dev.minecraftagent.client.network;
 
+import dev.minecraftagent.protocol.ClientChannelContract;
+import dev.minecraftagent.protocol.ClientPayloadLimits;
 import java.util.Arrays;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -8,9 +10,10 @@ import net.minecraft.resources.Identifier;
 
 /** Raw UTF-8 JSON carried on the single AGMA custom payload channel. */
 public record AgentClientPayload(byte[] bytes) implements CustomPacketPayload {
-  public static final int MAX_FRAME_BYTES = 40 * 1024;
+  public static final int MAX_FRAME_BYTES = ClientPayloadLimits.MAX_SERVER_TO_CLIENT_FRAME_BYTES;
   public static final Identifier CHANNEL =
-      Identifier.fromNamespaceAndPath("minecraftagent", "client");
+      Identifier.fromNamespaceAndPath(
+          ClientChannelContract.CHANNEL_NAMESPACE, ClientChannelContract.CHANNEL_PATH);
   public static final Type<AgentClientPayload> TYPE = new Type<>(CHANNEL);
   public static final StreamCodec<FriendlyByteBuf, AgentClientPayload> CODEC =
       StreamCodec.of(

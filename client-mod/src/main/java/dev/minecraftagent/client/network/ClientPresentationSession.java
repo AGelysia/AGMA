@@ -13,6 +13,7 @@ import dev.minecraftagent.client.view.BuildPreviewView;
 import dev.minecraftagent.client.view.StructuredView;
 import dev.minecraftagent.client.view.StructuredViewDecoder;
 import dev.minecraftagent.client.view.ViewDecodeException;
+import dev.minecraftagent.protocol.ClientChannelContract;
 import java.util.Base64;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -138,7 +139,9 @@ public final class ClientPresentationSession {
     }
     transfers.disconnect();
     generation = hello.generation();
-    accepted = hello.accepted() && "1.0".equals(hello.viewSchemaVersion());
+    accepted =
+        hello.accepted()
+            && ClientChannelContract.VIEW_SCHEMA_VERSION.equals(hello.viewSchemaVersion());
     dispatch(
         () -> {
           overlay.disconnect();

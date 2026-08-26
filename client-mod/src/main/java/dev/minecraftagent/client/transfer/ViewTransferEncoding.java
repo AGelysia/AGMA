@@ -1,10 +1,11 @@
 package dev.minecraftagent.client.transfer;
 
+import dev.minecraftagent.protocol.ClientChannelContract;
 import java.util.Optional;
 
 public enum ViewTransferEncoding {
-  IDENTITY("identity"),
-  GZIP("gzip");
+  IDENTITY(ClientChannelContract.VIEW_ENCODING_IDENTITY),
+  GZIP(ClientChannelContract.VIEW_ENCODING_GZIP);
 
   private final String wireName;
 

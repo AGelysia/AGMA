@@ -1,5 +1,6 @@
 package dev.minecraftagent.paper.client;
 
+import dev.minecraftagent.protocol.StructuredViewContract;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -61,24 +62,15 @@ public final class ClientViewSelector {
   private static void requireFallback(String fallbackText) {
     if (fallbackText == null
         || fallbackText.isBlank()
-        || fallbackText.codePointCount(0, fallbackText.length()) > 8192
-        || fallbackText.codePoints().anyMatch(ClientViewSelector::unsafeFallbackCodePoint)) {
+        || !StructuredViewContract.isWellFormedUtf16(fallbackText)
+        || StructuredViewContract.codePointLength(fallbackText)
+            > StructuredViewContract.FALLBACK_TEXT_MAX_CHARS
+        || fallbackText
+            .codePoints()
+            .anyMatch(
+                codePoint -> StructuredViewContract.isUnsafeVisibleCodePoint(codePoint, true))) {
       throw new ClientProtocolException("CLIENT_FALLBACK_INVALID");
     }
-  }
-
-  private static boolean unsafeFallbackCodePoint(int value) {
-    if (value == '\n' || value == '\t') {
-      return false;
-    }
-    return value <= 0x1f
-        || value >= 0x7f && value <= 0x9f
-        || value >= 0xd800 && value <= 0xdfff
-        || value == 0x061c
-        || value == 0x200e
-        || value == 0x200f
-        || value >= 0x202a && value <= 0x202e
-        || value >= 0x2066 && value <= 0x2069;
   }
 
   public record Selection(

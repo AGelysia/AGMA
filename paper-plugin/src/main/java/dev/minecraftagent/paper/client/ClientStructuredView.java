@@ -1,6 +1,7 @@
 package dev.minecraftagent.paper.client;
 
 import com.google.gson.JsonObject;
+import dev.minecraftagent.protocol.StructuredViewContract;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.UUID;
@@ -116,40 +117,16 @@ public final class ClientStructuredView {
       String value, int maximum, boolean allowLineFormatting, String code) {
     if (value == null
         || value.isBlank()
-        || value.codePointCount(0, value.length()) > maximum
+        || !StructuredViewContract.isWellFormedUtf16(value)
+        || StructuredViewContract.codePointLength(value) > maximum
         || value
             .codePoints()
-            .anyMatch(codePoint -> unsafeVisibleCodePoint(codePoint, allowLineFormatting))
-        || !wellFormed(value)) {
+            .anyMatch(
+                codePoint ->
+                    StructuredViewContract.isUnsafeVisibleCodePoint(
+                        codePoint, allowLineFormatting))) {
       throw new ClientProtocolException(code);
     }
     return value;
-  }
-
-  private static boolean wellFormed(String value) {
-    for (var index = 0; index < value.length(); index++) {
-      var character = value.charAt(index);
-      if (Character.isHighSurrogate(character)) {
-        if (++index >= value.length() || !Character.isLowSurrogate(value.charAt(index))) {
-          return false;
-        }
-      } else if (Character.isLowSurrogate(character)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  private static boolean unsafeVisibleCodePoint(int value, boolean allowLineFormatting) {
-    if (allowLineFormatting && (value == '\n' || value == '\t')) {
-      return false;
-    }
-    return value <= 0x1f
-        || value >= 0x7f && value <= 0x9f
-        || value == 0x061c
-        || value == 0x200e
-        || value == 0x200f
-        || value >= 0x202a && value <= 0x202e
-        || value >= 0x2066 && value <= 0x2069;
   }
 }

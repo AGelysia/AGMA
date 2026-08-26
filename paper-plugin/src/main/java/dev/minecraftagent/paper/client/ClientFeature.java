@@ -1,14 +1,15 @@
 package dev.minecraftagent.paper.client;
 
+import dev.minecraftagent.protocol.ClientChannelContract;
 import java.util.Arrays;
 
 /** Closed client feature names from the version 1.0 handshake. */
 public enum ClientFeature {
-  OVERLAY("overlay", 1),
-  ITEM_ICONS("itemIcons", 1),
-  RECIPE_VIEW("recipeView", 2),
-  LITEMATICA_PREVIEW("litematicaPreview", 1),
-  LITEMATICA_MATERIAL_LIST("litematicaMaterialList", 1);
+  OVERLAY(ClientChannelContract.FEATURE_OVERLAY, 1),
+  ITEM_ICONS(ClientChannelContract.FEATURE_ITEM_ICONS, 1),
+  RECIPE_VIEW(ClientChannelContract.FEATURE_RECIPE_VIEW, 2),
+  LITEMATICA_PREVIEW(ClientChannelContract.FEATURE_LITEMATICA_PREVIEW, 1),
+  LITEMATICA_MATERIAL_LIST(ClientChannelContract.FEATURE_LITEMATICA_MATERIAL_LIST, 1);
 
   private final String wireName;
   private final int maximumVersion;

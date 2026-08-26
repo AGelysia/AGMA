@@ -1,5 +1,7 @@
 package dev.minecraftagent.paper.client;
 
+import dev.minecraftagent.protocol.ClientChannelContract;
+import dev.minecraftagent.protocol.ClientPayloadLimits;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
@@ -32,7 +34,8 @@ public final class ClientTransferManager {
   /** Starts or replaces a network generation and discards every older pending transfer. */
   public synchronized void open(UUID playerUuid, long generation) {
     Objects.requireNonNull(playerUuid);
-    if (generation < 1 || generation > Integer.MAX_VALUE) {
+    if (generation < ClientPayloadLimits.GENERATION_MIN
+        || generation > ClientPayloadLimits.GENERATION_MAX) {
       throw new IllegalArgumentException("generation must be positive");
     }
     connections.put(playerUuid, new ConnectionTransfers(generation));
@@ -266,11 +269,11 @@ public final class ClientTransferManager {
       Duration timeout) {
     public Limits {
       if (maxChunkBytes < 1
-          || maxChunkBytes > 24 * 1024
+          || maxChunkBytes > ClientPayloadLimits.MAX_CHUNK_BYTES
           || maxViewBytes < 1
-          || maxViewBytes > 1024 * 1024
+          || maxViewBytes > ClientPayloadLimits.MAX_TRANSFER_BYTES
           || maxChunks < 1
-          || maxChunks > 64
+          || maxChunks > ClientPayloadLimits.CHUNK_COUNT_MAX
           || maxPendingBytes < maxViewBytes
           || maxPendingBytes > 2 * 1024 * 1024
           || maxPendingTransfers < 1
@@ -283,13 +286,19 @@ public final class ClientTransferManager {
     }
 
     public static Limits production() {
-      return new Limits(24 * 1024, 1024 * 1024, 64, 2 * 1024 * 1024, 8, Duration.ofSeconds(15));
+      return new Limits(
+          ClientPayloadLimits.MAX_CHUNK_BYTES,
+          ClientPayloadLimits.MAX_TRANSFER_BYTES,
+          ClientPayloadLimits.CHUNK_COUNT_MAX,
+          2 * 1024 * 1024,
+          8,
+          Duration.ofSeconds(15));
     }
   }
 
   public enum Encoding {
-    IDENTITY("identity"),
-    GZIP("gzip");
+    IDENTITY(ClientChannelContract.VIEW_ENCODING_IDENTITY),
+    GZIP(ClientChannelContract.VIEW_ENCODING_GZIP);
 
     private final String wireName;
 
@@ -303,8 +312,8 @@ public final class ClientTransferManager {
   }
 
   public enum Mode {
-    SHOW("show"),
-    UPDATE("update");
+    SHOW(ClientChannelContract.VIEW_MODE_SHOW),
+    UPDATE(ClientChannelContract.VIEW_MODE_UPDATE);
 
     private final String wireName;
 
@@ -331,9 +340,9 @@ public final class ClientTransferManager {
       Objects.requireNonNull(transferId);
       bytes = Objects.requireNonNull(bytes).clone();
       if (index < 0
-          || index > 63
+          || index > ClientPayloadLimits.CHUNK_INDEX_MAX
           || bytes.length < 1
-          || bytes.length > 24 * 1024
+          || bytes.length > ClientPayloadLimits.MAX_CHUNK_BYTES
           || !validSha256(sha256)
           || !ClientTransferManager.sha256(bytes).equals(sha256)) {
         throw new ClientProtocolException("CLIENT_TRANSFER_CHUNK_INVALID");
@@ -367,16 +376,16 @@ public final class ClientTransferManager {
       Objects.requireNonNull(mode);
       Objects.requireNonNull(encoding);
       chunks = List.copyOf(chunks);
-      if (generation < 1
-          || generation > Integer.MAX_VALUE
+      if (generation < ClientPayloadLimits.GENERATION_MIN
+          || generation > ClientPayloadLimits.GENERATION_MAX
           || revision < 1
           || compressedBytes < 1
-          || compressedBytes > 1024 * 1024
+          || compressedBytes > ClientPayloadLimits.MAX_TRANSFER_BYTES
           || uncompressedBytes < 1
-          || uncompressedBytes > 1024 * 1024
+          || uncompressedBytes > ClientPayloadLimits.MAX_TRANSFER_BYTES
           || !validSha256(contentSha256)
           || chunks.isEmpty()
-          || chunks.size() > 64) {
+          || chunks.size() > ClientPayloadLimits.CHUNK_COUNT_MAX) {
         throw new ClientProtocolException("CLIENT_TRANSFER_PLAN_INVALID");
       }
       var transferred = 0;
@@ -418,6 +427,6 @@ public final class ClientTransferManager {
       Instant deadline) {}
 
   private static boolean validSha256(String value) {
-    return value != null && value.matches("[a-f0-9]{64}");
+    return value != null && ClientPayloadLimits.SHA256.matcher(value).matches();
   }
 }

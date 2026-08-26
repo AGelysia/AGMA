@@ -30,6 +30,13 @@ dependencies {
     implementation(libs.json.canonicalization)
     include(libs.json.canonicalization)
 
+    // Shared single source of truth for the minecraftagent:client wire channel; nested into
+    // the remapped mod JAR like the other plain libraries. Dependency-free (JDK only).
+    implementation(project(":protocol:jvm")) {
+        isTransitive = false
+    }
+    include(project(":protocol:jvm"))
+
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.json.schema.validator)
     testImplementation(libs.junit.jupiter)
