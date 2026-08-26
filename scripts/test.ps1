@@ -24,22 +24,27 @@ try {
 
 Push-Location $Root
 try {
-    & $Gradle @GradleArgs :paper-plugin:assemble
-    if ($LASTEXITCODE -ne 0) { throw "Paper assemble failed with exit code $LASTEXITCODE" }
-    & $Gradle @GradleArgs :client-mod:assemble
-    if ($LASTEXITCODE -ne 0) { throw "Client assemble failed with exit code $LASTEXITCODE" }
-    & $Gradle @GradleArgs :standalone-client:core:build
-    if ($LASTEXITCODE -ne 0) { throw "Standalone client core build failed with exit code $LASTEXITCODE" }
-    & $Gradle @GradleArgs :standalone-client:runtime-supervisor-core:build
-    if ($LASTEXITCODE -ne 0) { throw "Standalone runtime supervisor build failed with exit code $LASTEXITCODE" }
-    & $Gradle @GradleArgs :standalone-client:fabric-common:build
-    if ($LASTEXITCODE -ne 0) { throw "Standalone Fabric common build failed with exit code $LASTEXITCODE" }
-    & $Gradle @GradleArgs :standalone-client:fabric-mc12111:build
-    if ($LASTEXITCODE -ne 0) { throw "Standalone Minecraft 1.21.11 Fabric build failed with exit code $LASTEXITCODE" }
-    & $Gradle @GradleArgs :standalone-client:fabric-mc1182:build
-    if ($LASTEXITCODE -ne 0) { throw "Standalone Minecraft 1.18.2 Fabric build failed with exit code $LASTEXITCODE" }
-    & $Gradle @GradleArgs :standalone-client:forge-mc1182:build
-    if ($LASTEXITCODE -ne 0) { throw "Standalone Minecraft 1.18.2 Forge build failed with exit code $LASTEXITCODE" }
+    # Same version alignment rules as the Linux job; the implementation is shared.
+    node "$Root/scripts/check-versions.mjs"
+    if ($LASTEXITCODE -ne 0) { throw "check-versions failed with exit code $LASTEXITCODE" }
+
+    # One Gradle invocation: multi-project configuration (Loom especially) is the
+    # dominant cost, so paying it once per module is what made CI slow. Windows runs
+    # the same targets as Linux so test results exist for every module on both OSes.
+    $Targets = @(
+        ":protocol:jvm:build",
+        ":paper-plugin:build",
+        ":client-mod:build",
+        ":standalone-client:core:build",
+        ":standalone-client:runtime-supervisor-core:build",
+        ":standalone-client:fabric-common:build",
+        ":standalone-client:ui-common:build",
+        ":standalone-client:fabric-mc12111:build",
+        ":standalone-client:fabric-mc1182:build",
+        ":standalone-client:forge-mc1182:build"
+    )
+    & $Gradle @GradleArgs @Targets
+    if ($LASTEXITCODE -ne 0) { throw "Gradle build failed with exit code $LASTEXITCODE" }
 } finally {
     Pop-Location
 }

@@ -23,13 +23,19 @@ fi
 npm run build
 
 cd "$ROOT"
+./scripts/check-versions.sh
 ./scripts/test-standalone-managed-runtime.sh
 ./scripts/test-standalone-client-release.sh
-./gradlew "${GRADLE_ARGS[@]}" :paper-plugin:build
-./gradlew "${GRADLE_ARGS[@]}" :client-mod:build
-./gradlew "${GRADLE_ARGS[@]}" :standalone-client:core:build
-./gradlew "${GRADLE_ARGS[@]}" :standalone-client:runtime-supervisor-core:build
-./gradlew "${GRADLE_ARGS[@]}" :standalone-client:fabric-common:build
-./gradlew "${GRADLE_ARGS[@]}" :standalone-client:fabric-mc12111:build
-./gradlew "${GRADLE_ARGS[@]}" :standalone-client:fabric-mc1182:build
-./gradlew "${GRADLE_ARGS[@]}" :standalone-client:forge-mc1182:build
+# One Gradle invocation: multi-project configuration (Loom especially) is the
+# dominant cost, so paying it once per module is what made CI slow.
+./gradlew "${GRADLE_ARGS[@]}" \
+  :protocol:jvm:build \
+  :paper-plugin:build \
+  :client-mod:build \
+  :standalone-client:core:build \
+  :standalone-client:runtime-supervisor-core:build \
+  :standalone-client:fabric-common:build \
+  :standalone-client:ui-common:build \
+  :standalone-client:fabric-mc12111:build \
+  :standalone-client:fabric-mc1182:build \
+  :standalone-client:forge-mc1182:build
