@@ -1,9 +1,15 @@
 import Fastify, { type FastifyInstance } from "fastify";
-import type { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
 
 import { isMainModule } from "./main-module.js";
 import { asRuntimeStartupError, RuntimeStartupError } from "./startup-error.js";
+import {
+  observeManagedParent,
+  runManagedRuntimeMain,
+  parseManagedRuntimeCli,
+  type ManagedParentObservation,
+  type RuntimeCliOptions,
+} from "./runtime-lifecycle.js";
 import {
   loadRuntimeConfig,
   runtimeServiceConfig,
@@ -209,11 +215,12 @@ export async function bootstrap(options: BootstrapOptions = {}): Promise<Bootstr
     const loaded = await loadRuntimeConfig(options);
     const runtimeConfig = runtimeServiceConfig(loaded.resolved);
     requireStartupActive(options.signal);
+    await checkLogDirectory(loaded.paths.rootDirectory, loaded.paths.logDirectory);
+    logger.setLevel(runtimeConfig.logging.level);
+    logger.useLogDirectory(loaded.paths.logDirectory);
     for (const warning of loaded.warnings) {
       logger.configWarning(warning);
     }
-
-    await checkLogDirectory(loaded.paths.rootDirectory, loaded.paths.logDirectory);
     requireStartupActive(options.signal);
     const schemaRegistry = await checkProtocolSchema(options.protocolRoot);
     const connectorSchemaRegistry =
@@ -317,6 +324,7 @@ export async function bootstrap(options: BootstrapOptions = {}): Promise<Bootstr
       usage: costs,
       modules: new ModuleRegistry(loaded.resolved.profile, loaded.resolved.allowedClientTools),
       audience: loaded.resolved.profile,
+      logger,
       ...(webEvidence === undefined ? {} : { webEvidence }),
       ...(options.now === undefined ? {} : { now: () => options.now?.().getTime() ?? Date.now() }),
     });
@@ -427,120 +435,25 @@ export async function startRuntime(options: BootstrapOptions = {}): Promise<Star
   };
 }
 
-export interface RuntimeCliOptions {
-  readonly configPath?: string;
-  readonly managed: boolean;
-}
+export { observeManagedParent, type ManagedParentObservation, type RuntimeCliOptions };
 
 export function parseRuntimeCli(arguments_: readonly string[]): RuntimeCliOptions {
-  if (arguments_.length === 0) {
-    return { managed: false };
-  }
-  if (arguments_.length === 2 && arguments_[0] === "--config" && arguments_[1] !== undefined) {
-    return { configPath: arguments_[1], managed: false };
-  }
-  if (
-    arguments_.length === 3 &&
-    arguments_[0] === "--config" &&
-    arguments_[1] !== undefined &&
-    arguments_[2] === "--managed"
-  ) {
-    return { configPath: arguments_[1], managed: true };
-  }
-
-  throw new RuntimeStartupError({
-    code: "CONFIG_PATH_INVALID",
-    stage: "config",
-    safeMessage: "Usage: agma-runtime [--config <path> [--managed]]",
+  return parseManagedRuntimeCli(arguments_, {
+    configPathRequired: false,
+    usage: "Usage: agma-runtime [--config <path> [--managed]]",
   });
 }
 
-export interface ManagedParentObservation {
-  readonly signal: AbortSignal;
-  dispose(): void;
-}
-
-export function observeManagedParent(input: Readable): ManagedParentObservation {
-  const controller = new AbortController();
-  let disposed = false;
-  const abort = (): void => {
-    controller.abort();
-  };
-
-  input.once("end", abort);
-  input.once("error", abort);
-  if (input.readableEnded || input.destroyed) {
-    abort();
-  } else {
-    input.resume();
-  }
-
-  return {
-    signal: controller.signal,
-    dispose: () => {
-      if (disposed) {
-        return;
-      }
-      disposed = true;
-      input.off("end", abort);
-      input.off("error", abort);
-      input.pause();
-    },
-  };
-}
-
 async function runMain(): Promise<void> {
-  const logger = new RuntimeLogger();
-  let cli: RuntimeCliOptions;
-  let runtime: StartRuntimeResult;
-  let managedParent: ManagedParentObservation | undefined;
-  try {
-    cli = parseRuntimeCli(process.argv.slice(2));
-    managedParent = cli.managed ? observeManagedParent(process.stdin) : undefined;
-    runtime = await startRuntime({
-      logger,
-      ...(managedParent === undefined ? {} : { signal: managedParent.signal }),
-      ...(cli.configPath === undefined ? {} : { configPath: cli.configPath }),
-    });
-    if (managedParent?.signal.aborted === true) {
-      await runtime.close();
-      managedParent.dispose();
-      return;
-    }
-  } catch (error) {
-    managedParent?.dispose();
-    if (managedParent?.signal.aborted === true) {
-      return;
-    }
-    logger.startupFailure(asRuntimeStartupError(error));
-    process.exitCode = 1;
-    return;
-  }
-
-  let stopping = false;
-  const stop = async (): Promise<void> => {
-    if (stopping) {
-      return;
-    }
-    stopping = true;
-    process.off("SIGINT", stop);
-    process.off("SIGTERM", stop);
-    managedParent?.signal.removeEventListener("abort", stopOnParentClose);
-    managedParent?.dispose();
-    await runtime.close();
-    logger.stopped();
-  };
-  const stopOnParentClose = (): void => {
-    void stop();
-  };
-  process.once("SIGINT", stop);
-  process.once("SIGTERM", stop);
-  if (managedParent !== undefined) {
-    managedParent.signal.addEventListener("abort", stopOnParentClose, { once: true });
-    if (managedParent.signal.aborted) {
-      await stop();
-    }
-  }
+  await runManagedRuntimeMain<RuntimeCliOptions, StartRuntimeResult>({
+    parse: parseRuntimeCli,
+    start: (cli, logger, signal) =>
+      startRuntime({
+        logger,
+        ...(signal === undefined ? {} : { signal }),
+        ...(cli.configPath === undefined ? {} : { configPath: cli.configPath }),
+      }),
+  });
 }
 
 if (isMainModule(process.argv[1], import.meta.url)) {

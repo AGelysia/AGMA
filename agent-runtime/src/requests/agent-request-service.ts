@@ -10,6 +10,7 @@ import {
 import type { WebAuthorization, WebSearchContext } from "../evidence/search-provider.js";
 import type { WebEvidenceCollector } from "../evidence/web-evidence-pipeline.js";
 import { type ModuleId, ModuleRegistry } from "../modules/module-manifest.js";
+import { RuntimeLogger, silentLogSink } from "../observability/runtime-logger.js";
 import {
   ModelGenerationError,
   type ModelGenerationContinuation,
@@ -25,6 +26,7 @@ import {
   type ConversationOwner,
   type ConversationRepository,
 } from "../storage/conversation-repository.js";
+import { isRecord } from "../shared/predicates.js";
 import { type CoreToolDescriptor, ToolRegistry } from "../tools/tool-registry.js";
 import {
   type LocalToolExecution,
@@ -35,8 +37,15 @@ import type {
   ToolExecutionResult,
   ToolResultPayload,
 } from "../tools/tool-types.js";
-import type { ProviderUsageRecordResult, UsageAccounting } from "../usage/usage-accounting.js";
-import { RequestAdmissionController, type RequestAdmissionRejection } from "./request-admission.js";
+import type { UsageAccounting } from "../usage/usage-accounting.js";
+import {
+  MAXIMUM_MODEL_OUTPUT_TOKENS,
+  providerCostKind,
+  recordProviderCost,
+  RequestLifecycle,
+  runtimeInternalErrorResponse,
+  type RequestLifecycleRecord,
+} from "./request-lifecycle.js";
 import {
   createAuthoritativeRecipePresentation,
   type RecipeViewContentV2,
@@ -45,14 +54,7 @@ import {
   unavailableRecipeFallback,
 } from "./recipe-presentation.js";
 
-const MAXIMUM_MODEL_OUTPUT_TOKENS = 1024;
-const SHUTDOWN_PROVIDER_GRACE_MILLISECONDS = 1_000;
-
 type VerifiedProjectRevisions = Map<string, number>;
-
-function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 function updateVerifiedProject(
   verified: VerifiedProjectRevisions,
@@ -318,54 +320,11 @@ export interface AgentRequestServiceOptions {
   readonly usage?: UsageAccounting;
   readonly audience?: RequestAudience;
   readonly webEvidence?: WebEvidenceCollector;
+  readonly logger?: RuntimeLogger;
 }
 
-interface PendingToolCall {
-  readonly payload: ToolCallPayload;
-  readonly descriptor: CoreToolDescriptor;
-  readonly resolve: (payload: ToolResultPayload) => void;
-  readonly reject: (reason: unknown) => void;
-  readonly removeAbortListener: () => void;
-}
-
-interface RequestRecord {
-  readonly input: AgentRequestInput;
-  readonly respond: (response: AgentRuntimeResponse) => void;
-  readonly controller: AbortController;
-  phase: "QUEUED" | "ACTIVE" | "WAITING_TOOL";
-  timeout: NodeJS.Timeout | undefined;
-  terminalSent: boolean;
-  suppressResponse: boolean;
-  detached: boolean;
-  preparedSessionId: string | null;
-  executionSessionId: string | null;
-  createsSession: boolean;
-  pendingTool: PendingToolCall | undefined;
+interface RequestRecord extends RequestLifecycleRecord<CoreToolDescriptor> {
   clientGenerationId: string | undefined;
-  usageAdmitted: boolean;
-  readonly issuedToolCallIds: Set<string>;
-  inventoryAuthorizationUsed: boolean;
-  providerCostMicroUsd: number;
-  readonly providerUsageKinds: Set<ProviderUsageRecordResult["usageKind"]>;
-}
-
-function recordProviderCost(
-  record: Pick<RequestRecord, "providerCostMicroUsd" | "providerUsageKinds">,
-  usage: ProviderUsageRecordResult,
-): void {
-  const total = record.providerCostMicroUsd + usage.costMicroUsd;
-  if (!Number.isSafeInteger(total) || total < 0) {
-    throw new Error("Provider request cost exceeds its bounded total.");
-  }
-  record.providerCostMicroUsd = total;
-  record.providerUsageKinds.add(usage.usageKind);
-}
-
-function providerCostKind(
-  usageKinds: ReadonlySet<ProviderUsageRecordResult["usageKind"]>,
-): "reported" | "estimated" | "mixed" {
-  if (usageKinds.has("REPORTED") && usageKinds.has("ESTIMATED")) return "mixed";
-  return usageKinds.has("REPORTED") ? "reported" : "estimated";
 }
 
 class ToolLoopError extends Error {
@@ -383,25 +342,6 @@ class UsageBudgetError extends Error {
     super("MONTHLY_BUDGET_EXCEEDED");
     this.name = "UsageBudgetError";
   }
-}
-
-function limitedError(
-  playerUuid: string,
-  reason: RequestAdmissionRejection,
-): AgentTerminalResponse {
-  const fallbackText =
-    reason === "PLAYER_BUSY"
-      ? "You already have an AI request in progress."
-      : "Too many AI requests. Try again shortly.";
-  return {
-    type: "agent.error",
-    payload: {
-      playerUuid,
-      code: "REQUEST_LIMITED",
-      fallbackText,
-      retryable: true,
-    },
-  };
 }
 
 function budgetError(playerUuid: string, audience: RequestAudience): AgentTerminalResponse {
@@ -522,21 +462,6 @@ function sessionError(
   };
 }
 
-function internalError(playerUuid: string): {
-  readonly type: "agent.error";
-  readonly payload: AgentErrorPayload;
-} {
-  return {
-    type: "agent.error",
-    payload: {
-      playerUuid,
-      code: "RUNTIME_INTERNAL_ERROR",
-      fallbackText: "The AI request failed. Try again later.",
-      retryable: true,
-    },
-  };
-}
-
 function toolLoopError(
   playerUuid: string,
   code: "TOOL_REJECTED" | "TOOL_ROUND_LIMIT",
@@ -563,8 +488,6 @@ function toolLoopError(
 export class AgentRequestService {
   readonly #provider: ModelProvider;
   readonly #config: RuntimeConfig;
-  readonly #timeoutMilliseconds: number;
-  readonly #admission: RequestAdmissionController;
   readonly #now: () => number;
   readonly #randomUuid: () => string;
   readonly #conversations: ConversationRepository;
@@ -574,17 +497,9 @@ export class AgentRequestService {
   readonly #usage: UsageAccounting | undefined;
   readonly #audience: RequestAudience;
   readonly #webEvidence: WebEvidenceCollector | undefined;
-  readonly #requests = new Map<string, RequestRecord>();
-  readonly #runs = new Set<Promise<void>>();
-  #closed = false;
-  #usageHealthy = true;
+  readonly #lifecycle: RequestLifecycle<CoreToolDescriptor, RequestRecord>;
 
   public constructor(options: AgentRequestServiceOptions) {
-    const timeoutMilliseconds =
-      options.timeoutMilliseconds ?? options.config.model.timeoutSeconds * 1000;
-    if (!Number.isSafeInteger(timeoutMilliseconds) || timeoutMilliseconds < 1) {
-      throw new TypeError("The Agent request timeout must be a positive bounded integer.");
-    }
     this.#provider = options.provider;
     this.#config = options.config;
     this.#now = options.now ?? Date.now;
@@ -596,166 +511,60 @@ export class AgentRequestService {
     this.#usage = options.usage;
     this.#audience = options.audience ?? "paper";
     this.#webEvidence = options.webEvidence;
-    this.#timeoutMilliseconds = timeoutMilliseconds;
-    this.#admission = new RequestAdmissionController(
-      {
+    this.#lifecycle = new RequestLifecycle<CoreToolDescriptor, RequestRecord>({
+      logger: options.logger ?? new RuntimeLogger({ sink: silentLogSink }),
+      conversations: this.#conversations,
+      scopeId: options.config.server.id,
+      timeoutMilliseconds:
+        options.timeoutMilliseconds ?? options.config.model.timeoutSeconds * 1000,
+      maximumContextMessages: options.config.limits.maxContextMessages,
+      admissionLimits: {
         maximumConcurrent: options.config.limits.maxConcurrentRequests,
         maximumQueued: options.config.limits.maxQueuedRequests,
         perPlayerCooldownMilliseconds: options.config.limits.perPlayerCooldownSeconds * 1000,
         dailyRequestsPerPlayer: options.config.limits.dailyRequestsPerPlayer,
       },
-      this.#now,
-    );
+      now: this.#now,
+      randomUuid: this.#randomUuid,
+      ...(options.usage === undefined ? {} : { usage: options.usage }),
+      cancelQueuedBeforeActive: true,
+      usageAdmissionFailureCode: "USAGE_ACCOUNTING_FAILED",
+      usageCloseFailureCode: "USAGE_ACCOUNTING_FAILED",
+      run: (record) => this.#run(record),
+      mapRunError: (error, playerUuid) =>
+        error instanceof ModelGenerationError
+          ? providerError(playerUuid, error.code, this.#audience)
+          : error instanceof ConversationOwnershipError
+            ? sessionError(playerUuid, "SESSION_NOT_FOUND", this.#audience)
+            : error instanceof ToolLoopError
+              ? toolLoopError(playerUuid, error.code, this.#audience)
+              : error instanceof UsageBudgetError
+                ? budgetError(playerUuid, this.#audience)
+                : runtimeInternalErrorResponse(playerUuid),
+      validateToolResult: (descriptor, payload) => this.#validToolResult(descriptor, payload),
+      createRecord: (base) => ({ ...base, clientGenerationId: undefined }),
+      usageAdmissionFailedResponse: (playerUuid) => runtimeInternalErrorResponse(playerUuid),
+      usageBudgetExceededResponse: (playerUuid) => budgetError(playerUuid, this.#audience),
+    });
   }
 
   public submit(input: AgentRequestInput, respond: (response: AgentRuntimeResponse) => void): void {
-    if (this.#closed) {
-      this.#safeRespond(respond, {
-        type: "agent.error",
-        payload: {
-          playerUuid: input.playerUuid,
-          code: "RUNTIME_INTERNAL_ERROR",
-          fallbackText: "The AI Runtime is stopping.",
-          retryable: true,
-        },
-      });
-      return;
-    }
-    if (this.#requests.has(input.requestId)) {
-      this.#safeRespond(respond, limitedError(input.playerUuid, "PLAYER_BUSY"));
-      return;
-    }
-    if (this.#usage !== undefined && !this.#usageHealthy) {
-      this.#safeRespond(respond, internalError(input.playerUuid));
-      return;
-    }
-
-    let usageAdmitted = false;
-    if (this.#usage !== undefined) {
-      try {
-        const usageDecision = this.#usageOperation(() =>
-          this.#usage?.admitRequest({
-            requestId: input.requestId,
-            playerUuid: input.playerUuid,
-            timestamp: this.#now(),
-          }),
-        );
-        if (usageDecision === undefined) {
-          throw new Error("Usage accounting disappeared during admission.");
-        }
-        if (!usageDecision.accepted) {
-          this.#safeRespond(
-            respond,
-            usageDecision.reason === "MONTHLY_BUDGET_EXCEEDED"
-              ? budgetError(input.playerUuid, this.#audience)
-              : limitedError(input.playerUuid, "PLAYER_DAILY_LIMIT"),
-          );
-          return;
-        }
-        usageAdmitted = true;
-      } catch {
-        this.#safeRespond(respond, internalError(input.playerUuid));
-        return;
-      }
-    }
-
-    const record: RequestRecord = {
-      input,
-      respond,
-      controller: new AbortController(),
-      phase: "QUEUED",
-      timeout: undefined,
-      terminalSent: false,
-      suppressResponse: false,
-      detached: false,
-      preparedSessionId: null,
-      executionSessionId: null,
-      createsSession: false,
-      pendingTool: undefined,
-      clientGenerationId: undefined,
-      usageAdmitted,
-      issuedToolCallIds: new Set(),
-      inventoryAuthorizationUsed: false,
-      providerCostMicroUsd: 0,
-      providerUsageKinds: new Set(),
-    };
-    this.#requests.set(input.requestId, record);
-    const decision = this.#admission.admit({
-      requestId: input.requestId,
-      playerUuid: input.playerUuid,
-      start: () => this.#start(record),
-    });
-    if (!decision.accepted) {
-      this.#requests.delete(input.requestId);
-      try {
-        if (record.usageAdmitted) {
-          this.#usageOperation(() => {
-            if (this.#usage?.rollbackAdmission(input.requestId) !== true) {
-              throw new Error("Durable usage admission could not be rolled back.");
-            }
-          });
-          record.usageAdmitted = false;
-        }
-        this.#safeRespond(respond, limitedError(input.playerUuid, decision.reason));
-      } catch {
-        this.#safeRespond(respond, internalError(input.playerUuid));
-      }
-      return;
-    }
-
-    record.phase = decision.queued ? "QUEUED" : "ACTIVE";
-    record.timeout = setTimeout(() => this.#timeout(record), this.#timeoutMilliseconds);
-    record.timeout.unref();
+    this.#lifecycle.submit(input, respond);
   }
 
   public cancel(requestId: string, playerUuid: string): boolean {
-    const record = this.#requests.get(requestId);
-    if (record === undefined || record.input.playerUuid !== playerUuid) {
-      return false;
-    }
-    record.suppressResponse = true;
-    this.#detach(record);
-    record.controller.abort(new Error("REQUEST_CANCELLED"));
-    return true;
+    return this.#lifecycle.cancel(requestId, playerUuid);
   }
 
   public acceptToolResult(
     requestId: string,
     payload: ToolResultPayload,
   ): "accepted" | "ignored" | "violation" {
-    const record = this.#requests.get(requestId);
-    if (record === undefined || record.terminalSent || record.suppressResponse) {
-      return "ignored";
-    }
-    const pending = record.pendingTool;
-    if (pending === undefined) {
-      return "violation";
-    }
-    const expected = pending.payload;
-    if (
-      payload.toolCallId !== expected.toolCallId ||
-      payload.sessionId !== expected.sessionId ||
-      payload.playerUuid !== expected.playerUuid ||
-      payload.tool !== expected.tool ||
-      payload.sequence !== expected.sequence ||
-      !this.#validToolResult(pending.descriptor, payload)
-    ) {
-      return "violation";
-    }
-    record.pendingTool = undefined;
-    pending.removeAbortListener();
-    pending.resolve(payload);
-    return "accepted";
+    return this.#lifecycle.acceptToolResult(requestId, payload);
   }
 
   public cancelAll(): void {
-    const records = [...this.#requests.values()];
-    for (const record of records.filter((candidate) => candidate.phase === "QUEUED")) {
-      this.cancel(record.input.requestId, record.input.playerUuid);
-    }
-    for (const record of records.filter((candidate) => candidate.phase !== "QUEUED")) {
-      this.cancel(record.input.requestId, record.input.playerUuid);
-    }
+    this.#lifecycle.cancelAll();
   }
 
   #validToolResult(descriptor: CoreToolDescriptor, payload: ToolResultPayload): boolean {
@@ -783,14 +592,19 @@ export class AgentRequestService {
     input: SessionResumeInput,
     respond: (response: SessionResumeResponse) => void,
   ): void {
-    if (this.#closed) {
-      this.#safeRespond(respond, internalError(input.playerUuid));
+    if (this.#lifecycle.closed) {
+      this.#lifecycle.safeRespond(
+        respond,
+        runtimeInternalErrorResponse(input.playerUuid),
+        input.requestId,
+      );
       return;
     }
     if (!this.#conversations.enabled) {
-      this.#safeRespond(
+      this.#lifecycle.safeRespond(
         respond,
         sessionError(input.playerUuid, "CONVERSATION_STORAGE_DISABLED", this.#audience),
+        input.requestId,
       );
       return;
     }
@@ -800,7 +614,7 @@ export class AgentRequestService {
         input.sessionId === null
           ? this.#conversations.findLatestOwned(owner)
           : this.#conversations.findOwned(input.sessionId, owner);
-      this.#safeRespond(
+      this.#lifecycle.safeRespond(
         respond,
         session === undefined
           ? sessionError(input.playerUuid, "SESSION_NOT_FOUND", this.#audience)
@@ -808,76 +622,32 @@ export class AgentRequestService {
               type: "session.resumed",
               payload: { playerUuid: input.playerUuid, sessionId: session.id },
             },
+        input.requestId,
       );
     } catch {
-      this.#safeRespond(respond, internalError(input.playerUuid));
+      this.#lifecycle.safeRespond(
+        respond,
+        runtimeInternalErrorResponse(input.playerUuid),
+        input.requestId,
+      );
     }
   }
 
   public async close(): Promise<void> {
-    this.#closed = true;
-    this.cancelAll();
-    if (this.#runs.size === 0) {
-      return;
-    }
-    let graceTimer: NodeJS.Timeout | undefined;
-    try {
-      await Promise.race([
-        Promise.allSettled([...this.#runs]),
-        new Promise<void>((resolve) => {
-          graceTimer = setTimeout(resolve, SHUTDOWN_PROVIDER_GRACE_MILLISECONDS);
-        }),
-      ]);
-    } finally {
-      if (graceTimer !== undefined) {
-        clearTimeout(graceTimer);
-      }
-    }
+    await this.#lifecycle.close();
   }
 
   public get activeCount(): number {
-    return this.#admission.activeCount;
+    return this.#lifecycle.activeCount;
   }
 
   public get queuedCount(): number {
-    return this.#admission.queuedCount;
-  }
-
-  #start(record: RequestRecord): void {
-    record.phase = "ACTIVE";
-    const run = this.#run(record)
-      .catch((error: unknown) => {
-        if (record.terminalSent || record.suppressResponse) {
-          return;
-        }
-        record.terminalSent = true;
-        this.#safeRespond(
-          record.respond,
-          error instanceof ModelGenerationError
-            ? providerError(record.input.playerUuid, error.code, this.#audience)
-            : error instanceof ConversationOwnershipError
-              ? sessionError(record.input.playerUuid, "SESSION_NOT_FOUND", this.#audience)
-              : error instanceof ToolLoopError
-                ? toolLoopError(record.input.playerUuid, error.code, this.#audience)
-                : error instanceof UsageBudgetError
-                  ? budgetError(record.input.playerUuid, this.#audience)
-                  : internalError(record.input.playerUuid),
-        );
-      })
-      .finally(() => {
-        this.#detach(record);
-      });
-    this.#runs.add(run);
-    void run
-      .finally(() => {
-        this.#runs.delete(run);
-      })
-      .catch(() => undefined);
+    return this.#lifecycle.queuedCount;
   }
 
   async #run(record: RequestRecord): Promise<void> {
     const manifest = this.#modules.get(record.input.module);
-    const history = this.#prepareConversation(record);
+    const history = this.#lifecycle.prepareConversation(record);
     let evidenceClaims: readonly EvidenceClaim[] = [];
     const authorization = record.input.webAuthorization ?? "off";
     let evidenceChannel = "";
@@ -919,12 +689,14 @@ export class AgentRequestService {
 
     while (!record.controller.signal.aborted) {
       const toolsAvailable = sequence < this.#config.limits.maxToolRounds;
-      if (this.#usage !== undefined && !this.#usageHealthy) {
+      if (this.#usage !== undefined && !this.#lifecycle.usageHealthy) {
         throw new Error("Usage accounting is unavailable.");
       }
       if (sequence > 0 && this.#usage !== undefined) {
-        const reservation = this.#usageOperation(() =>
-          this.#usage?.reserveProviderRound(record.input.requestId, sequence, this.#now()),
+        const reservation = this.#lifecycle.usageOperation(
+          record.input.requestId,
+          "USAGE_ACCOUNTING_FAILED",
+          () => this.#usage?.reserveProviderRound(record.input.requestId, sequence, this.#now()),
         );
         if (reservation === undefined) {
           throw new Error("Usage accounting disappeared during reservation.");
@@ -937,7 +709,7 @@ export class AgentRequestService {
         }
       }
       if (this.#usage !== undefined) {
-        this.#usageOperation(() => {
+        this.#lifecycle.usageOperation(record.input.requestId, "USAGE_ACCOUNTING_FAILED", () => {
           if (
             this.#usage?.markProviderRoundStarted(record.input.requestId, sequence, this.#now()) !==
             true
@@ -962,7 +734,7 @@ export class AgentRequestService {
         });
       } catch (error) {
         if (this.#usage !== undefined) {
-          this.#usageOperation(() => {
+          this.#lifecycle.usageOperation(record.input.requestId, "USAGE_ACCOUNTING_FAILED", () => {
             if (
               error instanceof ModelGenerationError &&
               error.accountingDisposition === "NOT_BILLABLE" &&
@@ -994,14 +766,17 @@ export class AgentRequestService {
         throw error;
       }
       if (this.#usage !== undefined) {
-        const usage = this.#usageOperation(() =>
-          this.#usage?.recordProviderUsage({
-            requestId: record.input.requestId,
-            playerUuid: record.input.playerUuid,
-            providerRound: sequence,
-            timestamp: this.#now(),
-            ...(result.usage === undefined ? {} : { usage: result.usage }),
-          }),
+        const usage = this.#lifecycle.usageOperation(
+          record.input.requestId,
+          "USAGE_ACCOUNTING_FAILED",
+          () =>
+            this.#usage?.recordProviderUsage({
+              requestId: record.input.requestId,
+              playerUuid: record.input.playerUuid,
+              providerRound: sequence,
+              timestamp: this.#now(),
+              ...(result.usage === undefined ? {} : { usage: result.usage }),
+            }),
         );
         if (usage !== undefined) recordProviderCost(record, usage);
       } else if (this.#audience === "client") {
@@ -1082,7 +857,7 @@ export class AgentRequestService {
       ) {
         throw new ToolLoopError("TOOL_REJECTED");
       }
-      const toolCallId = this.#allocateToolCallId(record);
+      const toolCallId = this.#lifecycle.allocateToolCallId(record);
       let toolResult: ToolExecutionResult;
       if (descriptor.execution === "runtime_local") {
         try {
@@ -1121,7 +896,7 @@ export class AgentRequestService {
           arguments: result.arguments,
           sequence,
         };
-        toolResult = await this.#awaitToolResult(record, descriptor, payload);
+        toolResult = await this.#lifecycle.awaitToolResult(record, descriptor, payload);
       }
       if (descriptor.execution === "connector_remote" && toolResult.status === "succeeded") {
         const generationId = toolResult.result?.["generationId"];
@@ -1219,48 +994,25 @@ export class AgentRequestService {
               content: recipeView.content,
             },
           ];
-    this.#safeRespond(record.respond, {
-      type: "agent.complete",
-      payload: {
-        sessionId: record.preparedSessionId,
-        playerUuid: record.input.playerUuid,
-        fallbackText,
-        structuredViews,
-        ...(this.#audience === "client"
-          ? {
-              costMicroUsd: record.providerCostMicroUsd,
-              costKind: providerCostKind(record.providerUsageKinds),
-            }
-          : {}),
+    this.#lifecycle.safeRespond(
+      record.respond,
+      {
+        type: "agent.complete",
+        payload: {
+          sessionId: record.preparedSessionId,
+          playerUuid: record.input.playerUuid,
+          fallbackText,
+          structuredViews,
+          ...(this.#audience === "client"
+            ? {
+                costMicroUsd: record.providerCostMicroUsd,
+                costKind: providerCostKind(record.providerUsageKinds),
+              }
+            : {}),
+        },
       },
-    });
-  }
-
-  #awaitToolResult(
-    record: RequestRecord,
-    descriptor: CoreToolDescriptor,
-    payload: ToolCallPayload,
-  ): Promise<ToolResultPayload> {
-    return new Promise<ToolResultPayload>((resolve, reject) => {
-      const onAbort = (): void => reject(record.controller.signal.reason);
-      const pending: PendingToolCall = {
-        payload,
-        descriptor,
-        resolve,
-        reject,
-        removeAbortListener: () => record.controller.signal.removeEventListener("abort", onAbort),
-      };
-      record.pendingTool = pending;
-      record.phase = "WAITING_TOOL";
-      record.controller.signal.addEventListener("abort", onAbort, { once: true });
-      if (record.controller.signal.aborted) {
-        onAbort();
-        return;
-      }
-      this.#safeRespond(record.respond, { type: "tool.call", payload });
-    }).finally(() => {
-      record.phase = "ACTIVE";
-    });
+      record.input.requestId,
+    );
   }
 
   #validLocalToolResult(descriptor: CoreToolDescriptor, payload: ToolExecutionResult): boolean {
@@ -1278,129 +1030,5 @@ export class AgentRequestService {
 
   #owner(playerUuid: string): ConversationOwner {
     return { serverId: this.#config.server.id, playerUuid };
-  }
-
-  #allocateToolCallId(record: RequestRecord): string {
-    for (let attempt = 0; attempt < 8; attempt += 1) {
-      const candidate = this.#randomUuid();
-      if (
-        candidate !== record.input.requestId &&
-        candidate !== record.executionSessionId &&
-        !record.issuedToolCallIds.has(candidate)
-      ) {
-        record.issuedToolCallIds.add(candidate);
-        return candidate;
-      }
-    }
-    throw new Error("Unable to allocate a unique Tool call ID.");
-  }
-
-  #prepareConversation(record: RequestRecord) {
-    if (!this.#conversations.enabled) {
-      if (record.input.sessionId !== null) {
-        throw new ConversationOwnershipError();
-      }
-      record.executionSessionId = this.#randomUuid();
-      return [];
-    }
-
-    const owner = this.#owner(record.input.playerUuid);
-    if (record.input.sessionId === null) {
-      record.preparedSessionId = this.#randomUuid();
-      record.executionSessionId = record.preparedSessionId;
-      record.createsSession = true;
-      return [];
-    }
-    const session = this.#conversations.findOwned(record.input.sessionId, owner);
-    if (session === undefined) {
-      throw new ConversationOwnershipError();
-    }
-    record.preparedSessionId = session.id;
-    record.executionSessionId = session.id;
-    record.createsSession = false;
-    const maximumHistory = Math.max(
-      0,
-      Math.floor((this.#config.limits.maxContextMessages - 1) / 2) * 2,
-    );
-    return this.#conversations.loadRecentOwned(session.id, owner, maximumHistory);
-  }
-
-  #timeout(record: RequestRecord): void {
-    if (record.terminalSent || record.suppressResponse) {
-      return;
-    }
-    record.terminalSent = true;
-    this.#detach(record);
-    record.controller.abort(new Error("MODEL_TIMEOUT"));
-    this.#safeRespond(record.respond, {
-      type: "agent.error",
-      payload: {
-        playerUuid: record.input.playerUuid,
-        code: "MODEL_TIMEOUT",
-        fallbackText: "The AI request timed out. Try again.",
-        retryable: true,
-      },
-    });
-  }
-
-  #clearTimeout(record: RequestRecord): void {
-    if (record.timeout !== undefined) {
-      clearTimeout(record.timeout);
-      record.timeout = undefined;
-    }
-  }
-
-  #detach(record: RequestRecord): void {
-    if (record.detached) {
-      return;
-    }
-    record.detached = true;
-    if (record.usageAdmitted) {
-      record.usageAdmitted = false;
-      try {
-        this.#usageOperation(() => {
-          if (this.#usage?.closeRequest(record.input.requestId, this.#now()) !== true) {
-            throw new Error("Durable usage admission could not be closed.");
-          }
-        });
-      } catch {
-        // A terminal request must still release in-memory admission after a storage failure.
-      }
-    }
-    const pending = record.pendingTool;
-    if (pending !== undefined) {
-      record.pendingTool = undefined;
-      pending.removeAbortListener();
-      pending.reject(new Error("REQUEST_DETACHED"));
-    }
-    this.#clearTimeout(record);
-    if (this.#requests.get(record.input.requestId) === record) {
-      this.#requests.delete(record.input.requestId);
-    }
-    if (record.phase === "QUEUED") {
-      this.#admission.cancelQueued(record.input.requestId, record.input.playerUuid);
-    } else {
-      this.#admission.releaseActive(record.input.requestId);
-    }
-  }
-
-  #usageOperation<Result>(operation: () => Result): Result {
-    if (!this.#usageHealthy) {
-      throw new Error("Usage accounting is unavailable.");
-    }
-    try {
-      return operation();
-    } catch (error) {
-      this.#usageHealthy = false;
-      throw error;
-    }
-  }
-
-  #safeRespond<Response>(responder: (response: Response) => void, response: Response): void {
-    try {
-      responder(response);
-    } catch {
-      // A failed transport must not leak a rejection or retain admission state.
-    }
   }
 }

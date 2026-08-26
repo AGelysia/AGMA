@@ -1,6 +1,6 @@
 import { DatabaseSync } from "node:sqlite";
 import { createServer } from "node:net";
-import { chmod, mkdir, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { PassThrough } from "node:stream";
 
@@ -135,7 +135,7 @@ describe("runtime bootstrap", () => {
       check: vi.fn(async () => {
         reportProviderStarted?.();
         await providerGate;
-        return { ok: true };
+        return { ok: true } as const;
       }),
     };
     const captured = capturedLogger();
@@ -346,7 +346,7 @@ describe("runtime bootstrap", () => {
     const loaded = await loadRuntimeConfig({ configPath, environment: runtimeEnvironment() });
 
     await expect(
-      checkModelProvider(loaded.config, {
+      checkModelProvider(loaded.resolved, {
         check: vi.fn().mockResolvedValue({ ok: false, code }),
       }),
     ).rejects.toMatchObject({ code, field });
@@ -371,7 +371,7 @@ describe("runtime bootstrap", () => {
         }),
     };
 
-    await expect(checkModelProvider(loaded.config, provider, 10)).rejects.toMatchObject({
+    await expect(checkModelProvider(loaded.resolved, provider, 10)).rejects.toMatchObject({
       code: "PROVIDER_TIMEOUT",
     });
     expect(aborted).toBe(true);
@@ -440,6 +440,50 @@ describe("runtime bootstrap", () => {
     });
     await new Promise<void>((resolve, reject) => {
       rebound.close((error) => (error === undefined ? resolve() : reject(error)));
+    });
+  });
+
+  it("writes structured events to the configured log directory", async () => {
+    const directory = await fixtureDirectory();
+    const port = await findAvailablePort();
+    const configPath = await writeRuntimeConfig(directory, validRuntimeConfig(port));
+    const captured = capturedLogger();
+
+    const runtime = await startRuntime({
+      configPath,
+      environment: runtimeEnvironment(),
+      logger: captured.logger,
+      modelProviderHealthCheck: healthyProvider(),
+    });
+    await runtime.close();
+
+    const logs = await readFile(join(directory, "logs", "runtime.log"), "utf8");
+    expect(logs).toContain('"event":"runtime.ready"');
+    expect(logs).not.toContain(TEST_API_KEY);
+    expect(logs).not.toContain(TEST_SERVER_TOKEN);
+    expect(captured.lines.join("")).toContain('"event":"runtime.ready"');
+  });
+
+  it("applies the configured logging level before events reach the log file", async () => {
+    const directory = await fixtureDirectory();
+    const port = await findAvailablePort();
+    const configPath = await writeRuntimeConfig(
+      directory,
+      validRuntimeConfig(port).replace("level: info", "level: error"),
+    );
+    const captured = capturedLogger();
+
+    const runtime = await startRuntime({
+      configPath,
+      environment: runtimeEnvironment(),
+      logger: captured.logger,
+      modelProviderHealthCheck: healthyProvider(),
+    });
+    await runtime.close();
+
+    expect(captured.lines.join("")).not.toContain("runtime.ready");
+    await expect(readFile(join(directory, "logs", "runtime.log"), "utf8")).rejects.toMatchObject({
+      code: "ENOENT",
     });
   });
 });

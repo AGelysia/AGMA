@@ -7,6 +7,7 @@ import {
   type ModelGenerationRequest,
   type ModelProvider,
 } from "../src/providers/model-provider.js";
+import { RuntimeLogger } from "../src/observability/runtime-logger.js";
 import {
   ClientAgentRequestService,
   type ClientAgentServiceConfig,
@@ -69,6 +70,17 @@ function config(): ClientAgentServiceConfig {
       perPlayerCooldownSeconds: 0,
       dailyRequestsPerPlayer: 100,
     },
+  };
+}
+
+function capturingLogger(): { readonly lines: string[]; readonly logger: RuntimeLogger } {
+  const lines: string[] = [];
+  return {
+    lines,
+    logger: new RuntimeLogger({
+      now: () => new Date("2026-07-17T00:00:00.000Z"),
+      sink: { write: (line) => lines.push(line) },
+    }),
   };
 }
 
@@ -420,22 +432,22 @@ describe("client-only Agent request service", () => {
     const generated: ModelGenerationRequest[] = [];
     const adapter: ModelProvider = {
       check: vi.fn().mockResolvedValue({ ok: true }),
-      generate: vi.fn(async (request) => {
+      generate: vi.fn(async (request: ModelGenerationRequest) => {
         generated.push(request);
         events.push(`generate:${String(generated.length)}`);
         if (generated.length === 1) {
           return {
-            type: "tool_call",
+            type: "tool_call" as const,
             providerCallId: "local-search",
             providerName: "game_resource_search",
             arguments: {
               query: "iron ingot",
               limit: 5,
             },
-            continuation: { provider: "openai", items: [] },
+            continuation: { provider: "openai" as const, items: [] },
           };
         }
-        return { type: "final", fallbackText: `[${evidence.claimId}]` };
+        return { type: "final" as const, fallbackText: `[${evidence.claimId}]` };
       }),
     };
     const webEvidence = {
@@ -785,5 +797,195 @@ describe("client-only Agent request service", () => {
 
     expect(responses).toMatchObject([{ type: "agent.error", payload: { code: "TOOL_REJECTED" } }]);
     expect(responses.some((response) => response.type === "tool.call")).toBe(false);
+  });
+
+  it("logs an unexpected request failure with the request id but never the prompt", async () => {
+    const captured = capturingLogger();
+    const adapter: ModelProvider = {
+      check: vi.fn().mockResolvedValue({ ok: true }),
+      generate: vi.fn().mockResolvedValue({ type: "final", fallbackText: "unused" }),
+    };
+    const webEvidence = {
+      collect: vi.fn().mockRejectedValue(new Error("evidence collector crashed")),
+    } satisfies WebEvidenceCollector;
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registry(),
+      webEvidence,
+      logger: captured.logger,
+    });
+    const responses: AgentRuntimeResponse[] = [];
+
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "Search for a current guide.",
+        webAuthorization: "once",
+      },
+      (response) => responses.push(response),
+    );
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    expect(responses).toMatchObject([
+      { type: "agent.error", payload: { code: "RUNTIME_INTERNAL_ERROR" } },
+    ]);
+    const logs = captured.lines.join("");
+    expect(logs).toContain('"event":"runtime.error"');
+    expect(logs).toContain('"code":"RUNTIME_INTERNAL_ERROR"');
+    expect(logs).toContain(`"requestId":"${REQUEST_ID}"`);
+    expect(logs).toContain("evidence collector crashed");
+    expect(logs).not.toContain("current guide");
+  });
+
+  it("logs a usage admission failure before responding with a stable internal error", async () => {
+    const captured = capturingLogger();
+    const adapter: ModelProvider = {
+      check: vi.fn().mockResolvedValue({ ok: true }),
+      generate: vi.fn().mockResolvedValue({ type: "final", fallbackText: "unused" }),
+    };
+    const usage = {
+      admitRequest: vi.fn(() => {
+        throw new Error("sqlite disk is full");
+      }),
+      rollbackAdmission: vi.fn().mockReturnValue(true),
+      reserveProviderRound: vi.fn().mockReturnValue({ accepted: true }),
+      markProviderRoundStarted: vi.fn().mockReturnValue(true),
+      releaseProviderRound: vi.fn().mockReturnValue(true),
+      recordProviderUsage: vi
+        .fn()
+        .mockReturnValue({ inserted: true, usageKind: "REPORTED", costMicroUsd: 10 }),
+      closeRequest: vi.fn().mockReturnValue(true),
+      snapshot: vi.fn(() => {
+        throw new Error("not used");
+      }),
+    } as UsageAccounting;
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registry(),
+      usage,
+      logger: captured.logger,
+    });
+    const responses: AgentRuntimeResponse[] = [];
+
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "Search for a current guide.",
+      },
+      (response) => responses.push(response),
+    );
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    expect(responses).toMatchObject([
+      { type: "agent.error", payload: { code: "RUNTIME_INTERNAL_ERROR" } },
+    ]);
+    const logs = captured.lines.join("");
+    expect(logs).toContain('"code":"USAGE_ADMISSION_FAILED"');
+    expect(logs).toContain(`"requestId":"${REQUEST_ID}"`);
+    expect(logs).toContain("sqlite disk is full");
+  });
+
+  it("fails closed after a durable usage write fails", async () => {
+    const captured = capturingLogger();
+    const adapter: ModelProvider = {
+      check: vi.fn().mockResolvedValue({ ok: true }),
+      generate: vi.fn().mockResolvedValue({ type: "final", fallbackText: "provider response" }),
+    };
+    const usage = {
+      admitRequest: vi.fn().mockReturnValue({ accepted: true }),
+      rollbackAdmission: vi.fn().mockReturnValue(true),
+      reserveProviderRound: vi.fn().mockReturnValue({ accepted: true }),
+      markProviderRoundStarted: vi.fn().mockReturnValue(true),
+      releaseProviderRound: vi.fn().mockReturnValue(true),
+      recordProviderUsage: vi.fn(() => {
+        throw new Error("simulated accounting write failure");
+      }),
+      closeRequest: vi.fn().mockReturnValue(true),
+      snapshot: vi.fn(() => {
+        throw new Error("not used");
+      }),
+    } as UsageAccounting;
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registry(),
+      usage,
+      logger: captured.logger,
+    });
+    const responses: AgentRuntimeResponse[] = [];
+
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "Search for a current guide.",
+      },
+      (response) => responses.push(response),
+    );
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+    service.submit(
+      {
+        requestId: "44444444-4444-4444-8444-444444444444",
+        playerUuid: "55555555-5555-4555-8555-555555555555",
+        sessionId: null,
+        module: "general",
+        message: "Search again.",
+      },
+      (response) => responses.push(response),
+    );
+
+    expect(responses).toMatchObject([
+      { type: "agent.error", payload: { code: "RUNTIME_INTERNAL_ERROR" } },
+      { type: "agent.error", payload: { code: "RUNTIME_INTERNAL_ERROR" } },
+    ]);
+    expect(adapter.generate).toHaveBeenCalledOnce();
+    expect(usage.admitRequest).toHaveBeenCalledOnce();
+    const logs = captured.lines.join("");
+    expect(logs).toContain('"code":"USAGE_ACCOUNTING_FAILED"');
+    expect(logs).toContain(`"requestId":"${REQUEST_ID}"`);
+    expect(logs).toContain("simulated accounting write failure");
+  });
+
+  it("logs a failed transport response instead of surfacing the rejection", async () => {
+    const captured = capturingLogger();
+    const adapter: ModelProvider = {
+      check: vi.fn().mockResolvedValue({ ok: true }),
+      generate: vi.fn().mockResolvedValue({ type: "final", fallbackText: "client answer" }),
+    };
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registry(),
+      logger: captured.logger,
+    });
+
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "Search for a current guide.",
+      },
+      () => {
+        throw new Error("connector socket closed");
+      },
+    );
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    const logs = captured.lines.join("");
+    expect(logs).toContain('"code":"TRANSPORT_RESPONSE_FAILED"');
+    expect(logs).toContain(`"requestId":"${REQUEST_ID}"`);
+    expect(logs).toContain("connector socket closed");
   });
 });

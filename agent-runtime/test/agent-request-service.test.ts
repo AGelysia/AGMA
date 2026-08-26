@@ -6,6 +6,7 @@ import type { RuntimeConfig } from "../src/config/runtime-config.js";
 import type { EvidenceClaim } from "../src/evidence/evidence-normalizer.js";
 import type { WebEvidenceCollector } from "../src/evidence/web-evidence-pipeline.js";
 import { ModuleRegistry } from "../src/modules/module-manifest.js";
+import { RuntimeLogger } from "../src/observability/runtime-logger.js";
 import {
   ModelGenerationError,
   type ModelGenerationRequest,
@@ -17,7 +18,6 @@ import {
   type AgentRuntimeResponse,
   type AgentRequestInput,
   type AgentRequestServiceOptions,
-  type AgentTerminalResponse,
 } from "../src/requests/agent-request-service.js";
 import { SchemaRegistry } from "../src/protocol/schema-registry.js";
 import { SqliteConversationRepository } from "../src/storage/conversation-repository.js";
@@ -36,6 +36,17 @@ const tools = new ToolRegistry(await SchemaRegistry.load());
 
 function agentService(options: Omit<AgentRequestServiceOptions, "tools">): AgentRequestService {
   return new AgentRequestService({ ...options, tools });
+}
+
+function capturingLogger(): { readonly lines: string[]; readonly logger: RuntimeLogger } {
+  const lines: string[] = [];
+  return {
+    lines,
+    logger: new RuntimeLogger({
+      now: () => new Date("2026-07-11T00:00:00.000Z"),
+      sink: { write: (line) => lines.push(line) },
+    }),
+  };
 }
 
 function config(overrides: Partial<RuntimeConfig["limits"]> = {}): RuntimeConfig {
@@ -95,9 +106,11 @@ function provider(
 ): ModelProvider {
   return {
     check: vi.fn().mockResolvedValue({ ok: true }),
-    generate: vi.fn(async (requestValue) => {
+    generate: vi.fn(async (requestValue: ModelGenerationRequest) => {
       const result = await generate(requestValue);
-      return "type" in result ? result : { type: "final", fallbackText: result.fallbackText };
+      return "type" in result
+        ? result
+        : { type: "final" as const, fallbackText: result.fallbackText };
     }),
   };
 }
@@ -191,7 +204,7 @@ describe("Agent request service", () => {
         : second.promise,
     );
     const service = agentService({ provider: adapter, config: config() });
-    const responses: AgentTerminalResponse[] = [];
+    const responses: AgentRuntimeResponse[] = [];
 
     service.submit(request("request-1"), (response) => responses.push(response));
     service.submit(request("request-2", PLAYER_TWO), (response) => responses.push(response));
@@ -234,8 +247,8 @@ describe("Agent request service", () => {
       return calls === 1 ? abandoned.promise : replacement.promise;
     });
     const service = agentService({ provider: adapter, config: config() });
-    const firstResponses: AgentTerminalResponse[] = [];
-    const secondResponses: AgentTerminalResponse[] = [];
+    const firstResponses: AgentRuntimeResponse[] = [];
+    const secondResponses: AgentRuntimeResponse[] = [];
 
     service.submit(request("request-1"), (response) => firstResponses.push(response));
     await flush();
@@ -356,7 +369,7 @@ describe("Agent request service", () => {
       config: config(),
       timeoutMilliseconds: 10,
     });
-    const responses: AgentTerminalResponse[] = [];
+    const responses: AgentRuntimeResponse[] = [];
 
     service.submit(request("request-1"), (response) => responses.push(response));
     await flush();
@@ -384,7 +397,7 @@ describe("Agent request service", () => {
     const pending = deferred<ModelGenerationResult>();
     const adapter = provider(() => pending.promise);
     const service = agentService({ provider: adapter, config: config() });
-    const duplicateResponses: AgentTerminalResponse[] = [];
+    const duplicateResponses: AgentRuntimeResponse[] = [];
 
     service.submit(request("same-id", PLAYER_ONE), () => undefined);
     service.submit(request("same-id", PLAYER_TWO), (response) => duplicateResponses.push(response));
@@ -408,7 +421,7 @@ describe("Agent request service", () => {
       }),
     };
     const service = agentService({ provider: adapter, config: config() });
-    const responses: AgentTerminalResponse[] = [];
+    const responses: AgentRuntimeResponse[] = [];
 
     service.submit(request("request-1"), (response) => responses.push(response));
     await flush();
@@ -425,7 +438,7 @@ describe("Agent request service", () => {
     async (fallbackText) => {
       const adapter = provider(async () => ({ fallbackText }));
       const service = agentService({ provider: adapter, config: config() });
-      const responses: AgentTerminalResponse[] = [];
+      const responses: AgentRuntimeResponse[] = [];
 
       service.submit(request("request-1"), (response) => responses.push(response));
       await flush();
@@ -441,7 +454,7 @@ describe("Agent request service", () => {
     const fallbackText = `${"\ud83d\ude00".repeat(5000)}\n\tcomplete`;
     const adapter = provider(async () => ({ fallbackText }));
     const service = agentService({ provider: adapter, config: config() });
-    const responses: AgentTerminalResponse[] = [];
+    const responses: AgentRuntimeResponse[] = [];
 
     service.submit(request("request-1"), (response) => responses.push(response));
     await vi.waitFor(() => expect(service.activeCount).toBe(0));
@@ -457,7 +470,7 @@ describe("Agent request service", () => {
       throw new Error("transport stopped");
     });
     await vi.waitFor(() => expect(service.activeCount).toBe(0));
-    const responses: AgentTerminalResponse[] = [];
+    const responses: AgentRuntimeResponse[] = [];
     service.submit(request("request-2", PLAYER_TWO), (response) => responses.push(response));
     await flush();
     expect(responses).toMatchObject([
@@ -481,7 +494,7 @@ describe("Agent request service", () => {
       randomUuid: () => "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
       now: () => Date.parse("2026-07-13T00:00:00.000Z"),
     });
-    const firstResponses: AgentTerminalResponse[] = [];
+    const firstResponses: AgentRuntimeResponse[] = [];
     service.submit({ ...request(PERSISTENT_REQUEST_ONE), module: "recipe" }, (response) =>
       firstResponses.push(response),
     );
@@ -498,7 +511,7 @@ describe("Agent request service", () => {
       },
     });
 
-    const secondResponses: AgentTerminalResponse[] = [];
+    const secondResponses: AgentRuntimeResponse[] = [];
     service.submit(
       { ...request(PERSISTENT_REQUEST_TWO), sessionId, module: "general" },
       (response) => secondResponses.push(response),
@@ -564,7 +577,7 @@ describe("Agent request service", () => {
   it("keeps disabled conversation mode stateless and rejects resume", async () => {
     const adapter = provider(async () => ({ fallbackText: "stateless answer" }));
     const service = agentService({ provider: adapter, config: config() });
-    const completions: AgentTerminalResponse[] = [];
+    const completions: AgentRuntimeResponse[] = [];
     service.submit(request(PERSISTENT_REQUEST_ONE), (response) => completions.push(response));
     await vi.waitFor(() => expect(service.activeCount).toBe(0));
     expect(completions).toMatchObject([{ type: "agent.complete", payload: { sessionId: null } }]);
@@ -839,7 +852,7 @@ describe("Agent request service", () => {
       fallbackText: "Authoritative server recipe: one stick makes a diamond.",
     }));
     const service = agentService({ provider: adapter, config: config() });
-    const responses: AgentTerminalResponse[] = [];
+    const responses: AgentRuntimeResponse[] = [];
     service.submit({ ...request(PERSISTENT_REQUEST_ONE), module: "recipe" }, (response) =>
       responses.push(response),
     );
@@ -1105,7 +1118,7 @@ describe("Agent request service", () => {
       throw new ModelGenerationError("PROVIDER_UNAVAILABLE", "NOT_BILLABLE");
     });
     const failedService = agentService({ provider: failing, config: config(), usage });
-    const failedResponses: AgentTerminalResponse[] = [];
+    const failedResponses: AgentRuntimeResponse[] = [];
     failedService.submit(request(PERSISTENT_REQUEST_ONE), (response) =>
       failedResponses.push(response),
     );
@@ -1126,7 +1139,7 @@ describe("Agent request service", () => {
     expect(occupying).toEqual({ accepted: true });
     const blockedProvider = provider(async () => ({ fallbackText: "must not run" }));
     const blockedService = agentService({ provider: blockedProvider, config: config(), usage });
-    const blockedResponses: AgentTerminalResponse[] = [];
+    const blockedResponses: AgentRuntimeResponse[] = [];
     blockedService.submit(request(PERSISTENT_REQUEST_TWO), (response) =>
       blockedResponses.push(response),
     );
@@ -1287,7 +1300,7 @@ describe("Agent request service", () => {
       usage: { inputTokens: 1, outputTokens: 1 },
     }));
     const service = agentService({ provider: adapter, config: config(), usage: broken });
-    const responses: AgentTerminalResponse[] = [];
+    const responses: AgentRuntimeResponse[] = [];
 
     service.submit(request(PERSISTENT_REQUEST_ONE), (response) => responses.push(response));
     await vi.waitFor(() => expect(service.activeCount).toBe(0));
@@ -1371,6 +1384,54 @@ describe("Agent request service", () => {
           "I could not verify an exact drop rate, coordinate, or version conclusion from applicable conflict-free web evidence.",
       },
     });
+  });
+
+  it("logs an unexpected request failure with the request id but never the prompt", async () => {
+    const captured = capturingLogger();
+    const adapter = provider(() => Promise.reject(new Error("provider stack corrupted")));
+    const service = agentService({
+      provider: adapter,
+      config: config(),
+      logger: captured.logger,
+    });
+    const responses: AgentRuntimeResponse[] = [];
+
+    service.submit(request(PERSISTENT_REQUEST_ONE), (response) => responses.push(response));
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    expect(responses).toHaveLength(1);
+    expect(responses[0]).toMatchObject({
+      type: "agent.error",
+      payload: { code: "RUNTIME_INTERNAL_ERROR", retryable: true },
+    });
+    const logs = captured.lines.join("");
+    expect(logs).toContain('"event":"runtime.error"');
+    expect(logs).toContain('"code":"RUNTIME_INTERNAL_ERROR"');
+    expect(logs).toContain(`"requestId":"${PERSISTENT_REQUEST_ONE}"`);
+    expect(logs).toContain("provider stack corrupted");
+    expect(logs).not.toContain("private prompt");
+  });
+
+  it("logs a failed transport response instead of surfacing the rejection", async () => {
+    const captured = capturingLogger();
+    const adapter = provider(() =>
+      Promise.resolve({ type: "final", fallbackText: "stored answer" }),
+    );
+    const service = agentService({
+      provider: adapter,
+      config: config(),
+      logger: captured.logger,
+    });
+
+    service.submit(request(PERSISTENT_REQUEST_ONE), () => {
+      throw new Error("transport socket closed");
+    });
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    const logs = captured.lines.join("");
+    expect(logs).toContain('"code":"TRANSPORT_RESPONSE_FAILED"');
+    expect(logs).toContain(`"requestId":"${PERSISTENT_REQUEST_ONE}"`);
+    expect(logs).toContain("transport socket closed");
   });
 });
 

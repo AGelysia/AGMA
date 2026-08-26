@@ -1,5 +1,4 @@
 import Fastify, { type FastifyInstance } from "fastify";
-import type { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
 
 import standaloneSchemaAllowlist from "../../../../standalone-client/contracts/runtime-schema-allowlist.json" with { type: "json" };
@@ -7,6 +6,12 @@ import standaloneRelease from "../../../../standalone-client/version.json" with 
 
 import { isMainModule } from "../../bootstrap/main-module.js";
 import { asRuntimeStartupError, RuntimeStartupError } from "../../bootstrap/startup-error.js";
+import {
+  observeManagedParent,
+  parseManagedRuntimeCli,
+  runManagedRuntimeMain,
+  type ManagedParentObservation,
+} from "../../bootstrap/runtime-lifecycle.js";
 import {
   loadStandaloneClientConfig,
   type LoadStandaloneConfigOptions,
@@ -112,8 +117,10 @@ export async function bootstrapStandaloneClient(
     requireActive(options.signal);
     const loaded = await loadStandaloneClientConfig(options);
     const config = loaded.resolved.service;
-    for (const warning of loaded.warnings) logger.configWarning(warning);
     await checkLogDirectory(loaded.paths.rootDirectory, loaded.paths.logDirectory);
+    logger.setLevel(loaded.config.logging.level);
+    logger.useLogDirectory(loaded.paths.logDirectory);
+    for (const warning of loaded.warnings) logger.configWarning(warning);
     const schemas = await loadStandaloneSchemas(options.standaloneProtocolRoot);
     requireActive(options.signal);
     const tools = new ClientToolRegistry(schemas, loaded.resolved.allowedClientTools);
@@ -203,6 +210,7 @@ export async function bootstrapStandaloneClient(
       tools,
       conversations,
       usage: costs,
+      logger,
       ...(webEvidence === undefined ? {} : { webEvidence }),
       ...(options.now === undefined ? {} : { now: () => options.now?.().getTime() ?? Date.now() }),
     });
@@ -279,93 +287,42 @@ export async function startStandaloneClient(
   return { ...runtime, close: async () => runtime.app.close() };
 }
 
-export interface StandaloneManagedParent {
-  readonly signal: AbortSignal;
-  dispose(): void;
-}
+export type StandaloneManagedParent = ManagedParentObservation;
 
-export function observeStandaloneManagedParent(input: Readable): StandaloneManagedParent {
-  const controller = new AbortController();
-  let disposed = false;
-  const abort = (): void => controller.abort();
-  input.once("end", abort);
-  input.once("error", abort);
-  if (input.readableEnded || input.destroyed) controller.abort();
-  else input.resume();
-  return {
-    signal: controller.signal,
-    dispose: () => {
-      if (disposed) return;
-      disposed = true;
-      input.off("end", abort);
-      input.off("error", abort);
-      input.pause();
-    },
-  };
-}
+export const observeStandaloneManagedParent = observeManagedParent;
 
 export function parseStandaloneCli(arguments_: readonly string[]): {
   readonly configPath: string;
   readonly managed: boolean;
 } {
-  if (arguments_.length >= 2 && arguments_[0] === "--config" && arguments_[1] !== undefined) {
-    if (arguments_.length === 2) return { configPath: arguments_[1], managed: false };
-    if (arguments_.length === 3 && arguments_[2] === "--managed") {
-      return { configPath: arguments_[1], managed: true };
-    }
-  }
-  throw new RuntimeStartupError({
-    code: "CONFIG_PATH_INVALID",
-    stage: "config",
-    safeMessage: "Usage: standalone Runtime --config <path> [--managed]",
+  const usage = "Usage: standalone Runtime --config <path> [--managed]";
+  const { configPath, managed } = parseManagedRuntimeCli(arguments_, {
+    configPathRequired: true,
+    usage,
   });
+  if (configPath === undefined) {
+    throw new RuntimeStartupError({
+      code: "CONFIG_PATH_INVALID",
+      stage: "config",
+      safeMessage: usage,
+    });
+  }
+  return { configPath, managed };
 }
 
 async function runMain(): Promise<void> {
-  const logger = new RuntimeLogger();
-  let runtime: StartedStandaloneRuntime;
-  let parent: StandaloneManagedParent | undefined;
-  try {
-    const cli = parseStandaloneCli(process.argv.slice(2));
-    parent = cli.managed ? observeStandaloneManagedParent(process.stdin) : undefined;
-    runtime = await startStandaloneClient({
-      configPath: cli.configPath,
-      logger,
-      ...(parent === undefined ? {} : { signal: parent.signal }),
-    });
-    if (parent?.signal.aborted === true) {
-      await runtime.close();
-      parent.dispose();
-      return;
-    }
-  } catch (error) {
-    parent?.dispose();
-    if (parent?.signal.aborted === true) return;
-    logger.startupFailure(asRuntimeStartupError(error));
-    process.exitCode = 1;
-    return;
-  }
-
-  let stopping = false;
-  const stop = async (): Promise<void> => {
-    if (stopping) return;
-    stopping = true;
-    process.off("SIGINT", stop);
-    process.off("SIGTERM", stop);
-    parent?.signal.removeEventListener("abort", stopOnParentClose);
-    parent?.dispose();
-    await runtime.close();
-    logger.stopped();
-  };
-  const stopOnParentClose = (): void => {
-    void stop();
-  };
-  process.once("SIGINT", stop);
-  process.once("SIGTERM", stop);
-  if (parent !== undefined) {
-    parent.signal.addEventListener("abort", stopOnParentClose, { once: true });
-    if (parent.signal.aborted) await stop();
-  }
+  await runManagedRuntimeMain<
+    { readonly configPath: string; readonly managed: boolean },
+    StartedStandaloneRuntime
+  >({
+    parse: parseStandaloneCli,
+    start: (cli, logger, signal) =>
+      startStandaloneClient({
+        configPath: cli.configPath,
+        logger,
+        ...(signal === undefined ? {} : { signal }),
+      }),
+  });
 }
 
 if (isMainModule(process.argv[1], import.meta.url)) await runMain();
