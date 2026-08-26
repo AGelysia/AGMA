@@ -13,7 +13,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /** Lazily verifies and installs the sidecar embedded in an offline Paper JAR. */
-public final class EmbeddedManagedRuntimeProvisioner implements ProcessFactory {
+public final class EmbeddedManagedRuntimeProvisioner
+    implements ManagedRuntimeSupervisor.Provisioner {
   private static final String DESCRIPTOR_RESOURCE = "managed-runtime/artifact.properties";
   private static final String SIDECAR_RESOURCE = "managed-runtime/sidecar.zip";
   private static final int MAX_DESCRIPTOR_BYTES = 4096;
@@ -25,23 +26,21 @@ public final class EmbeddedManagedRuntimeProvisioner implements ProcessFactory {
   private final ManagedRuntimeInstaller installer;
   private final Path managedRoot;
   private final String runtimeVersion;
-  private final ProcessFactory delegate;
 
   public EmbeddedManagedRuntimeProvisioner(
       ClassLoader resources,
       ManagedRuntimeInstaller installer,
       Path managedRoot,
-      String runtimeVersion,
-      ProcessFactory delegate) {
+      String runtimeVersion) {
     this.resources = Objects.requireNonNull(resources);
     this.installer = Objects.requireNonNull(installer);
     this.managedRoot = Objects.requireNonNull(managedRoot).toAbsolutePath().normalize();
     this.runtimeVersion = Objects.requireNonNull(runtimeVersion);
-    this.delegate = Objects.requireNonNull(delegate);
   }
 
+  /** Verifies and installs the embedded sidecar once; restarts reuse the verified install. */
   @Override
-  public Process start(ProcessBuilder builder) throws IOException {
+  public void provision() {
     requireNotInterrupted();
     if (!supportedPlatform(System.getProperty("os.name"), System.getProperty("os.arch"))) {
       throw failure("MANAGED_RUNTIME_PLATFORM_UNSUPPORTED");
@@ -68,7 +67,6 @@ public final class EmbeddedManagedRuntimeProvisioner implements ProcessFactory {
       throw failure("MANAGED_RUNTIME_VERSION_MISMATCH");
     }
     requireNotInterrupted();
-    return delegate.start(builder);
   }
 
   private static void requireNotInterrupted() {

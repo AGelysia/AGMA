@@ -33,6 +33,16 @@ repositories {
 
 dependencies {
     embedded(libs.json.canonicalization)
+    // Bundled into the plugin JAR like the other embedded libraries; Gson itself stays
+    // compileOnly because the Paper server provides it at runtime.
+    embedded(project(":standalone-client:runtime-supervisor-core")) {
+        isTransitive = false
+    }
+    // Shared single source of truth for the minecraftagent:client wire channel; unpacked
+    // into the plugin JAR like the other embedded libraries. Dependency-free (JDK only).
+    embedded(project(":protocol:jvm")) {
+        isTransitive = false
+    }
     compileOnly(libs.paper.api)
     compileOnly(libs.gson)
     compileOnly(libs.snakeyaml)

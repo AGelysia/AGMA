@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-public final class JavaHttpRuntimeConnector implements RuntimeConnector {
+public final class JavaHttpRuntimeConnector implements RuntimeConnector, AutoCloseable {
   static final int MAX_HANDSHAKE_BYTES = 16 * 1024;
   static final int MAX_APPLICATION_BYTES = 64 * 1024;
   static final int MAX_PENDING_APPLICATION_SENDS = 64;
@@ -47,6 +47,11 @@ public final class JavaHttpRuntimeConnector implements RuntimeConnector {
   public CompletionStage<AuthenticatedRuntimeConnection> connect(
       RuntimeConnectionSettings settings) {
     return begin(settings).result();
+  }
+
+  @Override
+  public void close() {
+    httpClient.close();
   }
 
   @Override

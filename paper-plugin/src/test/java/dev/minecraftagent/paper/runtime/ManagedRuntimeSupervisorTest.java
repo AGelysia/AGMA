@@ -6,20 +6,25 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import dev.minecraftagent.standalone.supervisor.SupervisorPolicy;
+import dev.minecraftagent.standalone.supervisor.SupervisorScheduler;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Duration;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
+import java.util.PriorityQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -30,50 +35,45 @@ import org.junit.jupiter.api.io.TempDir;
 class ManagedRuntimeSupervisorTest {
   @TempDir Path temporaryDirectory;
 
-  private ScheduledExecutorService scheduler;
+  private ManualScheduler scheduler;
   private ManagedRuntimeSupervisor supervisor;
 
   @AfterEach
-  void closeResources() throws InterruptedException {
+  void closeResources() {
     if (supervisor != null) {
       supervisor.close();
     }
     if (scheduler != null) {
-      scheduler.shutdownNow();
-      assertTrue(scheduler.awaitTermination(2, TimeUnit.SECONDS));
+      scheduler.close();
     }
   }
 
   @Test
   void startsOneFixedCommandAndCompletesAfterTheHealthProbeSucceeds() throws Exception {
-    var events = java.util.Collections.synchronizedList(new ArrayList<String>());
-    var process = new FakeProcess(true, true, events);
+    var process = new FakeProcess(1234, true);
     var builder = new AtomicReference<ProcessBuilder>();
     var starts = new AtomicInteger();
     var probes = new AtomicInteger();
     supervisor =
         supervisor(
             candidate -> {
-              events.add("start");
               starts.incrementAndGet();
               builder.set(candidate);
               return process;
             },
-            ignored -> {
-              events.add("probe");
-              return probes.incrementAndGet() >= 2;
-            },
-            Duration.ofSeconds(1),
-            Duration.ofMillis(10));
+            ignored -> probes.incrementAndGet() >= 2,
+            policy(1));
 
     var first = supervisor.prepare(RuntimeSupervisorTestFixture.connectionSettings());
     var second = supervisor.prepare(RuntimeSupervisorTestFixture.connectionSettings());
-    first.ready().toCompletableFuture().get(2, TimeUnit.SECONDS);
 
     assertSame(first, second);
+    scheduler.runAll();
+    first.ready().toCompletableFuture().get(2, TimeUnit.SECONDS);
+    scheduler.runAll();
+
     assertEquals(1, starts.get());
     assertTrue(probes.get() >= 2);
-    assertEquals("start", events.getFirst());
     assertEquals(
         List.of(
             temporaryDirectory.resolve("runtime/bin/node").toAbsolutePath().normalize().toString(),
@@ -108,103 +108,79 @@ class ManagedRuntimeSupervisorTest {
         builder.get().redirectError().file());
     assertEquals(ProcessBuilder.Redirect.Type.APPEND, builder.get().redirectOutput().type());
     assertEquals(ProcessBuilder.Redirect.Type.APPEND, builder.get().redirectError().type());
+    assertEquals(
+        PosixFilePermissions.fromString("rw-------"),
+        Files.getPosixFilePermissions(
+            temporaryDirectory.resolve("logs/runtime.out.log").toAbsolutePath().normalize()));
   }
 
   @Test
-  void failsWhenTheChildExitsBeforeReadiness() throws Exception {
-    var process = new FakeProcess(false, true, new ArrayList<>());
-    supervisor =
-        supervisor(
-            ignored -> process,
-            ignored -> {
-              throw new AssertionError("health must not be probed after exit");
-            },
-            Duration.ofSeconds(1),
-            Duration.ofMillis(5));
+  void failsWhenTheChildExitsBeforeReadiness() {
+    var process = new FakeProcess(1235, true);
+    var exits = new ArrayList<String>();
+    supervisor = supervisor(ignored -> process, ignored -> false, policy(0), exits);
+    var attempt = supervisor.prepare(RuntimeSupervisorTestFixture.connectionSettings());
+    scheduler.runDue();
 
-    var failure =
-        awaitFailure(supervisor.prepare(RuntimeSupervisorTestFixture.connectionSettings()));
+    process.exit();
+    scheduler.runAll();
 
-    assertEquals("MANAGED_RUNTIME_EXITED", failure.code());
+    assertEquals("MANAGED_RUNTIME_EXITED", awaitFailure(attempt).code());
+    assertTrue(exits.isEmpty());
   }
 
   @Test
-  void timesOutAndTerminatesAChildThatNeverBecomesHealthy() throws Exception {
-    var process = new FakeProcess(true, true, new ArrayList<>());
-    supervisor =
-        supervisor(
-            ignored -> process, ignored -> false, Duration.ofMillis(35), Duration.ofMillis(5));
+  void timesOutAndTerminatesAChildThatNeverBecomesHealthy() {
+    var process = new FakeProcess(1236, true);
+    supervisor = supervisor(ignored -> process, ignored -> false, policy(0));
+    var attempt = supervisor.prepare(RuntimeSupervisorTestFixture.connectionSettings());
+    scheduler.runAll();
 
-    var failure =
-        awaitFailure(supervisor.prepare(RuntimeSupervisorTestFixture.connectionSettings()));
+    scheduler.advance(Duration.ofSeconds(15));
 
-    assertEquals("MANAGED_RUNTIME_START_TIMEOUT", failure.code());
-    assertEquals(List.of("destroy", "waitFor"), process.terminationEvents());
+    assertEquals("MANAGED_RUNTIME_START_TIMEOUT", awaitFailure(attempt).code());
+    assertEquals(List.of("destroy"), process.terminationEvents());
     assertFalse(process.isAlive());
   }
 
   @Test
-  void cancellationTerminatesTheCurrentChild() throws Exception {
-    var process = new FakeProcess(true, true, new ArrayList<>());
-    var started = new CountDownLatch(1);
-    supervisor =
-        supervisor(
-            ignored -> process,
-            ignored -> {
-              started.countDown();
-              return false;
-            },
-            Duration.ofSeconds(1),
-            Duration.ofMillis(10));
-    var attempt = supervisor.prepare(RuntimeSupervisorTestFixture.connectionSettings());
-    assertTrue(started.await(1, TimeUnit.SECONDS));
-
-    attempt.cancel();
-
-    assertEquals("MANAGED_RUNTIME_CANCELLED", awaitFailure(attempt).code());
-    assertEquals(List.of("destroy", "waitFor"), process.terminationEvents());
-  }
-
-  @Test
-  void forciblyTerminatesAChildThatIgnoresTheGracefulStop() throws Exception {
-    var process = new FakeProcess(true, false, new ArrayList<>());
-    var started = new CountDownLatch(1);
-    supervisor =
-        supervisor(
-            ignored -> process,
-            ignored -> {
-              started.countDown();
-              return false;
-            },
-            Duration.ofSeconds(1),
-            Duration.ofMillis(10));
+  void forciblyTerminatesAChildThatIgnoresTheGracefulStop() {
+    var process = new FakeProcess(1237, false);
+    supervisor = supervisor(ignored -> process, ignored -> false, policy(0));
     supervisor.prepare(RuntimeSupervisorTestFixture.connectionSettings());
-    assertTrue(started.await(1, TimeUnit.SECONDS));
+    scheduler.runAll();
 
     supervisor.stop();
+    scheduler.advance(Duration.ofSeconds(15));
+    scheduler.runAll();
 
-    assertEquals(
-        List.of("destroy", "waitFor", "destroyForcibly", "waitFor"), process.terminationEvents());
+    assertEquals(List.of("destroy", "destroyForcibly"), process.terminationEvents());
     assertFalse(process.isAlive());
   }
 
   @Test
-  void closeStopsTheChildAndPreventsAnotherStart() throws Exception {
-    var process = new FakeProcess(true, true, new ArrayList<>());
-    var started = new CountDownLatch(1);
-    supervisor =
-        supervisor(
-            ignored -> process,
-            ignored -> {
-              started.countDown();
-              return false;
-            },
-            Duration.ofSeconds(1),
-            Duration.ofMillis(10));
+  void cancellationTerminatesTheCurrentChild() {
+    var process = new FakeProcess(1238, true);
+    supervisor = supervisor(ignored -> process, ignored -> false, policy(0));
+    var attempt = supervisor.prepare(RuntimeSupervisorTestFixture.connectionSettings());
+    scheduler.runDue();
+
+    attempt.cancel();
+    scheduler.runAll();
+
+    assertEquals("MANAGED_RUNTIME_CANCELLED", awaitFailure(attempt).code());
+    assertEquals(List.of("destroy"), process.terminationEvents());
+  }
+
+  @Test
+  void closeStopsTheChildAndPreventsAnotherStart() {
+    var process = new FakeProcess(1239, true);
+    supervisor = supervisor(ignored -> process, ignored -> false, policy(1));
     supervisor.prepare(RuntimeSupervisorTestFixture.connectionSettings());
-    assertTrue(started.await(1, TimeUnit.SECONDS));
+    scheduler.runAll();
 
     supervisor.close();
+    scheduler.runAll();
 
     assertFalse(process.isAlive());
     assertThrows(
@@ -213,80 +189,151 @@ class ManagedRuntimeSupervisorTest {
   }
 
   @Test
-  void closeReturnsWhileProvisioningIsStillInProgress() throws Exception {
-    var provisioning = new CountDownLatch(1);
-    var release = new CountDownLatch(1);
-    supervisor =
-        supervisor(
-            ignored -> {
-              provisioning.countDown();
-              try {
-                release.await();
-              } catch (InterruptedException error) {
-                Thread.currentThread().interrupt();
-                throw new IOException("cancelled");
-              }
-              return new FakeProcess(true, true, new ArrayList<>());
-            },
-            ignored -> false,
-            Duration.ofSeconds(1),
-            Duration.ofMillis(10));
-    var attempt = supervisor.prepare(RuntimeSupervisorTestFixture.connectionSettings());
-    assertTrue(provisioning.await(1, TimeUnit.SECONDS));
-
-    try {
-      org.junit.jupiter.api.Assertions.assertTimeout(Duration.ofMillis(250), supervisor::close);
-      assertEquals("MANAGED_RUNTIME_CANCELLED", awaitFailure(attempt).code());
-    } finally {
-      release.countDown();
-    }
-  }
-
-  @Test
-  void startFailureDoesNotExposeTheCommandEnvironmentOrUnderlyingError() throws Exception {
+  void startFailureDoesNotExposeTheCommandEnvironmentOrUnderlyingError() {
     supervisor =
         supervisor(
             ignored -> {
               throw new IOException("secret-from-operating-system");
             },
             ignored -> false,
-            Duration.ofSeconds(1),
-            Duration.ofMillis(10));
+            policy(0));
+    var attempt = supervisor.prepare(RuntimeSupervisorTestFixture.connectionSettings());
+    scheduler.runAll();
 
-    var failure =
-        awaitFailure(supervisor.prepare(RuntimeSupervisorTestFixture.connectionSettings()));
-
+    var failure = awaitFailure(attempt);
     assertEquals("MANAGED_RUNTIME_START_FAILED", failure.code());
     assertFalse(failure.toString().contains("secret-from-operating-system"));
     assertFalse(failure.toString().contains("NODE_ENV"));
     assertFalse(failure.toString().contains("main.js"));
   }
 
+  @Test
+  void restartsTheRuntimeAndNotifiesOperatorsWhenItDiesAfterReadiness() {
+    var first = new FakeProcess(1240, true);
+    var second = new FakeProcess(1241, true);
+    var third = new FakeProcess(1242, true);
+    var fourth = new FakeProcess(1243, true);
+    var launches = new AtomicInteger();
+    var exits = new ArrayList<String>();
+    supervisor =
+        supervisor(
+            ignored -> {
+              var process = List.of(first, second, third, fourth).get(launches.getAndIncrement());
+              return process;
+            },
+            ignored -> true,
+            policy(3),
+            exits);
+    var attempt = supervisor.prepare(RuntimeSupervisorTestFixture.connectionSettings());
+    scheduler.runAll();
+    attempt.ready().toCompletableFuture().join();
+    assertEquals(1, launches.get());
+    assertTrue(exits.isEmpty());
+
+    first.exit();
+    scheduler.runDue();
+
+    assertEquals(List.of("MANAGED_RUNTIME_EXITED"), exits);
+    scheduler.advance(Duration.ofSeconds(5));
+    scheduler.runAll();
+    assertEquals(2, launches.get());
+
+    second.exit();
+    third.exit();
+    fourth.exit();
+    scheduler.runAll();
+
+    assertEquals(4, launches.get());
+    assertEquals("MANAGED_RUNTIME_EXITED", exits.getLast());
+    scheduler.advance(Duration.ofMinutes(1));
+    scheduler.runAll();
+    assertEquals(4, launches.get());
+  }
+
+  @Test
+  void deliberateStopsDoNotNotifyOperatorsOfRuntimeExits() {
+    var process = new FakeProcess(1244, true);
+    var exits = new ArrayList<String>();
+    supervisor = supervisor(ignored -> process, ignored -> true, policy(1), exits);
+    var attempt = supervisor.prepare(RuntimeSupervisorTestFixture.connectionSettings());
+    scheduler.runAll();
+    attempt.ready().toCompletableFuture().join();
+
+    supervisor.stop();
+    scheduler.runAll();
+
+    assertFalse(process.isAlive());
+    assertTrue(exits.isEmpty());
+  }
+
+  @Test
+  void prepareAfterAStopStartsAFreshRuntime() {
+    var first = new FakeProcess(1245, true);
+    var second = new FakeProcess(1246, true);
+    var processes = new ArrayDeque<>(List.of(first, second));
+    var launches = new AtomicInteger();
+    supervisor =
+        supervisor(
+            ignored -> {
+              launches.incrementAndGet();
+              return processes.pollFirst();
+            },
+            ignored -> true,
+            policy(1));
+    supervisor.prepare(RuntimeSupervisorTestFixture.connectionSettings()).ready();
+    scheduler.runAll();
+
+    supervisor.stop();
+    scheduler.runAll();
+    supervisor.prepare(RuntimeSupervisorTestFixture.connectionSettings());
+    scheduler.runAll();
+
+    assertEquals(2, launches.get());
+    assertFalse(first.isAlive());
+    assertTrue(second.isAlive());
+  }
+
+  private ManagedRuntimeSupervisor supervisor(
+      ProcessFactory processFactory, HealthProbe healthProbe, SupervisorPolicy policy) {
+    return supervisor(processFactory, healthProbe, policy, new ArrayList<String>());
+  }
+
   private ManagedRuntimeSupervisor supervisor(
       ProcessFactory processFactory,
       HealthProbe healthProbe,
-      Duration startupTimeout,
-      Duration pollInterval) {
-    scheduler = Executors.newSingleThreadScheduledExecutor();
-    return new ManagedRuntimeSupervisor(
-        scheduler,
-        processFactory,
-        healthProbe,
-        new ManagedRuntimeSupervisor.Settings(
-            temporaryDirectory.resolve("runtime/bin/node"),
-            temporaryDirectory.resolve("runtime/app/main.js"),
-            temporaryDirectory.resolve("state/runtime.yml"),
-            temporaryDirectory.resolve("runtime"),
-            temporaryDirectory.resolve("logs/runtime.out.log"),
-            temporaryDirectory.resolve("logs/runtime.err.log"),
-            pollInterval,
-            startupTimeout,
-            Duration.ofMillis(5),
-            Map.of("NODE_ENV", "production", "LANG", "C.UTF-8")));
+      SupervisorPolicy policy,
+      List<String> exits) {
+    scheduler = new ManualScheduler();
+    supervisor =
+        new ManagedRuntimeSupervisor(
+            () -> {},
+            processFactory,
+            healthProbe,
+            scheduler,
+            new ManagedRuntimeSupervisor.Settings(
+                temporaryDirectory.resolve("runtime/bin/node"),
+                temporaryDirectory.resolve("runtime/app/main.js"),
+                temporaryDirectory.resolve("state/runtime.yml"),
+                temporaryDirectory.resolve("runtime"),
+                temporaryDirectory.resolve("logs/runtime.out.log"),
+                temporaryDirectory.resolve("logs/runtime.err.log"),
+                Map.of("NODE_ENV", "production", "LANG", "C.UTF-8")),
+            policy,
+            exits::add);
+    return supervisor;
   }
 
-  private static RuntimeSupervisorException awaitFailure(RuntimeStartAttempt attempt)
-      throws Exception {
+  private static SupervisorPolicy policy(int maximumRestarts) {
+    return new SupervisorPolicy(
+        Duration.ofSeconds(10),
+        Duration.ofMillis(100),
+        Duration.ofMillis(100),
+        Duration.ofSeconds(1),
+        Duration.ofSeconds(4),
+        maximumRestarts);
+  }
+
+  private static RuntimeSupervisorException awaitFailure(RuntimeStartAttempt attempt) {
     var error =
         assertThrows(
             ExecutionException.class,
@@ -295,15 +342,20 @@ class ManagedRuntimeSupervisorTest {
   }
 
   private static final class FakeProcess extends Process {
+    private final long pid;
     private final boolean gracefulStop;
     private final List<String> terminationEvents = new ArrayList<>();
-    private final List<String> sharedEvents;
-    private volatile boolean alive;
+    private final CompletableFuture<Process> exit = new CompletableFuture<>();
+    private volatile boolean alive = true;
 
-    private FakeProcess(boolean alive, boolean gracefulStop, List<String> sharedEvents) {
-      this.alive = alive;
+    private FakeProcess(long pid, boolean gracefulStop) {
+      this.pid = pid;
       this.gracefulStop = gracefulStop;
-      this.sharedEvents = sharedEvents;
+    }
+
+    @Override
+    public long pid() {
+      return pid;
     }
 
     @Override
@@ -322,17 +374,8 @@ class ManagedRuntimeSupervisorTest {
     }
 
     @Override
-    public int waitFor() throws InterruptedException {
-      while (alive) {
-        Thread.sleep(1);
-      }
-      return 0;
-    }
-
-    @Override
-    public boolean waitFor(long timeout, TimeUnit unit) {
-      terminationEvents.add("waitFor");
-      return !alive;
+    public int waitFor() {
+      throw new UnsupportedOperationException("unused by the supervisor");
     }
 
     @Override
@@ -346,17 +389,15 @@ class ManagedRuntimeSupervisorTest {
     @Override
     public void destroy() {
       terminationEvents.add("destroy");
-      sharedEvents.add("destroy");
       if (gracefulStop) {
-        alive = false;
+        exit();
       }
     }
 
     @Override
     public Process destroyForcibly() {
       terminationEvents.add("destroyForcibly");
-      sharedEvents.add("destroyForcibly");
-      alive = false;
+      exit();
       return this;
     }
 
@@ -365,8 +406,82 @@ class ManagedRuntimeSupervisorTest {
       return alive;
     }
 
+    @Override
+    public CompletableFuture<Process> onExit() {
+      return exit;
+    }
+
+    private void exit() {
+      alive = false;
+      exit.complete(this);
+    }
+
     private List<String> terminationEvents() {
       return List.copyOf(terminationEvents);
+    }
+  }
+
+  private static final class ManualScheduler implements SupervisorScheduler {
+    private final PriorityQueue<ScheduledAction> actions =
+        new PriorityQueue<>(
+            Comparator.comparingLong((ScheduledAction task) -> task.deadline)
+                .thenComparingLong(task -> task.sequence));
+    private long now;
+    private long sequence;
+    private boolean closed;
+
+    @Override
+    public Cancellable schedule(Runnable action, Duration delay) {
+      if (closed) {
+        throw new IllegalStateException("Scheduler is closed");
+      }
+      var scheduled = new ScheduledAction(now + delay.toNanos(), sequence++, action);
+      actions.add(scheduled);
+      return () -> scheduled.cancelled = true;
+    }
+
+    @Override
+    public void close() {
+      closed = true;
+      actions.clear();
+    }
+
+    private void advance(Duration duration) {
+      now += duration.toNanos();
+      runDue();
+    }
+
+    private void runDue() {
+      while (!actions.isEmpty() && actions.peek().deadline <= now) {
+        var action = actions.remove();
+        if (!action.cancelled) {
+          action.action.run();
+        }
+      }
+    }
+
+    private void runAll() {
+      var guard = 0;
+      while (!actions.isEmpty()) {
+        if (++guard > 1000) {
+          throw new IllegalStateException("Manual scheduler did not quiesce");
+        }
+        now = Math.max(now, actions.peek().deadline);
+        runDue();
+      }
+    }
+  }
+
+  private static final class ScheduledAction {
+    private final long deadline;
+    private final long sequence;
+    private final Runnable action;
+    private boolean cancelled;
+
+    private ScheduledAction(long deadline, long sequence, Runnable action) {
+      this.deadline = deadline;
+      this.sequence = sequence;
+      this.action = action;
     }
   }
 }

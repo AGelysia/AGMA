@@ -64,6 +64,9 @@ import dev.minecraftagent.paper.tool.BukkitReadToolExecutor;
 import dev.minecraftagent.paper.tool.ReadToolRegistry;
 import dev.minecraftagent.paper.transport.JavaHttpRuntimeConnector;
 import dev.minecraftagent.paper.transport.RuntimeConnectionSettings;
+import dev.minecraftagent.standalone.supervisor.ExecutorSupervisorScheduler;
+import dev.minecraftagent.standalone.supervisor.SupervisorPolicy;
+import dev.minecraftagent.standalone.supervisor.SupervisorScheduler;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -87,6 +90,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import net.kyori.adventure.text.Component;
@@ -111,6 +115,14 @@ public final class MinecraftAgentPlugin extends JavaPlugin {
       new AtomicReference<>(lockedProposalPolicy());
   private final AtomicReference<ReloadManager> reloadManagerReference = new AtomicReference<>();
   private final AtomicReference<IndependentCommandRegistration> setupRegistrationReference =
+      new AtomicReference<>();
+  private final AtomicReference<JavaHttpRuntimeConnector> runtimeConnectorReference =
+      new AtomicReference<>();
+  private final AtomicReference<ExecutorService> ioExecutorReference = new AtomicReference<>();
+  private final AtomicReference<ExecutorService> callbackExecutorReference =
+      new AtomicReference<>();
+  // Closes the managed runtime scheduler even when onEnable fails before the coordinator owns it.
+  private final AtomicReference<SupervisorScheduler> managedSchedulerReference =
       new AtomicReference<>();
   private final CapabilityRegistry capabilityRegistry = new CapabilityRegistry();
 
@@ -153,16 +165,28 @@ public final class MinecraftAgentPlugin extends JavaPlugin {
               var thread = new Thread(runnable, "agma-paper-io");
               return thread;
             });
+    // Structured-reply callbacks get their own executor: sharing agma-paper-io
+    // would let a long callback delay request timeouts and unrelated I/O.
+    var callbacks =
+        Executors.newSingleThreadExecutor(
+            runnable -> {
+              var thread = new Thread(runnable, "agma-request-callbacks");
+              return thread;
+            });
+    ioExecutorReference.set(worker);
+    callbackExecutorReference.set(callbacks);
+    var managedScheduler = new ExecutorSupervisorScheduler("agma-managed-runtime-supervisor");
+    managedSchedulerReference.set(managedScheduler);
     var managedSupervisor =
         new ManagedRuntimeSupervisor(
-            worker,
             new EmbeddedManagedRuntimeProvisioner(
                 MinecraftAgentPlugin.class.getClassLoader(),
                 new ManagedRuntimeInstaller(),
                 managedDirectory.resolve("runtime"),
-                componentVersion,
-                ProcessFactory.system()),
+                componentVersion),
+            ProcessFactory.system(),
             new LoopbackRuntimeHealthProbe(),
+            managedScheduler,
             new ManagedRuntimeSupervisor.Settings(
                 managedInstallDirectory.resolve("bin/node"),
                 managedInstallDirectory.resolve("app/dist/bootstrap/index.js"),
@@ -170,16 +194,21 @@ public final class MinecraftAgentPlugin extends JavaPlugin {
                 managedInstallDirectory,
                 managedDirectory.resolve("logs/runtime.out.log"),
                 managedDirectory.resolve("logs/runtime.err.log"),
-                Duration.ofMillis(250),
-                Duration.ofSeconds(120),
-                Duration.ofSeconds(5),
                 Map.of(
                     "NODE_ENV",
                     "production",
                     "LANG",
                     "C.UTF-8",
                     "AGMA_MANAGED_SERVER_TOKEN",
-                    managedServerToken)));
+                    managedServerToken)),
+            new SupervisorPolicy(
+                Duration.ofSeconds(120),
+                Duration.ofMillis(250),
+                Duration.ofSeconds(5),
+                Duration.ofSeconds(1),
+                Duration.ofSeconds(30),
+                3),
+            code -> getLogger().severe("event=managed_runtime_exit code=" + code));
     var runtimeSupervisor = new DeploymentRuntimeSupervisor(managedSupervisor);
     var localChecks = new LocalStartupChecks();
     var pluginInventory =
@@ -187,6 +216,7 @@ public final class MinecraftAgentPlugin extends JavaPlugin {
             java.util.Arrays.asList(getServer().getPluginManager().getPlugins()));
     getServer().getPluginManager().registerEvents(pluginInventory, this);
     var connector = new JavaHttpRuntimeConnector(worker);
+    runtimeConnectorReference.set(connector);
     var operationalGate = new OperationalGate();
     var proposalAuthorizer =
         new ProposalAuthorizer(
@@ -260,7 +290,7 @@ public final class MinecraftAgentPlugin extends JavaPlugin {
             code -> getLogger().warning("event=request_warning code=" + code),
             toolRegistry,
             toolExecutor,
-            worker,
+            callbacks,
             clientState::capabilitySnapshot,
             (playerId, fallbackText, views) -> {
               var publication = clientViews.prepare(playerId, fallbackText, views, Instant.now());
@@ -638,6 +668,22 @@ public final class MinecraftAgentPlugin extends JavaPlugin {
     var setupRegistration = setupRegistrationReference.getAndSet(null);
     if (setupRegistration != null) {
       setupRegistration.close();
+    }
+    var connector = runtimeConnectorReference.getAndSet(null);
+    if (connector != null) {
+      connector.close();
+    }
+    var managedScheduler = managedSchedulerReference.getAndSet(null);
+    if (managedScheduler != null) {
+      managedScheduler.close();
+    }
+    var ioExecutor = ioExecutorReference.getAndSet(null);
+    if (ioExecutor != null) {
+      ioExecutor.shutdown();
+    }
+    var callbackExecutor = callbackExecutorReference.getAndSet(null);
+    if (callbackExecutor != null) {
+      callbackExecutor.shutdown();
     }
   }
 
