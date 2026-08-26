@@ -34,6 +34,11 @@ final class VerifyTestResults {
       Set.of(
           "dev.minecraftagent.client.litematica.LitematicaAdapterTest",
           "dev.minecraftagent.protocol.SharedProtocolContractTest");
+  private static final Set<String> PROTOCOL_REQUIRED =
+      Set.of(
+          "dev.minecraftagent.protocol.ClientPayloadFramesTest",
+          "dev.minecraftagent.protocol.StructuredViewValidatorTest",
+          "dev.minecraftagent.protocol.WireJsonTest");
   private static final Set<String> STANDALONE_CORE_REQUIRED =
       Set.of(
           "dev.minecraftagent.protocol.SharedProtocolContractTest",
@@ -62,40 +67,44 @@ final class VerifyTestResults {
   private VerifyTestResults() {}
 
   public static void main(String[] args) throws Exception {
-    if (args.length != 9) {
+    if (args.length != 10) {
       fail(
-          "usage: VerifyTestResults.java <runtime.xml> <paper-results> <client-results>"
-              + " <standalone-core-results> <supervisor-results> <fabric-common-results>"
-              + " <fabric-mc12111-results> <fabric-mc1182-results> <forge-mc1182-results>");
+          "usage: VerifyTestResults.java <runtime.xml> <protocol-jvm-results> <paper-results>"
+              + " <client-results> <standalone-core-results> <supervisor-results>"
+              + " <fabric-common-results> <fabric-mc12111-results> <fabric-mc1182-results>"
+              + " <forge-mc1182-results>");
     }
 
     verify(
         new Lane("Runtime", 26, 287, RUNTIME_REQUIRED),
         suitesFromDocument(Path.of(args[0])));
     verify(
-        new Lane("Paper", 59, 463, PAPER_REQUIRED),
+        new Lane("Protocol JVM", 3, 33, PROTOCOL_REQUIRED),
         suitesFromDirectory(Path.of(args[1])));
     verify(
-        new Lane("Client", 17, 210, CLIENT_REQUIRED),
+        new Lane("Paper", 59, 463, PAPER_REQUIRED),
         suitesFromDirectory(Path.of(args[2])));
     verify(
-        new Lane("Standalone Core", 3, 19, STANDALONE_CORE_REQUIRED),
+        new Lane("Client", 17, 210, CLIENT_REQUIRED),
         suitesFromDirectory(Path.of(args[3])));
     verify(
-        new Lane("Standalone Supervisor", 3, 20, SUPERVISOR_REQUIRED),
+        new Lane("Standalone Core", 3, 19, STANDALONE_CORE_REQUIRED),
         suitesFromDirectory(Path.of(args[4])));
     verify(
-        new Lane("Standalone Fabric Common", 10, 30, FABRIC_COMMON_REQUIRED),
+        new Lane("Standalone Supervisor", 3, 20, SUPERVISOR_REQUIRED),
         suitesFromDirectory(Path.of(args[5])));
     verify(
-        new Lane("Standalone Minecraft 1.21.11 Fabric", 1, 1, FABRIC_VERSION_REQUIRED),
+        new Lane("Standalone Fabric Common", 10, 30, FABRIC_COMMON_REQUIRED),
         suitesFromDirectory(Path.of(args[6])));
     verify(
-        new Lane("Standalone Minecraft 1.18.2 Fabric", 1, 1, FABRIC_VERSION_REQUIRED),
+        new Lane("Standalone Minecraft 1.21.11 Fabric", 1, 1, FABRIC_VERSION_REQUIRED),
         suitesFromDirectory(Path.of(args[7])));
     verify(
-        new Lane("Standalone Minecraft 1.18.2 Forge", 1, 1, FORGE_VERSION_REQUIRED),
+        new Lane("Standalone Minecraft 1.18.2 Fabric", 1, 1, FABRIC_VERSION_REQUIRED),
         suitesFromDirectory(Path.of(args[8])));
+    verify(
+        new Lane("Standalone Minecraft 1.18.2 Forge", 1, 1, FORGE_VERSION_REQUIRED),
+        suitesFromDirectory(Path.of(args[9])));
   }
 
   private static List<Suite> suitesFromDirectory(Path directory) throws Exception {
