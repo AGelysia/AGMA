@@ -12,7 +12,11 @@ import {
 import type { ModelProviderHealthCheck } from "../src/health/model-provider.js";
 import { RuntimeLogger } from "../src/observability/runtime-logger.js";
 import { SchemaRegistry } from "../src/protocol/schema-registry.js";
-import type { ModelProvider } from "../src/providers/model-provider.js";
+import type {
+  ModelGenerationRequest,
+  ModelGenerationResult,
+  ModelProvider,
+} from "../src/providers/model-provider.js";
 import {
   createHandshakeProof,
   verifyHandshakeProof,
@@ -184,6 +188,14 @@ function managementCostsRequest(): Record<string, unknown> {
   };
 }
 
+function volumeCostsRequest(index: number): Record<string, unknown> {
+  const request = managementCostsRequest();
+  const nonce = Buffer.alloc(16);
+  nonce.writeBigUInt64BE(BigInt(index + 1));
+  request["nonce"] = nonce.toString("base64url");
+  return request;
+}
+
 function toolResult(callEnvelope: Record<string, unknown>): Record<string, unknown> {
   const call = asRecord(callEnvelope["payload"]);
   return {
@@ -274,6 +286,50 @@ function nextClose(socket: WebSocket): Promise<CloseDetails> {
     socket.once("close", (code, reason) => {
       resolve({ code, reason: reason.toString("utf8") });
     });
+  });
+}
+
+function nextMessages(
+  socket: WebSocket,
+  count: number,
+): Promise<readonly Record<string, unknown>[]> {
+  return new Promise((resolve, reject) => {
+    const messages: Record<string, unknown>[] = [];
+    const detach = (): void => {
+      socket.off("error", onError);
+      socket.off("close", onClose);
+      socket.off("message", onMessage);
+    };
+    const onError = (error: Error): void => {
+      detach();
+      reject(error);
+    };
+    const onClose = (code: number): void => {
+      detach();
+      reject(
+        new Error(`Socket closed with ${String(code)} after ${String(messages.length)} messages.`),
+      );
+    };
+    const onMessage = (data: RawData, isBinary: boolean): void => {
+      if (isBinary) {
+        detach();
+        reject(new Error("Expected a text WebSocket message"));
+        return;
+      }
+      messages.push(
+        JSON.parse(Buffer.isBuffer(data) ? data.toString("utf8") : String(data)) as Record<
+          string,
+          unknown
+        >,
+      );
+      if (messages.length === count) {
+        detach();
+        resolve(messages);
+      }
+    };
+    socket.on("error", onError);
+    socket.on("close", onClose);
+    socket.on("message", onMessage);
   });
 }
 
@@ -662,7 +718,7 @@ describe("Paper WebSocket handshake", () => {
 
   it("round-trips a correlated typed Tool call and result before completion", async () => {
     let generation = 0;
-    const generate = vi.fn(async () => {
+    const generate = vi.fn<ModelProvider["generate"]>(async () => {
       generation += 1;
       return generation === 1
         ? {
@@ -703,7 +759,7 @@ describe("Paper WebSocket handshake", () => {
       payload: { fallbackText: "One player is online." },
     });
     expect(generate).toHaveBeenCalledTimes(2);
-    expect(generate.mock.calls[1]?.[0].toolOutput.output).toContain('"source":"paper_api"');
+    expect(generate.mock.calls[1]?.[0]?.toolOutput?.output).toContain('"source":"paper_api"');
     expect(socket.readyState).toBe(WebSocket.OPEN);
   });
 
@@ -719,18 +775,18 @@ describe("Paper WebSocket handshake", () => {
     });
     const modelProvider: ModelProvider = {
       check: vi.fn().mockResolvedValue({ ok: true }),
-      generate: vi.fn(async ({ signal }) => {
+      generate: vi.fn(async (request: ModelGenerationRequest): Promise<ModelGenerationResult> => {
         generation += 1;
         if (generation > 1) {
           return { type: "final", fallbackText: "replacement answer" };
         }
         reportStarted?.();
         return new Promise((_resolve, reject) => {
-          signal.addEventListener(
+          request.signal.addEventListener(
             "abort",
             () => {
               reportAborted?.();
-              reject(signal.reason);
+              reject(request.signal.reason);
             },
             { once: true },
           );
@@ -830,6 +886,36 @@ describe("Paper WebSocket handshake", () => {
     expect(capabilitySocket.readyState).toBe(WebSocket.OPEN);
     expect(modelProvider.generate).toHaveBeenCalledTimes(2);
   });
+
+  it("sustains application traffic beyond the replay cache bound without false replays", async () => {
+    const { url } = await startFixture();
+    const socket = await openClient(url);
+    const handshake = paperHello();
+    await exchange(socket, handshake);
+
+    const volume = 2_600;
+    const responses = nextMessages(socket, volume);
+    const sent: Record<string, unknown>[] = [];
+    for (let index = 0; index < volume; index += 1) {
+      const request = volumeCostsRequest(index);
+      sent.push(request);
+      socket.send(JSON.stringify(request));
+    }
+    const received = await responses;
+    expect(received).toHaveLength(volume);
+    expect(received.at(-1)).toMatchObject({ type: "management.costs.response" });
+    expect(socket.readyState).toBe(WebSocket.OPEN);
+
+    const replayed = nextClose(socket);
+    socket.send(JSON.stringify(sent.at(-1)));
+    expect(await replayed).toEqual({ code: 1008, reason: "APPLICATION_MESSAGE_REPLAYED" });
+
+    const handshakeReplay = await openClient(url);
+    expect(await sendAndClose(handshakeReplay, JSON.stringify(handshake))).toEqual({
+      code: 1008,
+      reason: "HANDSHAKE_REPLAYED",
+    });
+  }, 30_000);
 
   it("keeps legacy health-only injection fail closed without an implicit provider fetch", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");

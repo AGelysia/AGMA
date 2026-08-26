@@ -4,10 +4,7 @@ import {
   BRAVE_WEB_SEARCH_ENDPOINT,
   BraveSearchProvider,
 } from "../src/evidence/brave-search-provider.js";
-import {
-  buildControlledSearchQuery,
-  SearchProviderError,
-} from "../src/evidence/search-provider.js";
+import { buildControlledSearchQuery } from "../src/evidence/search-provider.js";
 
 const API_KEY = "fake-search-key-that-is-never-sent-to-the-network";
 
@@ -102,9 +99,7 @@ describe("Brave Search Provider", () => {
         apiKey: API_KEY,
         fetch: vi.fn<typeof fetch>().mockResolvedValue(response),
       });
-      await expect(provider.search(input("minecraft test"))).rejects.toMatchObject<
-        Partial<SearchProviderError>
-      >({ code });
+      await expect(provider.search(input("minecraft test"))).rejects.toMatchObject({ code });
     }
   });
 });

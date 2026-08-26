@@ -3,6 +3,7 @@ import { inflateRawSync } from "node:zlib";
 
 import { parseStrictJson } from "../transport/strict-json.js";
 import { SUPPORTED_PROTOCOL_VERSION } from "../version.js";
+import { isRecord } from "../shared/predicates.js";
 
 export interface SemanticValidationError {
   readonly code: string;
@@ -74,10 +75,6 @@ const CAPABILITY_PLUGIN_COMPARISON =
 
 export const BUILD_PREVIEW_UNCOMPRESSED_HARD_LIMIT_BYTES = 64 * 1024 * 1024;
 export const BUILD_PREVIEW_COMPRESSED_HARD_LIMIT_BYTES = 16 * 1024 * 1024;
-
-function isRecord(value: unknown): value is JsonRecord {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 function escapeJsonPointer(value: string): string {
   return value.replaceAll("~", "~0").replaceAll("/", "~1");

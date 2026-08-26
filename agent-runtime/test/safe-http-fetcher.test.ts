@@ -8,7 +8,6 @@ import {
   type PinnedHttpsRequest,
   type PinnedHttpsResponse,
   type PinnedHttpsTransport,
-  SafeFetchError,
   SafeHttpFetcher,
 } from "../src/evidence/safe-http-fetcher.js";
 
@@ -96,7 +95,7 @@ describe("safe HTTPS evidence fetcher", () => {
 
     await expect(
       fetcher.fetchPage("https://mixed.example/", new AbortController().signal),
-    ).rejects.toMatchObject<Partial<SafeFetchError>>({ code: "FETCH_ADDRESS_REJECTED" });
+    ).rejects.toMatchObject({ code: "FETCH_ADDRESS_REJECTED" });
     expect(transport.requests).toEqual([]);
   });
 

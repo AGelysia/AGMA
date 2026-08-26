@@ -1,4 +1,4 @@
-import type { DatabaseSync } from "node:sqlite";
+import type { DatabaseSync, StatementSync } from "node:sqlite";
 
 import type { ModelGenerationUsage } from "../providers/model-provider.js";
 
@@ -218,6 +218,20 @@ function aggregate(
   };
 }
 
+interface UsageAggregateStatements {
+  readonly selectAdmittedRequests: StatementSync;
+  readonly upsertAdmission: StatementSync;
+  readonly decrementAdmission: StatementSync;
+  readonly selectUsageTotals: StatementSync;
+  readonly upsertUsage: StatementSync;
+  readonly updateEstimatedUsage: StatementSync;
+}
+
+const AGGREGATE_PERIODS = [
+  { table: "usage_daily", periodColumn: "usage_day" },
+  { table: "usage_monthly", periodColumn: "usage_month" },
+] as const;
+
 export class SqliteUsageAccounting implements UsageAccounting {
   readonly #database: DatabaseSync;
   readonly #serverId: string;
@@ -225,6 +239,46 @@ export class SqliteUsageAccounting implements UsageAccounting {
   readonly #model: string;
   readonly #pricing: UsagePricing;
   readonly #limits: UsageAccountingLimits;
+  readonly #aggregates: ReadonlyMap<string, UsageAggregateStatements>;
+  readonly #selectAdmissionPlayer: StatementSync;
+  readonly #selectPlayerDailyAdmissions: StatementSync;
+  readonly #insertAdmission: StatementSync;
+  readonly #upsertPlayerDailyAdmission: StatementSync;
+  readonly #decrementPlayerDailyAdmission: StatementSync;
+  readonly #selectRollbackAdmission: StatementSync;
+  readonly #selectProviderEventPresence: StatementSync;
+  readonly #deleteAdmission: StatementSync;
+  readonly #selectAdmissionState: StatementSync;
+  readonly #selectReservationState: StatementSync;
+  readonly #selectReservationStart: StatementSync;
+  readonly #updateReservationStarted: StatementSync;
+  readonly #releaseReservation: StatementSync;
+  readonly #selectReservationWithAdmission: StatementSync;
+  readonly #selectProviderEvent: StatementSync;
+  readonly #updateEstimatedProviderEvent: StatementSync;
+  readonly #insertProviderEvent: StatementSync;
+  readonly #insertEstimatedProviderEvent: StatementSync;
+  readonly #settleReservation: StatementSync;
+  readonly #settleRequestReservations: StatementSync;
+  readonly #settleServerReservations: StatementSync;
+  readonly #releaseRequestReservations: StatementSync;
+  readonly #releaseServerReservations: StatementSync;
+  readonly #selectAdmissionOwner: StatementSync;
+  readonly #selectStartedReservations: StatementSync;
+  readonly #closeAdmission: StatementSync;
+  readonly #closeServerAdmissions: StatementSync;
+  readonly #selectAbandonedReservations: StatementSync;
+  readonly #deleteEventsForClosedAdmissions: StatementSync;
+  readonly #deleteReservationsForClosedAdmissions: StatementSync;
+  readonly #deleteClosedAdmissions: StatementSync;
+  readonly #deleteExpiredPlayerDaily: StatementSync;
+  readonly #deleteExpiredDaily: StatementSync;
+  readonly #insertReservation: StatementSync;
+  readonly #selectDailyAggregate: StatementSync;
+  readonly #selectMonthlyAggregate: StatementSync;
+  readonly #selectActiveReservationTotal: StatementSync;
+  readonly #selectRecentDailyAggregates: StatementSync;
+  readonly #selectMonthlyCost: StatementSync;
 
   public constructor(database: DatabaseSync, options: UsageAccountingOptions) {
     if (!SERVER_ID.test(options.serverId)) {
@@ -254,17 +308,254 @@ export class SqliteUsageAccounting implements UsageAccounting {
     this.#model = options.model;
     this.#pricing = { ...options.pricing };
     this.#limits = { ...options.limits };
+    this.#aggregates = new Map(
+      AGGREGATE_PERIODS.map(({ table, periodColumn }) => [
+        `${table}:${periodColumn}`,
+        {
+          selectAdmittedRequests: database.prepare(
+            `SELECT admitted_requests FROM ${table} WHERE server_id = ? AND ${periodColumn} = ?`,
+          ),
+          upsertAdmission: database.prepare(
+            `INSERT INTO ${table}
+               (server_id, ${periodColumn}, admitted_requests, provider_calls,
+                reported_provider_calls, estimated_provider_calls, input_tokens, output_tokens,
+                cost_micro_usd)
+             VALUES (?, ?, 1, 0, 0, 0, 0, 0, 0)
+             ON CONFLICT(server_id, ${periodColumn}) DO UPDATE SET
+               admitted_requests = admitted_requests + 1`,
+          ),
+          decrementAdmission: database.prepare(
+            `UPDATE ${table} SET admitted_requests = admitted_requests - 1
+             WHERE server_id = ? AND ${periodColumn} = ? AND admitted_requests > 0`,
+          ),
+          selectUsageTotals: database.prepare(
+            `SELECT provider_calls, reported_provider_calls, estimated_provider_calls,
+                    input_tokens, output_tokens, cost_micro_usd
+             FROM ${table} WHERE server_id = ? AND ${periodColumn} = ?`,
+          ),
+          upsertUsage: database.prepare(
+            `INSERT INTO ${table}
+               (server_id, ${periodColumn}, admitted_requests, provider_calls,
+                reported_provider_calls, estimated_provider_calls, input_tokens, output_tokens,
+                cost_micro_usd)
+             VALUES (?, ?, 0, 1, ?, ?, ?, ?, ?)
+             ON CONFLICT(server_id, ${periodColumn}) DO UPDATE SET
+               provider_calls = provider_calls + 1,
+               reported_provider_calls = reported_provider_calls + excluded.reported_provider_calls,
+               estimated_provider_calls = estimated_provider_calls + excluded.estimated_provider_calls,
+               input_tokens = input_tokens + excluded.input_tokens,
+               output_tokens = output_tokens + excluded.output_tokens,
+               cost_micro_usd = cost_micro_usd + excluded.cost_micro_usd`,
+          ),
+          updateEstimatedUsage: database.prepare(
+            `UPDATE ${table}
+             SET reported_provider_calls = ?, estimated_provider_calls = ?, input_tokens = ?,
+                 output_tokens = ?, cost_micro_usd = ?
+             WHERE server_id = ? AND ${periodColumn} = ?`,
+          ),
+        },
+      ]),
+    );
+    this.#selectAdmissionPlayer = database.prepare(
+      "SELECT player_uuid FROM usage_request_admissions WHERE server_id = ? AND request_id = ?",
+    );
+    this.#selectPlayerDailyAdmissions = database.prepare(
+      `SELECT admitted_requests FROM usage_player_daily
+       WHERE server_id = ? AND player_uuid = ? AND usage_day = ?`,
+    );
+    this.#insertAdmission = database.prepare(
+      `INSERT INTO usage_request_admissions
+         (server_id, request_id, player_uuid, usage_day, usage_month, state, admitted_at, closed_at)
+       VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, NULL)`,
+    );
+    this.#upsertPlayerDailyAdmission = database.prepare(
+      `INSERT INTO usage_player_daily
+         (server_id, player_uuid, usage_day, admitted_requests)
+       VALUES (?, ?, ?, 1)
+       ON CONFLICT(server_id, player_uuid, usage_day) DO UPDATE SET
+         admitted_requests = admitted_requests + 1`,
+    );
+    this.#decrementPlayerDailyAdmission = database.prepare(
+      `UPDATE usage_player_daily SET admitted_requests = admitted_requests - 1
+       WHERE server_id = ? AND usage_day = ? AND player_uuid = ? AND admitted_requests > 0`,
+    );
+    this.#selectRollbackAdmission = database.prepare(
+      `SELECT player_uuid, usage_day, usage_month, state
+       FROM usage_request_admissions WHERE server_id = ? AND request_id = ?`,
+    );
+    this.#selectProviderEventPresence = database.prepare(
+      "SELECT 1 AS present FROM provider_usage_events WHERE server_id = ? AND request_id = ? LIMIT 1",
+    );
+    this.#deleteAdmission = database.prepare(
+      "DELETE FROM usage_request_admissions WHERE server_id = ? AND request_id = ?",
+    );
+    this.#selectAdmissionState = database.prepare(
+      "SELECT state FROM usage_request_admissions WHERE server_id = ? AND request_id = ?",
+    );
+    this.#selectReservationState = database.prepare(
+      `SELECT state FROM usage_round_reservations
+       WHERE server_id = ? AND request_id = ? AND provider_round = ?`,
+    );
+    this.#selectReservationStart = database.prepare(
+      `SELECT state, started_at FROM usage_round_reservations
+       WHERE server_id = ? AND request_id = ? AND provider_round = ?`,
+    );
+    this.#updateReservationStarted = database.prepare(
+      `UPDATE usage_round_reservations SET started_at = ?
+       WHERE server_id = ? AND request_id = ? AND provider_round = ?
+         AND state = 'ACTIVE' AND started_at IS NULL`,
+    );
+    this.#releaseReservation = database.prepare(
+      `UPDATE usage_round_reservations
+       SET state = 'RELEASED', settled_at = ?
+       WHERE server_id = ? AND request_id = ? AND provider_round = ?
+         AND state = 'ACTIVE'`,
+    );
+    this.#selectReservationWithAdmission = database.prepare(
+      `SELECT r.reserved_micro_usd, r.state, r.reserved_at, r.started_at, r.usage_month,
+              a.player_uuid
+       FROM usage_round_reservations r
+       JOIN usage_request_admissions a
+         ON a.server_id = r.server_id AND a.request_id = r.request_id
+       WHERE r.server_id = ? AND r.request_id = ? AND r.provider_round = ?`,
+    );
+    this.#selectProviderEvent = database.prepare(
+      `SELECT player_uuid, provider, model, usage_kind, input_tokens, output_tokens,
+              cost_micro_usd, occurred_at, usage_day, usage_month
+       FROM provider_usage_events
+       WHERE server_id = ? AND request_id = ? AND provider_round = ?`,
+    );
+    this.#updateEstimatedProviderEvent = database.prepare(
+      `UPDATE provider_usage_events
+       SET usage_kind = 'REPORTED', input_tokens = ?, output_tokens = ?,
+           cost_micro_usd = ?, occurred_at = ?
+       WHERE server_id = ? AND request_id = ? AND provider_round = ?
+         AND usage_kind = 'ESTIMATED'`,
+    );
+    this.#insertProviderEvent = database.prepare(
+      `INSERT INTO provider_usage_events
+         (server_id, request_id, provider_round, player_uuid, provider, model, usage_kind,
+          input_tokens, output_tokens, cost_micro_usd, occurred_at, usage_day, usage_month)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    );
+    this.#insertEstimatedProviderEvent = database.prepare(
+      `INSERT INTO provider_usage_events
+         (server_id, request_id, provider_round, player_uuid, provider, model, usage_kind,
+          input_tokens, output_tokens, cost_micro_usd, occurred_at, usage_day, usage_month)
+       VALUES (?, ?, ?, ?, ?, ?, 'ESTIMATED', 0, 0, ?, ?, ?, ?)`,
+    );
+    this.#settleReservation = database.prepare(
+      `UPDATE usage_round_reservations
+       SET state = 'SETTLED', settled_at = ?
+       WHERE server_id = ? AND request_id = ? AND provider_round = ?
+         AND state = 'ACTIVE' AND started_at IS NOT NULL`,
+    );
+    this.#settleRequestReservations = database.prepare(
+      `UPDATE usage_round_reservations
+       SET state = 'SETTLED', settled_at = ?
+       WHERE server_id = ? AND request_id = ? AND state = 'ACTIVE'
+         AND started_at IS NOT NULL`,
+    );
+    this.#settleServerReservations = database.prepare(
+      `UPDATE usage_round_reservations
+       SET state = 'SETTLED', settled_at = ?
+       WHERE server_id = ? AND state = 'ACTIVE' AND started_at IS NOT NULL`,
+    );
+    this.#releaseRequestReservations = database.prepare(
+      `UPDATE usage_round_reservations
+       SET state = 'RELEASED', settled_at = ?
+       WHERE server_id = ? AND request_id = ? AND state = 'ACTIVE'
+         AND started_at IS NULL`,
+    );
+    this.#releaseServerReservations = database.prepare(
+      `UPDATE usage_round_reservations
+       SET state = 'RELEASED', settled_at = ?
+       WHERE server_id = ? AND state = 'ACTIVE' AND started_at IS NULL`,
+    );
+    this.#selectAdmissionOwner = database.prepare(
+      `SELECT player_uuid, state FROM usage_request_admissions
+       WHERE server_id = ? AND request_id = ?`,
+    );
+    this.#selectStartedReservations = database.prepare(
+      `SELECT provider_round, reserved_micro_usd, reserved_at, usage_month
+       FROM usage_round_reservations
+       WHERE server_id = ? AND request_id = ? AND state = 'ACTIVE'
+         AND started_at IS NOT NULL`,
+    );
+    this.#closeAdmission = database.prepare(
+      `UPDATE usage_request_admissions
+       SET state = 'CLOSED', closed_at = ?
+       WHERE server_id = ? AND request_id = ? AND state = 'ACTIVE'`,
+    );
+    this.#closeServerAdmissions = database.prepare(
+      `UPDATE usage_request_admissions
+       SET state = 'CLOSED', closed_at = ?
+       WHERE server_id = ? AND state = 'ACTIVE'`,
+    );
+    this.#selectAbandonedReservations = database.prepare(
+      `SELECT r.request_id, r.provider_round, r.reserved_micro_usd, r.reserved_at,
+              r.usage_month, a.player_uuid
+       FROM usage_round_reservations r
+       JOIN usage_request_admissions a
+         ON a.server_id = r.server_id AND a.request_id = r.request_id
+       WHERE r.server_id = ? AND r.state = 'ACTIVE' AND r.started_at IS NOT NULL
+       ORDER BY r.request_id, r.provider_round`,
+    );
+    this.#deleteEventsForClosedAdmissions = database.prepare(
+      `DELETE FROM provider_usage_events
+       WHERE server_id = ? AND request_id IN (
+         SELECT request_id FROM usage_request_admissions
+         WHERE server_id = ? AND state = 'CLOSED' AND usage_day < ?
+       )`,
+    );
+    this.#deleteReservationsForClosedAdmissions = database.prepare(
+      `DELETE FROM usage_round_reservations
+       WHERE server_id = ? AND request_id IN (
+         SELECT request_id FROM usage_request_admissions
+         WHERE server_id = ? AND state = 'CLOSED' AND usage_day < ?
+       )`,
+    );
+    this.#deleteClosedAdmissions = database.prepare(
+      "DELETE FROM usage_request_admissions WHERE server_id = ? AND state = 'CLOSED' AND usage_day < ?",
+    );
+    this.#deleteExpiredPlayerDaily = database.prepare(
+      "DELETE FROM usage_player_daily WHERE server_id = ? AND usage_day < ?",
+    );
+    this.#deleteExpiredDaily = database.prepare(
+      "DELETE FROM usage_daily WHERE server_id = ? AND usage_day < ?",
+    );
+    this.#insertReservation = database.prepare(
+      `INSERT INTO usage_round_reservations
+         (server_id, request_id, provider_round, usage_month, reserved_micro_usd, state,
+          reserved_at, settled_at)
+       VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, NULL)`,
+    );
+    this.#selectDailyAggregate = database.prepare(
+      "SELECT * FROM usage_daily WHERE server_id = ? AND usage_day = ?",
+    );
+    this.#selectMonthlyAggregate = database.prepare(
+      "SELECT * FROM usage_monthly WHERE server_id = ? AND usage_month = ?",
+    );
+    this.#selectActiveReservationTotal = database.prepare(
+      `SELECT COALESCE(SUM(reserved_micro_usd), 0) AS reserved_micro_usd
+       FROM usage_round_reservations
+       WHERE server_id = ? AND usage_month = ? AND state = 'ACTIVE'`,
+    );
+    this.#selectRecentDailyAggregates = database.prepare(
+      `SELECT * FROM usage_daily
+       WHERE server_id = ? AND usage_day <= ?
+       ORDER BY usage_day DESC LIMIT ?`,
+    );
+    this.#selectMonthlyCost = database.prepare(
+      "SELECT cost_micro_usd FROM usage_monthly WHERE server_id = ? AND usage_month = ?",
+    );
   }
 
   public admitRequest(input: UsageRequestIdentity): UsageAdmissionDecision {
     this.#assertIdentity(input);
     const period = usagePeriod(input.timestamp);
     return this.#transaction(() => {
-      const existing = this.#database
-        .prepare(
-          "SELECT player_uuid FROM usage_request_admissions WHERE server_id = ? AND request_id = ?",
-        )
-        .get(this.#serverId, input.requestId);
+      const existing = this.#selectAdmissionPlayer.get(this.#serverId, input.requestId);
       if (existing !== undefined) {
         if (rowString(existing, "player_uuid") !== input.playerUuid) {
           throw new Error("Usage request ID collided with another player.");
@@ -272,12 +563,11 @@ export class SqliteUsageAccounting implements UsageAccounting {
         return { accepted: false, reason: "DUPLICATE_REQUEST" };
       }
 
-      const player = this.#database
-        .prepare(
-          `SELECT admitted_requests FROM usage_player_daily
-           WHERE server_id = ? AND player_uuid = ? AND usage_day = ?`,
-        )
-        .get(this.#serverId, input.playerUuid, period.day);
+      const player = this.#selectPlayerDailyAdmissions.get(
+        this.#serverId,
+        input.playerUuid,
+        period.day,
+      );
       if (optionalRowInteger(player, "admitted_requests") >= this.#limits.dailyRequestsPerPlayer) {
         return { accepted: false, reason: "PLAYER_DAILY_LIMIT" };
       }
@@ -285,30 +575,16 @@ export class SqliteUsageAccounting implements UsageAccounting {
         return { accepted: false, reason: "MONTHLY_BUDGET_EXCEEDED" };
       }
 
-      this.#database
-        .prepare(
-          `INSERT INTO usage_request_admissions
-             (server_id, request_id, player_uuid, usage_day, usage_month, state, admitted_at, closed_at)
-           VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, NULL)`,
-        )
-        .run(
-          this.#serverId,
-          input.requestId,
-          input.playerUuid,
-          period.day,
-          period.month,
-          period.iso,
-        );
+      this.#insertAdmission.run(
+        this.#serverId,
+        input.requestId,
+        input.playerUuid,
+        period.day,
+        period.month,
+        period.iso,
+      );
       this.#insertRoundReservation(input.requestId, 0, period);
-      this.#database
-        .prepare(
-          `INSERT INTO usage_player_daily
-             (server_id, player_uuid, usage_day, admitted_requests)
-           VALUES (?, ?, ?, 1)
-           ON CONFLICT(server_id, player_uuid, usage_day) DO UPDATE SET
-             admitted_requests = admitted_requests + 1`,
-        )
-        .run(this.#serverId, input.playerUuid, period.day);
+      this.#upsertPlayerDailyAdmission.run(this.#serverId, input.playerUuid, period.day);
       this.#incrementAdmissionAggregate("usage_daily", "usage_day", period.day);
       this.#incrementAdmissionAggregate("usage_monthly", "usage_month", period.month);
       return { accepted: true };
@@ -318,21 +594,11 @@ export class SqliteUsageAccounting implements UsageAccounting {
   public rollbackAdmission(requestId: string): boolean {
     assertRequestId(requestId);
     return this.#transaction(() => {
-      const admission = this.#database
-        .prepare(
-          `SELECT player_uuid, usage_day, usage_month, state
-           FROM usage_request_admissions WHERE server_id = ? AND request_id = ?`,
-        )
-        .get(this.#serverId, requestId);
+      const admission = this.#selectRollbackAdmission.get(this.#serverId, requestId);
       if (admission === undefined || rowString(admission, "state") !== "ACTIVE") {
         return false;
       }
-      const event = this.#database
-        .prepare(
-          "SELECT 1 AS present FROM provider_usage_events WHERE server_id = ? AND request_id = ? LIMIT 1",
-        )
-        .get(this.#serverId, requestId);
-      if (event !== undefined) {
+      if (this.#selectProviderEventPresence.get(this.#serverId, requestId) !== undefined) {
         throw new Error("A started usage admission cannot be rolled back.");
       }
 
@@ -342,9 +608,7 @@ export class SqliteUsageAccounting implements UsageAccounting {
       this.#decrementAdmissionAggregate("usage_player_daily", "usage_day", day, playerUuid);
       this.#decrementAdmissionAggregate("usage_daily", "usage_day", day);
       this.#decrementAdmissionAggregate("usage_monthly", "usage_month", month);
-      this.#database
-        .prepare("DELETE FROM usage_request_admissions WHERE server_id = ? AND request_id = ?")
-        .run(this.#serverId, requestId);
+      this.#deleteAdmission.run(this.#serverId, requestId);
       return true;
     });
   }
@@ -358,20 +622,11 @@ export class SqliteUsageAccounting implements UsageAccounting {
     assertProviderRound(providerRound);
     const period = usagePeriod(timestamp);
     return this.#transaction(() => {
-      const admission = this.#database
-        .prepare(
-          "SELECT state FROM usage_request_admissions WHERE server_id = ? AND request_id = ?",
-        )
-        .get(this.#serverId, requestId);
+      const admission = this.#selectAdmissionState.get(this.#serverId, requestId);
       if (admission === undefined || rowString(admission, "state") !== "ACTIVE") {
         return { accepted: false, reason: "REQUEST_NOT_ACTIVE" };
       }
-      const existing = this.#database
-        .prepare(
-          `SELECT state FROM usage_round_reservations
-           WHERE server_id = ? AND request_id = ? AND provider_round = ?`,
-        )
-        .get(this.#serverId, requestId, providerRound);
+      const existing = this.#selectReservationState.get(this.#serverId, requestId, providerRound);
       if (existing !== undefined) {
         return rowString(existing, "state") === "ACTIVE"
           ? { accepted: true }
@@ -394,12 +649,11 @@ export class SqliteUsageAccounting implements UsageAccounting {
     assertProviderRound(providerRound);
     const { iso } = usagePeriod(timestamp);
     return this.#transaction(() => {
-      const reservation = this.#database
-        .prepare(
-          `SELECT state, started_at FROM usage_round_reservations
-           WHERE server_id = ? AND request_id = ? AND provider_round = ?`,
-        )
-        .get(this.#serverId, requestId, providerRound);
+      const reservation = this.#selectReservationStart.get(
+        this.#serverId,
+        requestId,
+        providerRound,
+      );
       if (reservation === undefined || rowString(reservation, "state") !== "ACTIVE") {
         return false;
       }
@@ -410,13 +664,12 @@ export class SqliteUsageAccounting implements UsageAccounting {
         }
         return true;
       }
-      const updated = this.#database
-        .prepare(
-          `UPDATE usage_round_reservations SET started_at = ?
-           WHERE server_id = ? AND request_id = ? AND provider_round = ?
-             AND state = 'ACTIVE' AND started_at IS NULL`,
-        )
-        .run(iso, this.#serverId, requestId, providerRound);
+      const updated = this.#updateReservationStarted.run(
+        iso,
+        this.#serverId,
+        requestId,
+        providerRound,
+      );
       return updated.changes === 1;
     });
   }
@@ -430,14 +683,7 @@ export class SqliteUsageAccounting implements UsageAccounting {
     assertProviderRound(providerRound);
     const { iso } = usagePeriod(timestamp);
     return this.#transaction(() => {
-      const updated = this.#database
-        .prepare(
-          `UPDATE usage_round_reservations
-           SET state = 'RELEASED', settled_at = ?
-           WHERE server_id = ? AND request_id = ? AND provider_round = ?
-             AND state = 'ACTIVE'`,
-        )
-        .run(iso, this.#serverId, requestId, providerRound);
+      const updated = this.#releaseReservation.run(iso, this.#serverId, requestId, providerRound);
       return updated.changes === 1;
     });
   }
@@ -454,16 +700,11 @@ export class SqliteUsageAccounting implements UsageAccounting {
     }
 
     return this.#transaction(() => {
-      const reservation = this.#database
-        .prepare(
-          `SELECT r.reserved_micro_usd, r.state, r.reserved_at, r.started_at, r.usage_month,
-                  a.player_uuid
-           FROM usage_round_reservations r
-           JOIN usage_request_admissions a
-             ON a.server_id = r.server_id AND a.request_id = r.request_id
-           WHERE r.server_id = ? AND r.request_id = ? AND r.provider_round = ?`,
-        )
-        .get(this.#serverId, input.requestId, input.providerRound);
+      const reservation = this.#selectReservationWithAdmission.get(
+        this.#serverId,
+        input.requestId,
+        input.providerRound,
+      );
       if (reservation === undefined) {
         throw new Error("Provider usage has no matching durable reservation.");
       }
@@ -480,14 +721,11 @@ export class SqliteUsageAccounting implements UsageAccounting {
           ? rowInteger(reservation, "reserved_micro_usd")
           : calculateUsageCostMicroUsd(input.usage, this.#pricing);
 
-      const existing = this.#database
-        .prepare(
-          `SELECT player_uuid, provider, model, usage_kind, input_tokens, output_tokens,
-                  cost_micro_usd, occurred_at, usage_day, usage_month
-           FROM provider_usage_events
-           WHERE server_id = ? AND request_id = ? AND provider_round = ?`,
-        )
-        .get(this.#serverId, input.requestId, input.providerRound);
+      const existing = this.#selectProviderEvent.get(
+        this.#serverId,
+        input.requestId,
+        input.providerRound,
+      );
       if (existing !== undefined) {
         const identityConflict =
           rowString(existing, "player_uuid") !== input.playerUuid ||
@@ -523,23 +761,15 @@ export class SqliteUsageAccounting implements UsageAccounting {
               previousCostMicroUsd,
               costMicroUsd,
             });
-            const corrected = this.#database
-              .prepare(
-                `UPDATE provider_usage_events
-                 SET usage_kind = 'REPORTED', input_tokens = ?, output_tokens = ?,
-                     cost_micro_usd = ?, occurred_at = ?
-                 WHERE server_id = ? AND request_id = ? AND provider_round = ?
-                   AND usage_kind = 'ESTIMATED'`,
-              )
-              .run(
-                inputTokens,
-                outputTokens,
-                costMicroUsd,
-                occurred.iso,
-                this.#serverId,
-                input.requestId,
-                input.providerRound,
-              );
+            const corrected = this.#updateEstimatedProviderEvent.run(
+              inputTokens,
+              outputTokens,
+              costMicroUsd,
+              occurred.iso,
+              this.#serverId,
+              input.requestId,
+              input.providerRound,
+            );
             if (corrected.changes !== 1) {
               throw new Error("Estimated provider usage could not be corrected.");
             }
@@ -557,36 +787,27 @@ export class SqliteUsageAccounting implements UsageAccounting {
         throw new Error("Provider usage reservation was not durably started.");
       }
 
-      this.#database
-        .prepare(
-          `INSERT INTO provider_usage_events
-             (server_id, request_id, provider_round, player_uuid, provider, model, usage_kind,
-              input_tokens, output_tokens, cost_micro_usd, occurred_at, usage_day, usage_month)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        )
-        .run(
-          this.#serverId,
-          input.requestId,
-          input.providerRound,
-          input.playerUuid,
-          this.#provider,
-          this.#model,
-          usageKind,
-          inputTokens,
-          outputTokens,
-          costMicroUsd,
-          occurred.iso,
-          reservedPeriod.day,
-          reservedPeriod.month,
-        );
-      const updated = this.#database
-        .prepare(
-          `UPDATE usage_round_reservations
-           SET state = 'SETTLED', settled_at = ?
-           WHERE server_id = ? AND request_id = ? AND provider_round = ?
-             AND state = 'ACTIVE' AND started_at IS NOT NULL`,
-        )
-        .run(occurred.iso, this.#serverId, input.requestId, input.providerRound);
+      this.#insertProviderEvent.run(
+        this.#serverId,
+        input.requestId,
+        input.providerRound,
+        input.playerUuid,
+        this.#provider,
+        this.#model,
+        usageKind,
+        inputTokens,
+        outputTokens,
+        costMicroUsd,
+        occurred.iso,
+        reservedPeriod.day,
+        reservedPeriod.month,
+      );
+      const updated = this.#settleReservation.run(
+        occurred.iso,
+        this.#serverId,
+        input.requestId,
+        input.providerRound,
+      );
       if (updated.changes !== 1) {
         throw new Error("Provider usage reservation could not be settled.");
       }
@@ -610,24 +831,12 @@ export class SqliteUsageAccounting implements UsageAccounting {
     assertRequestId(requestId);
     const occurred = usagePeriod(timestamp);
     return this.#transaction(() => {
-      const admission = this.#database
-        .prepare(
-          `SELECT player_uuid, state FROM usage_request_admissions
-           WHERE server_id = ? AND request_id = ?`,
-        )
-        .get(this.#serverId, requestId);
+      const admission = this.#selectAdmissionOwner.get(this.#serverId, requestId);
       if (admission === undefined || rowString(admission, "state") !== "ACTIVE") {
         return false;
       }
       const playerUuid = rowString(admission, "player_uuid");
-      const started = this.#database
-        .prepare(
-          `SELECT provider_round, reserved_micro_usd, reserved_at, usage_month
-           FROM usage_round_reservations
-           WHERE server_id = ? AND request_id = ? AND state = 'ACTIVE'
-             AND started_at IS NOT NULL`,
-        )
-        .all(this.#serverId, requestId);
+      const started = this.#selectStartedReservations.all(this.#serverId, requestId);
       for (const reservation of started) {
         const providerRound = rowInteger(reservation, "provider_round");
         const costMicroUsd = rowInteger(reservation, "reserved_micro_usd");
@@ -635,25 +844,18 @@ export class SqliteUsageAccounting implements UsageAccounting {
         if (reservedPeriod.month !== rowString(reservation, "usage_month")) {
           throw new Error("Provider reservation period is inconsistent.");
         }
-        this.#database
-          .prepare(
-            `INSERT INTO provider_usage_events
-               (server_id, request_id, provider_round, player_uuid, provider, model, usage_kind,
-                input_tokens, output_tokens, cost_micro_usd, occurred_at, usage_day, usage_month)
-             VALUES (?, ?, ?, ?, ?, ?, 'ESTIMATED', 0, 0, ?, ?, ?, ?)`,
-          )
-          .run(
-            this.#serverId,
-            requestId,
-            providerRound,
-            playerUuid,
-            this.#provider,
-            this.#model,
-            costMicroUsd,
-            occurred.iso,
-            reservedPeriod.day,
-            reservedPeriod.month,
-          );
+        this.#insertEstimatedProviderEvent.run(
+          this.#serverId,
+          requestId,
+          providerRound,
+          playerUuid,
+          this.#provider,
+          this.#model,
+          costMicroUsd,
+          occurred.iso,
+          reservedPeriod.day,
+          reservedPeriod.month,
+        );
         this.#incrementUsageAggregate("usage_daily", "usage_day", reservedPeriod.day, {
           usageKind: "ESTIMATED",
           inputTokens: 0,
@@ -667,32 +869,12 @@ export class SqliteUsageAccounting implements UsageAccounting {
           costMicroUsd,
         });
       }
-      this.#database
-        .prepare(
-          `UPDATE usage_round_reservations
-           SET state = 'SETTLED', settled_at = ?
-           WHERE server_id = ? AND request_id = ? AND state = 'ACTIVE'
-             AND started_at IS NOT NULL`,
-        )
-        .run(occurred.iso, this.#serverId, requestId);
-      const updated = this.#database
-        .prepare(
-          `UPDATE usage_request_admissions
-           SET state = 'CLOSED', closed_at = ?
-           WHERE server_id = ? AND request_id = ? AND state = 'ACTIVE'`,
-        )
-        .run(occurred.iso, this.#serverId, requestId);
+      this.#settleRequestReservations.run(occurred.iso, this.#serverId, requestId);
+      const updated = this.#closeAdmission.run(occurred.iso, this.#serverId, requestId);
       if (updated.changes === 0) {
         return false;
       }
-      this.#database
-        .prepare(
-          `UPDATE usage_round_reservations
-           SET state = 'RELEASED', settled_at = ?
-           WHERE server_id = ? AND request_id = ? AND state = 'ACTIVE'
-             AND started_at IS NULL`,
-        )
-        .run(occurred.iso, this.#serverId, requestId);
+      this.#releaseRequestReservations.run(occurred.iso, this.#serverId, requestId);
       return true;
     });
   }
@@ -700,17 +882,7 @@ export class SqliteUsageAccounting implements UsageAccounting {
   public recoverAbandonedRequests(timestamp: number): number {
     const occurred = usagePeriod(timestamp);
     return this.#transaction(() => {
-      const started = this.#database
-        .prepare(
-          `SELECT r.request_id, r.provider_round, r.reserved_micro_usd, r.reserved_at,
-                  r.usage_month, a.player_uuid
-           FROM usage_round_reservations r
-           JOIN usage_request_admissions a
-             ON a.server_id = r.server_id AND a.request_id = r.request_id
-           WHERE r.server_id = ? AND r.state = 'ACTIVE' AND r.started_at IS NOT NULL
-           ORDER BY r.request_id, r.provider_round`,
-        )
-        .all(this.#serverId);
+      const started = this.#selectAbandonedReservations.all(this.#serverId);
       for (const reservation of started) {
         const requestId = rowString(reservation, "request_id");
         const providerRound = rowInteger(reservation, "provider_round");
@@ -720,25 +892,18 @@ export class SqliteUsageAccounting implements UsageAccounting {
         if (reservedPeriod.month !== rowString(reservation, "usage_month")) {
           throw new Error("Provider reservation period is inconsistent.");
         }
-        this.#database
-          .prepare(
-            `INSERT INTO provider_usage_events
-               (server_id, request_id, provider_round, player_uuid, provider, model, usage_kind,
-                input_tokens, output_tokens, cost_micro_usd, occurred_at, usage_day, usage_month)
-             VALUES (?, ?, ?, ?, ?, ?, 'ESTIMATED', 0, 0, ?, ?, ?, ?)`,
-          )
-          .run(
-            this.#serverId,
-            requestId,
-            providerRound,
-            playerUuid,
-            this.#provider,
-            this.#model,
-            costMicroUsd,
-            occurred.iso,
-            reservedPeriod.day,
-            reservedPeriod.month,
-          );
+        this.#insertEstimatedProviderEvent.run(
+          this.#serverId,
+          requestId,
+          providerRound,
+          playerUuid,
+          this.#provider,
+          this.#model,
+          costMicroUsd,
+          occurred.iso,
+          reservedPeriod.day,
+          reservedPeriod.month,
+        );
         this.#incrementUsageAggregate("usage_daily", "usage_day", reservedPeriod.day, {
           usageKind: "ESTIMATED",
           inputTokens: 0,
@@ -752,27 +917,9 @@ export class SqliteUsageAccounting implements UsageAccounting {
           costMicroUsd,
         });
       }
-      this.#database
-        .prepare(
-          `UPDATE usage_round_reservations
-           SET state = 'SETTLED', settled_at = ?
-           WHERE server_id = ? AND state = 'ACTIVE' AND started_at IS NOT NULL`,
-        )
-        .run(occurred.iso, this.#serverId);
-      this.#database
-        .prepare(
-          `UPDATE usage_round_reservations
-           SET state = 'RELEASED', settled_at = ?
-           WHERE server_id = ? AND state = 'ACTIVE' AND started_at IS NULL`,
-        )
-        .run(occurred.iso, this.#serverId);
-      const updated = this.#database
-        .prepare(
-          `UPDATE usage_request_admissions
-           SET state = 'CLOSED', closed_at = ?
-           WHERE server_id = ? AND state = 'ACTIVE'`,
-        )
-        .run(occurred.iso, this.#serverId);
+      this.#settleServerReservations.run(occurred.iso, this.#serverId);
+      this.#releaseServerReservations.run(occurred.iso, this.#serverId);
+      const updated = this.#closeServerAdmissions.run(occurred.iso, this.#serverId);
       return Number(updated.changes);
     });
   }
@@ -780,61 +927,24 @@ export class SqliteUsageAccounting implements UsageAccounting {
   public pruneHistoricalDetails(timestamp: number): void {
     const cutoff = usagePeriod(timestamp - DETAIL_RETENTION_DAYS * 86_400_000).day;
     this.#transaction(() => {
-      this.#database
-        .prepare(
-          `DELETE FROM provider_usage_events
-           WHERE server_id = ? AND request_id IN (
-             SELECT request_id FROM usage_request_admissions
-             WHERE server_id = ? AND state = 'CLOSED' AND usage_day < ?
-           )`,
-        )
-        .run(this.#serverId, this.#serverId, cutoff);
-      this.#database
-        .prepare(
-          `DELETE FROM usage_round_reservations
-           WHERE server_id = ? AND request_id IN (
-             SELECT request_id FROM usage_request_admissions
-             WHERE server_id = ? AND state = 'CLOSED' AND usage_day < ?
-           )`,
-        )
-        .run(this.#serverId, this.#serverId, cutoff);
-      this.#database
-        .prepare(
-          `DELETE FROM usage_request_admissions
-           WHERE server_id = ? AND state = 'CLOSED' AND usage_day < ?`,
-        )
-        .run(this.#serverId, cutoff);
-      this.#database
-        .prepare("DELETE FROM usage_player_daily WHERE server_id = ? AND usage_day < ?")
-        .run(this.#serverId, cutoff);
-      this.#database
-        .prepare("DELETE FROM usage_daily WHERE server_id = ? AND usage_day < ?")
-        .run(this.#serverId, cutoff);
+      this.#deleteEventsForClosedAdmissions.run(this.#serverId, this.#serverId, cutoff);
+      this.#deleteReservationsForClosedAdmissions.run(this.#serverId, this.#serverId, cutoff);
+      this.#deleteClosedAdmissions.run(this.#serverId, cutoff);
+      this.#deleteExpiredPlayerDaily.run(this.#serverId, cutoff);
+      this.#deleteExpiredDaily.run(this.#serverId, cutoff);
     });
   }
 
   public snapshot(timestamp: number): ManagementCostSnapshot {
     const period = usagePeriod(timestamp);
-    const dailyRow = this.#database
-      .prepare("SELECT * FROM usage_daily WHERE server_id = ? AND usage_day = ?")
-      .get(this.#serverId, period.day);
-    const monthlyRow = this.#database
-      .prepare("SELECT * FROM usage_monthly WHERE server_id = ? AND usage_month = ?")
-      .get(this.#serverId, period.month);
-    const reservationRow = this.#database
-      .prepare(
-        `SELECT COALESCE(SUM(reserved_micro_usd), 0) AS reserved_micro_usd
-         FROM usage_round_reservations
-         WHERE server_id = ? AND usage_month = ? AND state = 'ACTIVE'`,
-      )
-      .get(this.#serverId, period.month);
-    const recentRows = this.#database
-      .prepare(
-        `SELECT * FROM usage_daily
-         WHERE server_id = ? AND usage_day <= ?
-         ORDER BY usage_day DESC LIMIT ?`,
-      )
-      .all(this.#serverId, period.day, MAXIMUM_RECENT_DAYS);
+    const dailyRow = this.#selectDailyAggregate.get(this.#serverId, period.day);
+    const monthlyRow = this.#selectMonthlyAggregate.get(this.#serverId, period.month);
+    const reservationRow = this.#selectActiveReservationTotal.get(this.#serverId, period.month);
+    const recentRows = this.#selectRecentDailyAggregates.all(
+      this.#serverId,
+      period.day,
+      MAXIMUM_RECENT_DAYS,
+    );
     const currentMonth = aggregate(monthlyRow, period.month);
     const activeReservationsMicroUsd = optionalRowInteger(reservationRow, "reserved_micro_usd");
     const exposure = currentMonth.costMicroUsd + activeReservationsMicroUsd;
@@ -883,16 +993,8 @@ export class SqliteUsageAccounting implements UsageAccounting {
   }
 
   #hasBudget(month: string, requestedMicroUsd: number): boolean {
-    const monthly = this.#database
-      .prepare("SELECT cost_micro_usd FROM usage_monthly WHERE server_id = ? AND usage_month = ?")
-      .get(this.#serverId, month);
-    const reservations = this.#database
-      .prepare(
-        `SELECT COALESCE(SUM(reserved_micro_usd), 0) AS reserved_micro_usd
-         FROM usage_round_reservations
-         WHERE server_id = ? AND usage_month = ? AND state = 'ACTIVE'`,
-      )
-      .get(this.#serverId, month);
+    const monthly = this.#selectMonthlyCost.get(this.#serverId, month);
+    const reservations = this.#selectActiveReservationTotal.get(this.#serverId, month);
     const settled = optionalRowInteger(monthly, "cost_micro_usd");
     const active = optionalRowInteger(reservations, "reserved_micro_usd");
     const exposure = settled + active;
@@ -902,22 +1004,23 @@ export class SqliteUsageAccounting implements UsageAccounting {
     );
   }
 
+  #aggregateStatements(table: string, periodColumn: string): UsageAggregateStatements {
+    const statements = this.#aggregates.get(`${table}:${periodColumn}`);
+    if (statements === undefined) {
+      throw new Error("Usage aggregate period is unsupported.");
+    }
+    return statements;
+  }
+
   #insertRoundReservation(requestId: string, providerRound: number, period: UsagePeriod): void {
-    this.#database
-      .prepare(
-        `INSERT INTO usage_round_reservations
-           (server_id, request_id, provider_round, usage_month, reserved_micro_usd, state,
-            reserved_at, settled_at)
-         VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, NULL)`,
-      )
-      .run(
-        this.#serverId,
-        requestId,
-        providerRound,
-        period.month,
-        this.#limits.providerRoundReservationMicroUsd,
-        period.iso,
-      );
+    this.#insertReservation.run(
+      this.#serverId,
+      requestId,
+      providerRound,
+      period.month,
+      this.#limits.providerRoundReservationMicroUsd,
+      period.iso,
+    );
   }
 
   #incrementAdmissionAggregate(
@@ -925,25 +1028,14 @@ export class SqliteUsageAccounting implements UsageAccounting {
     periodColumn: string,
     period: string,
   ): void {
-    const existing = this.#database
-      .prepare(`SELECT admitted_requests FROM ${table} WHERE server_id = ? AND ${periodColumn} = ?`)
-      .get(this.#serverId, period);
+    const statements = this.#aggregateStatements(table, periodColumn);
+    const existing = statements.selectAdmittedRequests.get(this.#serverId, period);
     safeIntegerSum(
       "Usage admission aggregate",
       optionalRowInteger(existing, "admitted_requests"),
       1,
     );
-    this.#database
-      .prepare(
-        `INSERT INTO ${table}
-           (server_id, ${periodColumn}, admitted_requests, provider_calls,
-            reported_provider_calls, estimated_provider_calls, input_tokens, output_tokens,
-            cost_micro_usd)
-         VALUES (?, ?, 1, 0, 0, 0, 0, 0, 0)
-         ON CONFLICT(server_id, ${periodColumn}) DO UPDATE SET
-           admitted_requests = admitted_requests + 1`,
-      )
-      .run(this.#serverId, period);
+    statements.upsertAdmission.run(this.#serverId, period);
   }
 
   #decrementAdmissionAggregate(
@@ -952,15 +1044,13 @@ export class SqliteUsageAccounting implements UsageAccounting {
     period: string,
     playerUuid?: string,
   ): void {
-    const playerClause = playerUuid === undefined ? "" : " AND player_uuid = ?";
-    const values =
-      playerUuid === undefined ? [this.#serverId, period] : [this.#serverId, period, playerUuid];
-    const updated = this.#database
-      .prepare(
-        `UPDATE ${table} SET admitted_requests = admitted_requests - 1
-         WHERE server_id = ? AND ${periodColumn} = ?${playerClause} AND admitted_requests > 0`,
-      )
-      .run(...values);
+    const updated =
+      playerUuid === undefined
+        ? this.#aggregateStatements(table, periodColumn).decrementAdmission.run(
+            this.#serverId,
+            period,
+          )
+        : this.#decrementPlayerDailyAdmission.run(this.#serverId, period, playerUuid);
     if (updated.changes !== 1) {
       throw new Error("Usage admission aggregate could not be rolled back.");
     }
@@ -979,13 +1069,8 @@ export class SqliteUsageAccounting implements UsageAccounting {
   ): void {
     const reported = usage.usageKind === "REPORTED" ? 1 : 0;
     const estimated = usage.usageKind === "ESTIMATED" ? 1 : 0;
-    const existing = this.#database
-      .prepare(
-        `SELECT provider_calls, reported_provider_calls, estimated_provider_calls,
-                input_tokens, output_tokens, cost_micro_usd
-         FROM ${table} WHERE server_id = ? AND ${periodColumn} = ?`,
-      )
-      .get(this.#serverId, period);
+    const statements = this.#aggregateStatements(table, periodColumn);
+    const existing = statements.selectUsageTotals.get(this.#serverId, period);
     safeIntegerSum("Provider call aggregate", optionalRowInteger(existing, "provider_calls"), 1);
     safeIntegerSum(
       "Reported provider call aggregate",
@@ -1012,30 +1097,15 @@ export class SqliteUsageAccounting implements UsageAccounting {
       optionalRowInteger(existing, "cost_micro_usd"),
       usage.costMicroUsd,
     );
-    this.#database
-      .prepare(
-        `INSERT INTO ${table}
-           (server_id, ${periodColumn}, admitted_requests, provider_calls,
-            reported_provider_calls, estimated_provider_calls, input_tokens, output_tokens,
-            cost_micro_usd)
-         VALUES (?, ?, 0, 1, ?, ?, ?, ?, ?)
-         ON CONFLICT(server_id, ${periodColumn}) DO UPDATE SET
-           provider_calls = provider_calls + 1,
-           reported_provider_calls = reported_provider_calls + excluded.reported_provider_calls,
-           estimated_provider_calls = estimated_provider_calls + excluded.estimated_provider_calls,
-           input_tokens = input_tokens + excluded.input_tokens,
-           output_tokens = output_tokens + excluded.output_tokens,
-           cost_micro_usd = cost_micro_usd + excluded.cost_micro_usd`,
-      )
-      .run(
-        this.#serverId,
-        period,
-        reported,
-        estimated,
-        usage.inputTokens,
-        usage.outputTokens,
-        usage.costMicroUsd,
-      );
+    statements.upsertUsage.run(
+      this.#serverId,
+      period,
+      reported,
+      estimated,
+      usage.inputTokens,
+      usage.outputTokens,
+      usage.costMicroUsd,
+    );
   }
 
   #replaceEstimatedUsageAggregate(
@@ -1049,13 +1119,8 @@ export class SqliteUsageAccounting implements UsageAccounting {
       readonly costMicroUsd: number;
     },
   ): void {
-    const row = this.#database
-      .prepare(
-        `SELECT provider_calls, reported_provider_calls, estimated_provider_calls,
-                input_tokens, output_tokens, cost_micro_usd
-         FROM ${table} WHERE server_id = ? AND ${periodColumn} = ?`,
-      )
-      .get(this.#serverId, period);
+    const statements = this.#aggregateStatements(table, periodColumn);
+    const row = statements.selectUsageTotals.get(this.#serverId, period);
     if (row === undefined || rowInteger(row, "estimated_provider_calls") < 1) {
       throw new Error("Estimated usage aggregate is missing.");
     }
@@ -1082,22 +1147,15 @@ export class SqliteUsageAccounting implements UsageAccounting {
     if (correctedCost < 0n || correctedCost > MAXIMUM_SAFE_INTEGER) {
       throw new Error("Usage cost aggregate exceeds the supported accounting range.");
     }
-    const updated = this.#database
-      .prepare(
-        `UPDATE ${table}
-         SET reported_provider_calls = ?, estimated_provider_calls = ?, input_tokens = ?,
-             output_tokens = ?, cost_micro_usd = ?
-         WHERE server_id = ? AND ${periodColumn} = ?`,
-      )
-      .run(
-        reportedProviderCalls,
-        estimatedProviderCalls,
-        inputTokens,
-        outputTokens,
-        Number(correctedCost),
-        this.#serverId,
-        period,
-      );
+    const updated = statements.updateEstimatedUsage.run(
+      reportedProviderCalls,
+      estimatedProviderCalls,
+      inputTokens,
+      outputTokens,
+      Number(correctedCost),
+      this.#serverId,
+      period,
+    );
     if (updated.changes !== 1) {
       throw new Error("Estimated usage aggregate could not be corrected.");
     }

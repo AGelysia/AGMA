@@ -6,6 +6,7 @@ import {
   type SearchProviderResponse,
   type SearchProviderResult,
 } from "./search-provider.js";
+import { isRecord } from "../shared/predicates.js";
 
 export const BRAVE_WEB_SEARCH_ENDPOINT = "https://api.search.brave.com/res/v1/web/search";
 const BRAVE_RESPONSE_MAXIMUM_BYTES = 256 * 1024;
@@ -16,10 +17,6 @@ export interface BraveSearchProviderOptions {
   readonly fetch?: typeof fetch;
   readonly endpoint?: typeof BRAVE_WEB_SEARCH_ENDPOINT;
   readonly timeoutMilliseconds?: number;
-}
-
-function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 async function readBoundedBody(response: Response): Promise<string> {

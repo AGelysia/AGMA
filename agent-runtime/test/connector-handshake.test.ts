@@ -122,6 +122,14 @@ function application(
   };
 }
 
+function volumeStatusRequest(index: number): Record<string, unknown> {
+  const request = application("client.status.request", {});
+  const nonce = Buffer.alloc(16);
+  nonce.writeBigUInt64BE(BigInt(index + 1));
+  request["nonce"] = nonce.toString("base64url");
+  return request;
+}
+
 async function startClient(
   adapter: ModelProvider,
   configSource: (port: number) => string = validClientRuntimeConfig,
@@ -237,14 +245,24 @@ function nextMessages(
 ): Promise<readonly Record<string, unknown>[]> {
   return new Promise((resolve, reject) => {
     const messages: Record<string, unknown>[] = [];
-    const onError = (error: Error): void => {
+    const detach = (): void => {
+      socket.off("error", onError);
+      socket.off("close", onClose);
       socket.off("message", onMessage);
+    };
+    const onError = (error: Error): void => {
+      detach();
       reject(error);
+    };
+    const onClose = (code: number): void => {
+      detach();
+      reject(
+        new Error(`Socket closed with ${String(code)} after ${String(messages.length)} messages.`),
+      );
     };
     const onMessage = (data: RawData, isBinary: boolean): void => {
       if (isBinary) {
-        socket.off("error", onError);
-        socket.off("message", onMessage);
+        detach();
         reject(new Error("Expected a text WebSocket message"));
         return;
       }
@@ -255,12 +273,12 @@ function nextMessages(
         >,
       );
       if (messages.length === count) {
-        socket.off("error", onError);
-        socket.off("message", onMessage);
+        detach();
         resolve(messages);
       }
     };
     socket.on("error", onError);
+    socket.on("close", onClose);
     socket.on("message", onMessage);
   });
 }
@@ -598,7 +616,7 @@ describe("standalone connector WebSocket", () => {
       result: EMPTY_SEARCH_RESULT,
       ...mutation,
     });
-    if (mutation.requestId !== undefined) terminal["requestId"] = mutation.requestId;
+    if ("requestId" in mutation) terminal["requestId"] = mutation.requestId;
 
     const closed = nextClose(socket);
     socket.send(JSON.stringify(terminal));
@@ -686,6 +704,39 @@ describe("standalone connector WebSocket", () => {
       reason: "APPLICATION_MESSAGE_REPLAYED",
     });
   });
+
+  it("sustains application traffic beyond the replay cache bound without false replays", async () => {
+    const adapter = provider(async () => ({ type: "final", fallbackText: "ok" }));
+    const { url } = await startClient(adapter);
+    const socket = await openClient(url);
+    const request = hello();
+    await authenticate(socket, request);
+
+    const volume = 1_400;
+    const responses = nextMessages(socket, volume);
+    const sent: Record<string, unknown>[] = [];
+    for (let index = 0; index < volume; index += 1) {
+      const statusRequest = volumeStatusRequest(index);
+      sent.push(statusRequest);
+      socket.send(JSON.stringify(statusRequest));
+    }
+    const received = await responses;
+    expect(received).toHaveLength(volume);
+    expect(received.at(-1)).toMatchObject({ type: "client.status" });
+    expect(socket.readyState).toBe(WebSocket.OPEN);
+
+    const closed = nextClose(socket);
+    socket.send(JSON.stringify(sent.at(-1)));
+    await expect(closed).resolves.toEqual({
+      code: 1008,
+      reason: "APPLICATION_MESSAGE_REPLAYED",
+    });
+
+    const replayed = await openClient(url);
+    const replayClose = nextClose(replayed);
+    replayed.send(JSON.stringify(request));
+    await expect(replayClose).resolves.toEqual({ code: 1008, reason: "HANDSHAKE_REPLAYED" });
+  }, 30_000);
 
   it("cancels an active request without closing the authenticated connector", async () => {
     let started: (() => void) | undefined;

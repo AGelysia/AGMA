@@ -144,4 +144,21 @@ describe("handshake replay cache", () => {
     expect(cache.size).toBe(2);
     expect(cache.accept("message-b", "nonce-b", 1000)).toBe(true);
   });
+
+  it("evicts oldest entries at its bound while rejecting retained identities", () => {
+    const cache = new HandshakeReplayCache({
+      ttlMilliseconds: 1000,
+      maximumEntries: 4,
+      evictOldestEntries: true,
+    });
+
+    expect(cache.accept("message-a", "nonce-a", 100)).toBe(true);
+    expect(cache.accept("message-b", "nonce-b", 200)).toBe(true);
+    expect(cache.size).toBe(4);
+    expect(cache.accept("message-c", "nonce-c", 300)).toBe(true);
+    expect(cache.size).toBe(4);
+    expect(cache.accept("message-b", "nonce-b", 400)).toBe(false);
+    expect(cache.accept("message-c", "nonce-c", 500)).toBe(false);
+    expect(cache.accept("message-a", "nonce-a", 600)).toBe(true);
+  });
 });

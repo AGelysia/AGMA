@@ -8,6 +8,7 @@ import {
   type ToolExecutionResult,
   type ToolResultPayload,
 } from "./tool-types.js";
+import { isRecord } from "../shared/predicates.js";
 
 export type ToolExecutionTarget = "paper_remote" | "connector_remote" | "runtime_local";
 
@@ -331,10 +332,6 @@ function projectPlanParameters(update: boolean): Readonly<Record<string, unknown
     required.unshift("projectId", "expectedRevision");
   }
   return closedProviderObject(properties, required);
-}
-
-function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function resourceUsesGeneration(value: unknown, generationId: string): boolean {

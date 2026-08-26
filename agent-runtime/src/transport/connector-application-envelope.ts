@@ -15,6 +15,7 @@ import {
 } from "./connector-handshake-authentication.js";
 import type { HandshakeReplayCache } from "./replay-cache.js";
 import { parseStrictJson } from "./strict-json.js";
+import { isRecord } from "../shared/predicates.js";
 
 export const CONNECTOR_APPLICATION_CLOCK_SKEW_MILLISECONDS = 30_000;
 export const CONNECTOR_APPLICATION_MAXIMUM_BYTES = 64 * 1024;
@@ -96,14 +97,12 @@ export interface ConnectorApplicationProtocolOptions {
   readonly scopeId: string;
   readonly subjectId: string;
   readonly schemaRegistry: SchemaRegistry;
+  // Inbound and outbound traffic consume two entries per message each, so this must
+  // evict oldest entries; a capacity-rejecting cache reports sustained load as replays.
   readonly replayCache: HandshakeReplayCache;
   readonly now?: () => Date;
   readonly randomBytes?: (size: number) => Buffer;
   readonly randomUuid?: () => string;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function invalid(): ConnectorApplicationFailure {

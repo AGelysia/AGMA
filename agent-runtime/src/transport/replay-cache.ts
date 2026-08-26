@@ -1,12 +1,14 @@
 export interface ReplayCacheOptions {
   readonly ttlMilliseconds: number;
   readonly maximumEntries: number;
+  readonly evictOldestEntries?: boolean;
 }
 
 export class HandshakeReplayCache {
   readonly #entries = new Map<string, number>();
   readonly #ttlMilliseconds: number;
   readonly #maximumEntries: number;
+  readonly #evictOldestEntries: boolean;
 
   public constructor(options: ReplayCacheOptions) {
     if (
@@ -19,6 +21,7 @@ export class HandshakeReplayCache {
     }
     this.#ttlMilliseconds = options.ttlMilliseconds;
     this.#maximumEntries = options.maximumEntries;
+    this.#evictOldestEntries = options.evictOldestEntries ?? false;
   }
 
   public accept(messageId: string, nonce: string, nowMilliseconds: number): boolean {
@@ -29,7 +32,18 @@ export class HandshakeReplayCache {
       return false;
     }
     if (this.#entries.size + 2 > this.#maximumEntries) {
-      return false;
+      if (!this.#evictOldestEntries) {
+        return false;
+      }
+      // Eviction is only safe for traffic that is also rejected as stale outside a
+      // bounded freshness window; an evicted identity is then too old to replay.
+      while (this.#entries.size + 2 > this.#maximumEntries) {
+        const oldest = this.#entries.keys().next().value as string | undefined;
+        if (oldest === undefined) {
+          break;
+        }
+        this.#entries.delete(oldest);
+      }
     }
 
     const expiresAt = nowMilliseconds + this.#ttlMilliseconds;

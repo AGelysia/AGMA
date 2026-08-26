@@ -18,6 +18,7 @@ import type {
 } from "../tools/tool-types.js";
 import { runtimeIdentity } from "../version.js";
 import {
+  CONNECTOR_APPLICATION_CLOCK_SKEW_MILLISECONDS,
   CONNECTOR_APPLICATION_MAXIMUM_BYTES,
   ConnectorApplicationFailure,
   ConnectorApplicationProtocol,
@@ -37,12 +38,15 @@ import {
 } from "./connector-handshake-authentication.js";
 import { HandshakeReplayCache } from "./replay-cache.js";
 import { parseStrictJson } from "./strict-json.js";
+import { isRecord } from "../shared/predicates.js";
 
 export const CONNECTOR_HANDSHAKE_MAXIMUM_BYTES = 16 * 1024;
 export const CONNECTOR_HANDSHAKE_CLOCK_SKEW_MILLISECONDS = 30_000;
 export const CONNECTOR_HANDSHAKE_TIMEOUT_MILLISECONDS = 5_000;
 const REPLAY_CACHE_TTL_MILLISECONDS = CONNECTOR_HANDSHAKE_CLOCK_SKEW_MILLISECONDS * 2;
 const REPLAY_CACHE_MAXIMUM_ENTRIES = 4096;
+const APPLICATION_REPLAY_CACHE_TTL_MILLISECONDS = CONNECTOR_APPLICATION_CLOCK_SKEW_MILLISECONDS * 2;
+const APPLICATION_REPLAY_CACHE_MAXIMUM_ENTRIES = 4096;
 const MAXIMUM_PENDING_CONNECTIONS = 8;
 const MAXIMUM_SETTLED_TOOL_CALLS = 4096;
 const DEFAULT_TOOL_TIMEOUT_MILLISECONDS = 15_000;
@@ -126,10 +130,6 @@ class ConnectorHandshakeFailure extends Error {
   }
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 function rawDataBuffer(data: RawData): Buffer {
   if (Buffer.isBuffer(data)) return data;
   if (Array.isArray(data)) return Buffer.concat(data);
@@ -160,6 +160,7 @@ export class ConnectorHandshakeService {
   readonly #randomBytes: (size: number) => Buffer;
   readonly #randomUuid: () => string;
   readonly #replayCache: HandshakeReplayCache;
+  readonly #applicationReplayCache: HandshakeReplayCache;
   readonly #applicationProtocol: ConnectorApplicationProtocol;
   readonly #connections = new Set<WebSocket>();
   readonly #pendingTools = new Map<string, PendingConnectorTool>();
@@ -206,11 +207,16 @@ export class ConnectorHandshakeService {
         ttlMilliseconds: REPLAY_CACHE_TTL_MILLISECONDS,
         maximumEntries: REPLAY_CACHE_MAXIMUM_ENTRIES,
       });
+    this.#applicationReplayCache = new HandshakeReplayCache({
+      ttlMilliseconds: APPLICATION_REPLAY_CACHE_TTL_MILLISECONDS,
+      maximumEntries: APPLICATION_REPLAY_CACHE_MAXIMUM_ENTRIES,
+      evictOldestEntries: true,
+    });
     this.#applicationProtocol = new ConnectorApplicationProtocol({
       scopeId: options.scopeId,
       subjectId: options.subjectId,
       schemaRegistry: options.schemaRegistry,
-      replayCache: this.#replayCache,
+      replayCache: this.#applicationReplayCache,
       ...(options.now === undefined ? {} : { now: options.now }),
       ...(options.randomBytes === undefined ? {} : { randomBytes: options.randomBytes }),
       ...(options.randomUuid === undefined ? {} : { randomUuid: options.randomUuid }),

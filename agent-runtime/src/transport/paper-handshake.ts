@@ -11,6 +11,7 @@ import type { AgentRequestService } from "../requests/agent-request-service.js";
 import type { UsageAccounting } from "../usage/usage-accounting.js";
 import { runtimeIdentity, SUPPORTED_PROTOCOL_VERSION } from "../version.js";
 import {
+  APPLICATION_CLOCK_SKEW_MILLISECONDS,
   APPLICATION_MAXIMUM_BYTES,
   ApplicationEnvelopeProtocol,
   ApplicationProtocolFailure,
@@ -24,12 +25,15 @@ import {
 } from "./handshake-authentication.js";
 import { HandshakeReplayCache } from "./replay-cache.js";
 import { parseStrictJson } from "./strict-json.js";
+import { isRecord } from "../shared/predicates.js";
 
 export const HANDSHAKE_MAXIMUM_BYTES = 16 * 1024;
 export const HANDSHAKE_CLOCK_SKEW_MILLISECONDS = 30_000;
 export const HANDSHAKE_TIMEOUT_MILLISECONDS = 5_000;
 const REPLAY_CACHE_TTL_MILLISECONDS = HANDSHAKE_CLOCK_SKEW_MILLISECONDS * 2;
 const REPLAY_CACHE_MAXIMUM_ENTRIES = 4096;
+const APPLICATION_REPLAY_CACHE_TTL_MILLISECONDS = APPLICATION_CLOCK_SKEW_MILLISECONDS * 2;
+const APPLICATION_REPLAY_CACHE_MAXIMUM_ENTRIES = 4096;
 const MAXIMUM_PENDING_CONNECTIONS = 8;
 
 type HandshakeFailureCode =
@@ -91,10 +95,6 @@ class HandshakeFailure extends Error {
   }
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 function rawDataBuffer(data: RawData): Buffer {
   if (Buffer.isBuffer(data)) {
     return data;
@@ -137,6 +137,7 @@ export class PaperHandshakeService {
   readonly #randomBytes: (size: number) => Buffer;
   readonly #randomUuid: () => string;
   readonly #replayCache: HandshakeReplayCache;
+  readonly #applicationReplayCache: HandshakeReplayCache;
   readonly #agentRequests: AgentRequestService;
   readonly #usage: UsageAccounting;
   readonly #applicationProtocol: ApplicationEnvelopeProtocol;
@@ -158,12 +159,17 @@ export class PaperHandshakeService {
         ttlMilliseconds: REPLAY_CACHE_TTL_MILLISECONDS,
         maximumEntries: REPLAY_CACHE_MAXIMUM_ENTRIES,
       });
+    this.#applicationReplayCache = new HandshakeReplayCache({
+      ttlMilliseconds: APPLICATION_REPLAY_CACHE_TTL_MILLISECONDS,
+      maximumEntries: APPLICATION_REPLAY_CACHE_MAXIMUM_ENTRIES,
+      evictOldestEntries: true,
+    });
     this.#agentRequests = options.agentRequests;
     this.#usage = options.usage;
     this.#applicationProtocol = new ApplicationEnvelopeProtocol({
       serverId: options.serverId,
       schemaRegistry: options.schemaRegistry,
-      replayCache: this.#replayCache,
+      replayCache: this.#applicationReplayCache,
       ...(options.now === undefined ? {} : { now: options.now }),
       ...(options.randomBytes === undefined ? {} : { randomBytes: options.randomBytes }),
       ...(options.randomUuid === undefined ? {} : { randomUuid: options.randomUuid }),

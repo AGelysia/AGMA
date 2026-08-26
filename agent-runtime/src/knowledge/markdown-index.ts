@@ -88,11 +88,32 @@ function excerpt(text: string): string {
   return [...text].slice(0, MAXIMUM_EXCERPT_CHARACTERS).join("").trimEnd();
 }
 
+interface IndexedKnowledgeChunk {
+  readonly chunk: KnowledgeChunk;
+  readonly normalizedTitle: string;
+  readonly normalizedHeading: string;
+  readonly normalizedText: string;
+  readonly searchable: string;
+}
+
+function indexChunk(chunk: KnowledgeChunk): IndexedKnowledgeChunk {
+  const normalizedTitle = normalized(chunk.title);
+  const normalizedHeading = normalized(chunk.heading);
+  const normalizedText = normalized(chunk.text);
+  return {
+    chunk,
+    normalizedTitle,
+    normalizedHeading,
+    normalizedText,
+    searchable: `${normalizedTitle}\n${normalizedHeading}\n${normalizedText}`,
+  };
+}
+
 export class MarkdownKnowledgeIndex {
-  readonly #chunks: readonly KnowledgeChunk[];
+  readonly #chunks: readonly IndexedKnowledgeChunk[];
 
   public constructor(chunks: readonly KnowledgeChunk[] = []) {
-    this.#chunks = Object.freeze([...chunks]);
+    this.#chunks = Object.freeze([...chunks].map(indexChunk));
   }
 
   public get size(): number {
@@ -103,23 +124,19 @@ export class MarkdownKnowledgeIndex {
     const query = safeText(rawQuery, MAXIMUM_QUERY_CHARACTERS, "query");
     const tokens = queryTokens(query);
     const matches = this.#chunks
-      .map((chunk) => {
-        const normalizedTitle = normalized(chunk.title);
-        const normalizedHeading = normalized(chunk.heading);
-        const normalizedText = normalized(chunk.text);
-        const searchable = `${normalizedTitle}\n${normalizedHeading}\n${normalizedText}`;
-        if (!tokens.every((token) => searchable.includes(token))) {
+      .map((entry) => {
+        if (!tokens.every((token) => entry.searchable.includes(token))) {
           return undefined;
         }
         const score = tokens.reduce(
           (total, token) =>
             total +
-            occurrences(normalizedText, token) +
-            occurrences(normalizedHeading, token) * 4 +
-            occurrences(normalizedTitle, token) * 8,
+            occurrences(entry.normalizedText, token) +
+            occurrences(entry.normalizedHeading, token) * 4 +
+            occurrences(entry.normalizedTitle, token) * 8,
           0,
         );
-        return { chunk, score };
+        return { chunk: entry.chunk, score };
       })
       .filter((match): match is { readonly chunk: KnowledgeChunk; readonly score: number } =>
         Boolean(match),

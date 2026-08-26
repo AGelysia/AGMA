@@ -209,11 +209,6 @@ describe("Runtime Tool Registry", () => {
     expect(registry.validateArguments(recipe, { itemId: "not-an-item" })).toBe(false);
     expect(
       registry.validateResult(context, {
-        toolCallId: "11111111-1111-4111-8111-111111111111",
-        sessionId: "22222222-2222-4222-8222-222222222222",
-        playerUuid: "33333333-3333-4333-8333-333333333333",
-        tool: context.id,
-        sequence: 0,
         status: "succeeded",
         source: "paper_api",
         trust: "authoritative",
@@ -223,11 +218,6 @@ describe("Runtime Tool Registry", () => {
     ).toBe(true);
     expect(
       registry.validateResult(context, {
-        toolCallId: "11111111-1111-4111-8111-111111111111",
-        sessionId: "22222222-2222-4222-8222-222222222222",
-        playerUuid: "33333333-3333-4333-8333-333333333333",
-        tool: context.id,
-        sequence: 0,
         status: "succeeded",
         source: "paper_api",
         trust: "untrusted",

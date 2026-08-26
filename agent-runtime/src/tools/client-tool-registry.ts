@@ -7,6 +7,7 @@ import {
   type ToolResultSource,
   type ToolResultTrust,
 } from "./tool-types.js";
+import { isRecord } from "../shared/predicates.js";
 
 export interface ClientToolDescriptor extends ModelToolDefinition {
   readonly id: ClientToolId;
@@ -108,10 +109,6 @@ function providerParameters(id: ClientToolId): Readonly<Record<string, unknown>>
 
 function schemaReference(id: ClientToolId, kind: "arguments" | "result"): string {
   return `tools/${id.replaceAll(/[._]/gu, "-")}-${kind}.schema.json`;
-}
-
-function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function resourceGeneration(value: unknown, generationId: string): boolean {

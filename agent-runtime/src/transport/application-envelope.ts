@@ -12,6 +12,7 @@ import { SUPPORTED_PROTOCOL_VERSION } from "../version.js";
 import { decodeCanonicalBase64Url } from "./handshake-authentication.js";
 import type { HandshakeReplayCache } from "./replay-cache.js";
 import { parseStrictJson } from "./strict-json.js";
+import { isRecord } from "../shared/predicates.js";
 
 export const APPLICATION_CLOCK_SKEW_MILLISECONDS = 30_000;
 export const APPLICATION_MAXIMUM_BYTES = 64 * 1024;
@@ -86,6 +87,8 @@ export type RuntimeApplicationResponse =
 export interface ApplicationEnvelopeProtocolOptions {
   readonly serverId: string;
   readonly schemaRegistry: SchemaRegistry;
+  // Inbound traffic consumes two entries per message, so this must evict oldest
+  // entries; a capacity-rejecting cache reports sustained load as replays.
   readonly replayCache: HandshakeReplayCache;
   readonly now?: () => Date;
   readonly randomBytes?: (size: number) => Buffer;
@@ -101,10 +104,6 @@ interface EnvelopeRecord extends Record<string, unknown> {
   readonly timestamp: string;
   readonly nonce: string;
   readonly payload: Record<string, unknown>;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function invalid(): ApplicationProtocolFailure {

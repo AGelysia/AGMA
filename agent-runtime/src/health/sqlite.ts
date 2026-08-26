@@ -89,6 +89,8 @@ export async function checkRuntimeSqlite(
     }
 
     step = "write";
+    database.exec("PRAGMA journal_mode = WAL");
+    database.exec("PRAGMA synchronous = NORMAL");
     const probeTable = `runtime_probe_${randomBytes(12).toString("hex")}`;
     database.exec("BEGIN IMMEDIATE");
     try {

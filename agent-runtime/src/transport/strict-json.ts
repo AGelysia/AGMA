@@ -1,4 +1,7 @@
 const DEFAULT_MAXIMUM_DEPTH = 32;
+// Provider bodies up to 1 MiB are scanned under this 4,096-value cap, so every scan
+// must cost O(token length); slicing the remaining source per token composes these
+// two bounds into quadratic work. Do not reintroduce per-token slicing.
 const DEFAULT_MAXIMUM_TOKENS = 4096;
 
 export class StrictJsonError extends Error {
@@ -17,6 +20,7 @@ class JsonScanner {
   readonly #source: string;
   readonly #maximumDepth: number;
   readonly #maximumTokens: number;
+  readonly #numberPattern = /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/uy;
   #index = 0;
   #tokens = 0;
 
@@ -166,9 +170,8 @@ class JsonScanner {
   }
 
   #scanNumber(): void {
-    const match = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/u.exec(
-      this.#source.slice(this.#index),
-    );
+    this.#numberPattern.lastIndex = this.#index;
+    const match = this.#numberPattern.exec(this.#source);
     if (match?.[0] === undefined) {
       throw new StrictJsonError("JSON contains an invalid value.");
     }

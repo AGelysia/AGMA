@@ -45,6 +45,10 @@ describe("runtime filesystem readiness", () => {
 
     await checkLogDirectory(directory, logDirectory);
     const sqlite = await checkRuntimeSqlite(directory, sqlitePath);
+    expect(sqlite.database.prepare("PRAGMA journal_mode").get()).toMatchObject({
+      journal_mode: "wal",
+    });
+    expect(sqlite.database.prepare("PRAGMA synchronous").get()).toMatchObject({ synchronous: 1 });
     const probeTables = sqlite.database
       .prepare("SELECT name FROM sqlite_master WHERE name LIKE 'runtime_probe_%'")
       .all();

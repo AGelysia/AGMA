@@ -1,5 +1,6 @@
 import { validateRecipeViewV2 } from "../protocol/semantic-validation.js";
 import type { CoreToolId, ToolExecutionResult } from "../tools/tool-types.js";
+import { isRecord } from "../shared/predicates.js";
 
 const RECIPE_VIEW_CONTENT_LIMIT_BYTES = 48 * 1024;
 const FALLBACK_VARIANT_LIMIT = 4;
@@ -27,10 +28,6 @@ export interface RecipeViewPresentation {
 export interface AuthoritativeRecipePresentation {
   readonly fallbackText: string;
   readonly view?: RecipeViewPresentation;
-}
-
-function isRecord(value: unknown): value is JsonRecord {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function isRecipeTool(tool: CoreToolId): tool is RecipeToolId {
