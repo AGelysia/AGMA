@@ -37,6 +37,58 @@ export interface ModelProviderHealthCheck {
   check(request: ModelProviderHealthRequest): Promise<ModelProviderHealthResult>;
 }
 
+/** Upper bound for the cheap background re-probe served by the /health view. */
+export const DEFAULT_PROVIDER_PROBE_TIMEOUT_MILLISECONDS = 5000;
+
+/**
+ * Cheap, bounded provider probe used to keep the /health view live without
+ * performing a billable generation.
+ */
+export interface ProviderHealthProbe {
+  readonly timeoutMilliseconds: number;
+  run(signal: AbortSignal): Promise<ModelProviderHealthResult>;
+}
+
+export function createProviderHealthProbe(
+  config: ModelProviderHealthConfig,
+  healthCheck: ModelProviderHealthCheck,
+): ProviderHealthProbe {
+  return {
+    timeoutMilliseconds: Math.min(
+      DEFAULT_PROVIDER_PROBE_TIMEOUT_MILLISECONDS,
+      config.model.timeoutSeconds * 1000,
+    ),
+    run: (signal) =>
+      healthCheck.check({
+        provider: config.model.provider,
+        model: config.model.model,
+        apiKey: config.model.apiKey,
+        signal,
+      }),
+  };
+}
+
+export interface ProviderHealthProbeRegistration {
+  readonly probe: ProviderHealthProbe;
+  readonly result: ModelProviderHealthResult;
+  readonly probedAt: number;
+}
+
+/**
+ * Last successful startup provider check. RuntimeHealthState snapshots this at
+ * construction so views re-probe the provider the runtime actually started
+ * with, without any bootstrap wiring changes.
+ */
+let registeredProviderProbe: ProviderHealthProbeRegistration | undefined;
+
+export function registerProviderHealthProbe(registration: ProviderHealthProbeRegistration): void {
+  registeredProviderProbe = registration;
+}
+
+export function currentProviderHealthProbe(): ProviderHealthProbeRegistration | undefined {
+  return registeredProviderProbe;
+}
+
 export class UnsupportedProductionProviderHealthCheck implements ModelProviderHealthCheck {
   public async check(): Promise<ModelProviderHealthResult> {
     return Promise.resolve({ ok: false, code: "PROVIDER_UNSUPPORTED" });
@@ -152,6 +204,12 @@ export async function checkModelProvider(
   if (!outcome.result.ok) {
     throw providerFailure(outcome.result.code);
   }
+
+  registerProviderHealthProbe({
+    probe: createProviderHealthProbe(config, healthCheck),
+    result: outcome.result,
+    probedAt: Date.now(),
+  });
 
   return Math.max(0, Math.round(performance.now() - startedAt));
 }

@@ -117,8 +117,8 @@ describe("Anthropic Messages provider", () => {
     });
   });
 
-  it.each(["max_tokens", "model_context_window_exceeded"])(
-    "rejects truncated text stopped by %s",
+  it.each(["model_context_window_exceeded", "pause_turn"])(
+    "rejects text stopped by %s",
     async (stopReason) => {
       const provider = new AnthropicMessagesProvider({
         fetch: vi.fn().mockResolvedValue(
@@ -134,6 +134,63 @@ describe("Anthropic Messages provider", () => {
       });
     },
   );
+
+  it("accepts a plain-text answer truncated by the output token limit", async () => {
+    const provider = new AnthropicMessagesProvider({
+      fetch: vi.fn().mockResolvedValue(
+        jsonResponse({
+          ...textMessage("Truncated but usable answer."),
+          stop_reason: "max_tokens",
+          usage: { input_tokens: 12, output_tokens: 1024 },
+        }),
+      ),
+    });
+
+    await expect(provider.generate(generationRequest())).resolves.toEqual({
+      type: "final",
+      fallbackText: "Truncated but usable answer.",
+      usage: { inputTokens: 12, outputTokens: 1024 },
+    });
+  });
+
+  it("rejects a truncated answer with no usable text", async () => {
+    const provider = new AnthropicMessagesProvider({
+      fetch: vi.fn().mockResolvedValue(
+        jsonResponse({
+          ...textMessage("   "),
+          stop_reason: "max_tokens",
+        }),
+      ),
+    });
+
+    await expect(provider.generate(generationRequest())).rejects.toMatchObject({
+      code: "MODEL_RESPONSE_INVALID",
+    });
+  });
+
+  it("never executes a tool call reported with a truncated stop reason", async () => {
+    const provider = new AnthropicMessagesProvider({
+      fetch: vi.fn().mockResolvedValue(
+        jsonResponse({
+          type: "message",
+          role: "assistant",
+          content: [
+            {
+              type: "tool_use",
+              id: "call-truncated",
+              name: "server_info_read",
+              input: {},
+            },
+          ],
+          stop_reason: "max_tokens",
+        }),
+      ),
+    });
+
+    await expect(provider.generate(generationRequest({ tools: [tool] }))).rejects.toMatchObject({
+      code: "MODEL_RESPONSE_INVALID",
+    });
+  });
 
   it("rejects oversized tool arguments before local execution", async () => {
     const provider = new AnthropicMessagesProvider({
@@ -252,7 +309,10 @@ describe("Anthropic Messages provider", () => {
     const fetchImplementation = vi
       .fn()
       .mockResolvedValue(new Response("private upstream detail", { status }));
-    const provider = new AnthropicMessagesProvider({ fetch: fetchImplementation });
+    const provider = new AnthropicMessagesProvider({
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 0,
+    });
 
     const operation = provider.generate(generationRequest());
     await expect(operation).rejects.toMatchObject({ code, accountingDisposition: "NOT_BILLABLE" });
@@ -268,6 +328,7 @@ describe("Anthropic Messages provider", () => {
   ] as const)("maps health HTTP %s to %s", async (status, code) => {
     const provider = new AnthropicMessagesProvider({
       fetch: vi.fn().mockResolvedValue(new Response("private detail", { status })),
+      retryDelayMilliseconds: 0,
     });
 
     await expect(
@@ -295,6 +356,145 @@ describe("Anthropic Messages provider", () => {
 
     controller.abort(new Error("cancelled by request owner"));
     await expect(operation).rejects.toThrow("cancelled by request owner");
+  });
+
+  it("recovers a generation round after one transient 429", async () => {
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("rate limited", { status: 429 }))
+      .mockResolvedValueOnce(jsonResponse(textMessage()));
+    const provider = new AnthropicMessagesProvider({
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 1,
+    });
+
+    await expect(provider.generate(generationRequest())).resolves.toEqual({
+      type: "final",
+      fallbackText: "Place four planks.",
+    });
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
+  });
+
+  it("recovers a generation round after one transient 503", async () => {
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("unavailable", { status: 503 }))
+      .mockResolvedValueOnce(jsonResponse(textMessage()));
+    const provider = new AnthropicMessagesProvider({
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 1,
+    });
+
+    await expect(provider.generate(generationRequest())).resolves.toEqual({
+      type: "final",
+      fallbackText: "Place four planks.",
+    });
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
+  });
+
+  it("recovers a generation round after one network-level fetch failure", async () => {
+    const fetchImplementation = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockResolvedValueOnce(jsonResponse(textMessage()));
+    const provider = new AnthropicMessagesProvider({
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 1,
+    });
+
+    await expect(provider.generate(generationRequest())).resolves.toEqual({
+      type: "final",
+      fallbackText: "Place four planks.",
+    });
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    [429, "MODEL_RATE_LIMITED"],
+    [503, "PROVIDER_UNAVAILABLE"],
+  ] as const)(
+    "keeps the terminal error when the retry also fails with %s",
+    async (status, code) => {
+      const fetchImplementation = vi
+        .fn()
+        .mockResolvedValue(new Response("private upstream detail", { status }));
+      const provider = new AnthropicMessagesProvider({
+        fetch: fetchImplementation,
+        retryDelayMilliseconds: 1,
+      });
+
+      const operation = provider.generate(generationRequest());
+      await expect(operation).rejects.toMatchObject({
+        code,
+        accountingDisposition: "NOT_BILLABLE",
+      });
+      await expect(operation).rejects.not.toThrow(/private upstream detail/u);
+      expect(fetchImplementation).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it.each([
+    [400, "MODEL_RESPONSE_INVALID"],
+    [401, "MODEL_AUTHENTICATION_FAILED"],
+  ] as const)("does not retry a non-transient generation HTTP %s", async (status, code) => {
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValue(new Response("private upstream detail", { status }));
+    const provider = new AnthropicMessagesProvider({
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 1,
+    });
+
+    await expect(provider.generate(generationRequest())).rejects.toMatchObject({
+      code,
+      accountingDisposition: "NOT_BILLABLE",
+    });
+    expect(fetchImplementation).toHaveBeenCalledOnce();
+  });
+
+  it("abandons the generation retry when the caller aborts during the backoff", async () => {
+    const controller = new AbortController();
+    let releaseFirstRound: (() => void) | undefined;
+    const firstRound = new Promise<void>((resolve) => {
+      releaseFirstRound = resolve;
+    });
+    const fetchImplementation = vi.fn(async (): Promise<Response> => {
+      await firstRound;
+      return new Response("rate limited", { status: 429 });
+    });
+    const provider = new AnthropicMessagesProvider({
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 5000,
+    });
+    const operation = provider.generate(generationRequest({ signal: controller.signal }));
+
+    releaseFirstRound?.();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    controller.abort(new Error("cancelled by request owner"));
+
+    await expect(operation).rejects.toThrow("cancelled by request owner");
+    expect(fetchImplementation).toHaveBeenCalledOnce();
+  });
+
+  it("recovers a health check after one transient 429", async () => {
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("rate limited", { status: 429 }))
+      .mockResolvedValueOnce(jsonResponse({ id: "claude-test", type: "model" }));
+    const provider = new AnthropicMessagesProvider({
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 1,
+    });
+
+    await expect(
+      provider.check({
+        provider: "anthropic",
+        model: "claude-test",
+        apiKey: API_KEY,
+        signal: new AbortController().signal,
+      }),
+    ).resolves.toEqual({ ok: true });
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
   });
 
   it("continues one tool use with a matching tool_result message", async () => {

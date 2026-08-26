@@ -216,7 +216,107 @@ describe("OpenAI-compatible Chat Completions provider", () => {
     expect(JSON.stringify(secondBody)).not.toContain("must not be retained");
   });
 
-  it("rejects mismatched provider state, unknown tools, and parallel calls", async () => {
+  it("processes the first call of a parallel fan-out and drops the rest", async () => {
+    const fetchImplementation = vi.fn().mockResolvedValue(
+      jsonResponse({
+        choices: [
+          {
+            index: 0,
+            finish_reason: "tool_calls",
+            message: {
+              role: "assistant",
+              content: "Let me check both.",
+              tool_calls: [
+                {
+                  id: "call-1",
+                  type: "function",
+                  function: {
+                    name: "server_recipe_lookup",
+                    arguments: '{"itemId":"minecraft:iron_ingot"}',
+                  },
+                },
+                {
+                  id: "call-2",
+                  type: "function",
+                  function: {
+                    name: "server_recipe_uses",
+                    arguments: '{"itemId":"minecraft:iron_ingot"}',
+                  },
+                },
+              ],
+            },
+          },
+        ],
+        usage: { prompt_tokens: 10, completion_tokens: 5 },
+      }),
+    );
+    const provider = new OpenAiChatCompletionsProvider({
+      provider: "deepseek",
+      fetch: fetchImplementation,
+    });
+    const base = request({
+      tools: [
+        {
+          id: "server.recipe.lookup",
+          providerName: "server_recipe_lookup",
+          description: "Look up recipes.",
+          parameters: { type: "object", properties: {}, additionalProperties: false },
+        },
+        {
+          id: "server.recipe.uses",
+          providerName: "server_recipe_uses",
+          description: "Look up uses.",
+          parameters: { type: "object", properties: {}, additionalProperties: false },
+        },
+      ],
+    });
+
+    const first = await provider.generate(base);
+    expect(first).toMatchObject({
+      type: "tool_call",
+      providerCallId: "call-1",
+      providerName: "server_recipe_lookup",
+      arguments: { itemId: "minecraft:iron_ingot" },
+    });
+    if (first.type !== "tool_call") {
+      throw new Error("expected a tool call");
+    }
+    // The continuation must carry only the processed call so the dropped call
+    // never leaves a dangling tool_call_id in the replayed conversation.
+    expect(first.continuation.items).toHaveLength(1);
+    expect(JSON.stringify(first.continuation)).not.toContain("call-2");
+
+    const body = JSON.parse(
+      String((fetchImplementation.mock.calls[0]?.[1] as RequestInit).body),
+    ) as Record<string, unknown>;
+    expect(body["parallel_tool_calls"]).toBe(false);
+  });
+
+  it("accepts a plain-text answer truncated by the output token limit", async () => {
+    const provider = new OpenAiChatCompletionsProvider({
+      provider: "deepseek",
+      fetch: vi.fn().mockResolvedValue(
+        jsonResponse({
+          choices: [
+            {
+              index: 0,
+              finish_reason: "length",
+              message: { role: "assistant", content: "Truncated but usable answer." },
+            },
+          ],
+          usage: { prompt_tokens: 12, completion_tokens: 1024 },
+        }),
+      ),
+    });
+
+    await expect(provider.generate(request())).resolves.toEqual({
+      type: "final",
+      fallbackText: "Truncated but usable answer.",
+      usage: { inputTokens: 12, outputTokens: 1024 },
+    });
+  });
+
+  it("rejects mismatched provider state and unknown tools", async () => {
     const unknownTool = new OpenAiChatCompletionsProvider({
       provider: "deepseek",
       fetch: vi.fn().mockResolvedValue(
@@ -371,6 +471,7 @@ describe("OpenAI-compatible Chat Completions provider", () => {
     const provider = new OpenAiChatCompletionsProvider({
       provider: "deepseek",
       fetch: vi.fn().mockResolvedValue(new Response("private upstream detail", { status })),
+      retryDelayMilliseconds: 0,
     });
     const operation = provider.generate(request());
     await expect(operation).rejects.toMatchObject({ code });
@@ -483,5 +584,190 @@ describe("OpenAI-compatible Chat Completions provider", () => {
     controller.abort(new Error("cancelled while reading"));
     streamController?.error(new Error("private aborted stream detail"));
     await expect(operation).rejects.toThrow("cancelled while reading");
+  });
+
+  it("recovers a generation round after one transient 429", async () => {
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("rate limited", { status: 429 }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          choices: [
+            {
+              index: 0,
+              finish_reason: "stop",
+              message: { role: "assistant", content: "  Use lime wool.  " },
+            },
+          ],
+          usage: { prompt_tokens: 12, completion_tokens: 5, total_tokens: 17 },
+        }),
+      );
+    const provider = new OpenAiChatCompletionsProvider({
+      provider: "deepseek",
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 1,
+    });
+
+    await expect(provider.generate(request())).resolves.toEqual({
+      type: "final",
+      fallbackText: "Use lime wool.",
+      usage: { inputTokens: 12, outputTokens: 5 },
+    });
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
+  });
+
+  it("recovers a generation round after one transient 503", async () => {
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("unavailable", { status: 503 }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          choices: [
+            {
+              index: 0,
+              finish_reason: "stop",
+              message: { role: "assistant", content: "  Use lime wool.  " },
+            },
+          ],
+          usage: { prompt_tokens: 12, completion_tokens: 5, total_tokens: 17 },
+        }),
+      );
+    const provider = new OpenAiChatCompletionsProvider({
+      provider: "deepseek",
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 1,
+    });
+
+    await expect(provider.generate(request())).resolves.toEqual({
+      type: "final",
+      fallbackText: "Use lime wool.",
+      usage: { inputTokens: 12, outputTokens: 5 },
+    });
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
+  });
+
+  it("recovers a generation round after one network-level fetch failure", async () => {
+    const fetchImplementation = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          choices: [
+            {
+              index: 0,
+              finish_reason: "stop",
+              message: { role: "assistant", content: "  Use lime wool.  " },
+            },
+          ],
+        }),
+      );
+    const provider = new OpenAiChatCompletionsProvider({
+      provider: "deepseek",
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 1,
+    });
+
+    await expect(provider.generate(request())).resolves.toEqual({
+      type: "final",
+      fallbackText: "Use lime wool.",
+    });
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    [429, "MODEL_RATE_LIMITED"],
+    [503, "PROVIDER_UNAVAILABLE"],
+  ] as const)(
+    "keeps the terminal error when the retry also fails with %s",
+    async (status, code) => {
+      const fetchImplementation = vi
+        .fn()
+        .mockResolvedValue(new Response("private upstream detail", { status }));
+      const provider = new OpenAiChatCompletionsProvider({
+        provider: "deepseek",
+        fetch: fetchImplementation,
+        retryDelayMilliseconds: 1,
+      });
+
+      const operation = provider.generate(request());
+      await expect(operation).rejects.toMatchObject({
+        code,
+        accountingDisposition: "BILLABILITY_UNKNOWN",
+      });
+      await expect(operation).rejects.not.toThrow(/private upstream detail/u);
+      expect(fetchImplementation).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it.each([
+    [400, "MODEL_RESPONSE_INVALID"],
+    [401, "MODEL_AUTHENTICATION_FAILED"],
+  ] as const)("does not retry a non-transient generation HTTP %s", async (status, code) => {
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValue(new Response("private upstream detail", { status }));
+    const provider = new OpenAiChatCompletionsProvider({
+      provider: "deepseek",
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 1,
+    });
+
+    await expect(provider.generate(request())).rejects.toMatchObject({
+      code,
+      accountingDisposition: "BILLABILITY_UNKNOWN",
+    });
+    expect(fetchImplementation).toHaveBeenCalledOnce();
+  });
+
+  it("abandons the generation retry when the caller aborts during the backoff", async () => {
+    const controller = new AbortController();
+    let releaseFirstRound: (() => void) | undefined;
+    const firstRound = new Promise<void>((resolve) => {
+      releaseFirstRound = resolve;
+    });
+    const fetchImplementation = vi.fn(async (): Promise<Response> => {
+      await firstRound;
+      return new Response("rate limited", { status: 429 });
+    });
+    const provider = new OpenAiChatCompletionsProvider({
+      provider: "deepseek",
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 5000,
+    });
+    const operation = provider.generate(request({ signal: controller.signal }));
+
+    releaseFirstRound?.();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    controller.abort(new Error("cancelled by request owner"));
+
+    await expect(operation).rejects.toThrow("cancelled by request owner");
+    expect(fetchImplementation).toHaveBeenCalledOnce();
+  });
+
+  it("recovers a health check after one transient 429", async () => {
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("rate limited", { status: 429 }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          object: "list",
+          data: [{ id: "deepseek-test", object: "model", owned_by: "deepseek" }],
+        }),
+      );
+    const provider = new OpenAiChatCompletionsProvider({
+      provider: "deepseek",
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 1,
+    });
+
+    await expect(
+      provider.check({
+        provider: "deepseek",
+        model: "deepseek-test",
+        apiKey: API_KEY,
+        signal: new AbortController().signal,
+      }),
+    ).resolves.toEqual({ ok: true });
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
   });
 });

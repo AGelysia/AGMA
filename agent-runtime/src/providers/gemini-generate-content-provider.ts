@@ -7,7 +7,6 @@ import type {
 import { parseStrictJson } from "../transport/strict-json.js";
 import {
   ModelGenerationError,
-  type ModelGenerationAccountingDisposition,
   type ModelGenerationRequest,
   type ModelGenerationResult,
   type ModelProvider,
@@ -16,14 +15,20 @@ import {
   appendEndpoint,
   boundedFallbackText,
   discardBody,
+  distinctProviderTools,
   type FetchImplementation,
+  fetchProviderResponse,
+  generationFailure,
+  healthFailure,
   isRecord,
   MAXIMUM_PROVIDER_RESPONSE_BYTES,
-  MAXIMUM_TOOL_ARGUMENT_CHARACTERS,
   PROVIDER_TOOL_NAME,
+  type ProviderHttpResilience,
+  providerHttpResilience,
+  type ProviderHttpResilienceOptions,
   readBoundedJson,
   serializeProviderRequest,
-  strictToolArguments,
+  strictFunctionArguments,
 } from "./provider-http.js";
 
 const GEMINI_API_ROOT = "https://generativelanguage.googleapis.com/v1beta";
@@ -31,7 +36,7 @@ const MAXIMUM_PROVIDER_IDENTIFIER_LENGTH = 256;
 const MAXIMUM_CONTENT_PARTS = 64;
 const MAXIMUM_CONTINUATION_ITEMS = 64;
 
-export interface GeminiGenerateContentProviderOptions {
+export interface GeminiGenerateContentProviderOptions extends ProviderHttpResilienceOptions {
   readonly baseUrl?: string;
   readonly fetch?: FetchImplementation;
 }
@@ -142,38 +147,6 @@ const providerResponseSchema = z
   })
   .loose();
 
-function healthFailure(status: number): ModelProviderHealthResult {
-  if (status === 401 || status === 403) {
-    return { ok: false, code: "PROVIDER_AUTH_FAILED" };
-  }
-  if (status === 404) {
-    return { ok: false, code: "MODEL_UNAVAILABLE" };
-  }
-  if (status === 408 || status === 429 || status >= 500) {
-    return { ok: false, code: "PROVIDER_UNAVAILABLE" };
-  }
-  return { ok: false, code: "MODEL_HEALTH_FAILED" };
-}
-
-function generationFailure(
-  status: number,
-  disposition: ModelGenerationAccountingDisposition,
-): ModelGenerationError {
-  if (status === 401 || status === 403) {
-    return new ModelGenerationError("MODEL_AUTHENTICATION_FAILED", disposition);
-  }
-  if (status === 404) {
-    return new ModelGenerationError("MODEL_UNAVAILABLE", disposition);
-  }
-  if (status === 429) {
-    return new ModelGenerationError("MODEL_RATE_LIMITED", disposition);
-  }
-  if (status === 408 || status >= 500) {
-    return new ModelGenerationError("PROVIDER_UNAVAILABLE", disposition);
-  }
-  return new ModelGenerationError("MODEL_RESPONSE_INVALID", disposition);
-}
-
 function invalidRequest(): ModelGenerationError {
   return new ModelGenerationError("MODEL_RESPONSE_INVALID", "NOT_BILLABLE");
 }
@@ -232,18 +205,11 @@ function geminiToolSchema(
 }
 
 function providerTools(request: ModelGenerationRequest): readonly Record<string, unknown>[] {
-  const names = new Set<string>();
-  const declarations = (request.tools ?? []).map((tool) => {
-    if (!PROVIDER_TOOL_NAME.test(tool.providerName) || names.has(tool.providerName)) {
-      throw invalidRequest();
-    }
-    names.add(tool.providerName);
-    return {
-      name: tool.providerName,
-      description: tool.description,
-      parametersJsonSchema: geminiToolSchema(tool.parameters),
-    };
-  });
+  const declarations = distinctProviderTools(request).map((tool) => ({
+    name: tool.providerName,
+    description: tool.description,
+    parametersJsonSchema: geminiToolSchema(tool.parameters),
+  }));
   return declarations.length === 0 ? [] : [{ functionDeclarations: declarations }];
 }
 
@@ -266,21 +232,6 @@ function parsedToolOutput(source: string): Readonly<Record<string, unknown>> {
     }
     throw invalidRequest();
   }
-}
-
-function strictFunctionArguments(
-  argumentsValue: Readonly<Record<string, unknown>>,
-): Readonly<Record<string, unknown>> {
-  let source: string;
-  try {
-    source = JSON.stringify(argumentsValue);
-  } catch {
-    throw new ModelGenerationError("MODEL_RESPONSE_INVALID");
-  }
-  if (source.length > MAXIMUM_TOOL_ARGUMENT_CHARACTERS) {
-    throw new ModelGenerationError("MODEL_RESPONSE_INVALID");
-  }
-  return strictToolArguments(source);
 }
 
 function tokenSum(...values: readonly number[]): number {
@@ -415,11 +366,13 @@ export class GeminiGenerateContentProvider implements ModelProvider {
   readonly #baseUrl: string;
   readonly #fetch: FetchImplementation;
   readonly #officialEndpoint: boolean;
+  readonly #resilience: ProviderHttpResilience;
 
   public constructor(options: GeminiGenerateContentProviderOptions = {}) {
     this.#baseUrl = options.baseUrl ?? GEMINI_API_ROOT;
     this.#fetch = options.fetch ?? globalThis.fetch;
     this.#officialEndpoint = options.baseUrl === undefined;
+    this.#resilience = providerHttpResilience(options);
   }
 
   public async check(request: ModelProviderHealthRequest): Promise<ModelProviderHealthResult> {
@@ -429,14 +382,15 @@ export class GeminiGenerateContentProvider implements ModelProvider {
 
     let response: Response;
     try {
-      response = await this.#fetch(
+      response = await fetchProviderResponse(
+        this.#fetch,
         appendEndpoint(this.#baseUrl, `models/${encodeURIComponent(request.model)}`),
         {
           method: "GET",
           headers: { "x-goog-api-key": request.apiKey },
           redirect: "error",
-          signal: request.signal,
         },
+        { signal: request.signal, ...this.#resilience },
       );
     } catch {
       if (request.signal.aborted) {
@@ -489,7 +443,8 @@ export class GeminiGenerateContentProvider implements ModelProvider {
 
     let response: Response;
     try {
-      response = await this.#fetch(
+      response = await fetchProviderResponse(
+        this.#fetch,
         appendEndpoint(
           this.#baseUrl,
           `models/${encodeURIComponent(request.model)}:generateContent`,
@@ -501,9 +456,9 @@ export class GeminiGenerateContentProvider implements ModelProvider {
             "Content-Type": "application/json",
           },
           redirect: "error",
-          signal: request.signal,
           body,
         },
+        { signal: request.signal, ...this.#resilience },
       );
     } catch {
       if (request.signal.aborted) {
@@ -541,7 +496,7 @@ export class GeminiGenerateContentProvider implements ModelProvider {
     const candidate = parsed.data.candidates[0];
     if (
       candidate === undefined ||
-      candidate.finishReason !== "STOP" ||
+      (candidate.finishReason !== "STOP" && candidate.finishReason !== "MAX_TOKENS") ||
       candidate.safetyRatings?.some((rating) => rating.blocked === true) === true
     ) {
       throw new ModelGenerationError("MODEL_RESPONSE_INVALID");
@@ -564,6 +519,9 @@ export class GeminiGenerateContentProvider implements ModelProvider {
 
     const call = calls[0]?.functionCall;
     if (call !== undefined) {
+      if (candidate.finishReason !== "STOP") {
+        throw new ModelGenerationError("MODEL_RESPONSE_INVALID");
+      }
       const allowedNames = new Set((request.tools ?? []).map((tool) => tool.providerName));
       if (!allowedNames.has(call.name)) {
         throw new ModelGenerationError("MODEL_RESPONSE_INVALID");
@@ -584,6 +542,8 @@ export class GeminiGenerateContentProvider implements ModelProvider {
       };
     }
 
+    // A plain-text answer truncated by MAX_TOKENS is still usable fallback text;
+    // only tool calls are unsafe to accept when truncated (see above).
     const fallbackText = boundedFallbackText(
       candidate.content.parts
         .filter((part) => "text" in part && part.thought !== true)

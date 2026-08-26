@@ -6,7 +6,6 @@ import type {
 } from "../health/model-provider.js";
 import {
   ModelGenerationError,
-  type ModelGenerationAccountingDisposition,
   type ModelGenerationRequest,
   type ModelGenerationResult,
   type ModelProvider,
@@ -17,12 +16,18 @@ import {
   appendEndpoint,
   boundedFallbackText,
   discardBody,
+  distinctProviderTools,
   type FetchImplementation,
+  fetchProviderResponse,
+  generationFailure,
+  healthFailure,
   isRecord,
-  MAXIMUM_TOOL_ARGUMENT_CHARACTERS,
+  type ProviderHttpResilience,
+  providerHttpResilience,
+  type ProviderHttpResilienceOptions,
   readBoundedJson,
   serializeProviderRequest,
-  strictToolArguments,
+  strictFunctionArguments,
 } from "./provider-http.js";
 
 const ANTHROPIC_API_ROOT = "https://api.anthropic.com/v1";
@@ -31,7 +36,7 @@ const MAXIMUM_CONTINUATION_ITEMS = 128;
 const MAXIMUM_CONTENT_BLOCKS = 64;
 const MAXIMUM_TEXT_CHARACTERS = 8192;
 
-export interface AnthropicMessagesProviderOptions {
+export interface AnthropicMessagesProviderOptions extends ProviderHttpResilienceOptions {
   readonly baseUrl?: string;
   readonly fetch?: FetchImplementation;
 }
@@ -114,49 +119,11 @@ function anthropicHeaders(apiKey: string): Readonly<Record<string, string>> {
   };
 }
 
-function healthFailure(status: number): ModelProviderHealthResult {
-  if (status === 401 || status === 403) {
-    return { ok: false, code: "PROVIDER_AUTH_FAILED" };
-  }
-  if (status === 404) {
-    return { ok: false, code: "MODEL_UNAVAILABLE" };
-  }
-  if (status === 408 || status === 429 || status >= 500) {
-    return { ok: false, code: "PROVIDER_UNAVAILABLE" };
-  }
-  return { ok: false, code: "MODEL_HEALTH_FAILED" };
-}
-
-function generationFailure(
-  status: number,
-  disposition: ModelGenerationAccountingDisposition,
-): ModelGenerationError {
-  if (status === 401 || status === 403) {
-    return new ModelGenerationError("MODEL_AUTHENTICATION_FAILED", disposition);
-  }
-  if (status === 404) {
-    return new ModelGenerationError("MODEL_UNAVAILABLE", disposition);
-  }
-  if (status === 429) {
-    return new ModelGenerationError("MODEL_RATE_LIMITED", disposition);
-  }
-  if (status === 408 || status >= 500) {
-    return new ModelGenerationError("PROVIDER_UNAVAILABLE", disposition);
-  }
-  return new ModelGenerationError("MODEL_RESPONSE_INVALID", disposition);
-}
-
 function providerTools(request: ModelGenerationRequest): readonly Record<string, unknown>[] {
-  const names = new Set<string>();
-  return request.tools.map((tool) => {
-    if (
-      !PROVIDER_TOOL_NAME.test(tool.providerName) ||
-      names.has(tool.providerName) ||
-      !isRecord(tool.parameters)
-    ) {
+  return distinctProviderTools(request).map((tool) => {
+    if (!isRecord(tool.parameters)) {
       throw new ModelGenerationError("MODEL_RESPONSE_INVALID", "NOT_BILLABLE");
     }
-    names.add(tool.providerName);
     return {
       name: tool.providerName,
       description: tool.description,
@@ -169,21 +136,6 @@ function providerTools(request: ModelGenerationRequest): readonly Record<string,
 function toolUse(message: AssistantContinuation): z.infer<typeof toolUseBlockSchema> | undefined {
   const calls = message.content.filter((block) => block.type === "tool_use");
   return calls.length === 1 ? calls[0] : undefined;
-}
-
-function strictFunctionArguments(
-  input: Readonly<Record<string, unknown>>,
-): Readonly<Record<string, unknown>> {
-  let source: string;
-  try {
-    source = JSON.stringify(input);
-  } catch {
-    throw new ModelGenerationError("MODEL_RESPONSE_INVALID");
-  }
-  if (source.length > MAXIMUM_TOOL_ARGUMENT_CHARACTERS) {
-    throw new ModelGenerationError("MODEL_RESPONSE_INVALID");
-  }
-  return strictToolArguments(source);
 }
 
 function continuationItems(request: ModelGenerationRequest): readonly ContinuationItem[] {
@@ -265,11 +217,13 @@ export class AnthropicMessagesProvider implements ModelProvider {
   readonly #baseUrl: string;
   readonly #fetch: FetchImplementation;
   readonly #officialEndpoint: boolean;
+  readonly #resilience: ProviderHttpResilience;
 
   public constructor(options: AnthropicMessagesProviderOptions = {}) {
     this.#baseUrl = options.baseUrl ?? ANTHROPIC_API_ROOT;
     this.#fetch = options.fetch ?? globalThis.fetch;
     this.#officialEndpoint = options.baseUrl === undefined;
+    this.#resilience = providerHttpResilience(options);
   }
 
   public async check(request: ModelProviderHealthRequest): Promise<ModelProviderHealthResult> {
@@ -279,14 +233,15 @@ export class AnthropicMessagesProvider implements ModelProvider {
 
     let response: Response;
     try {
-      response = await this.#fetch(
+      response = await fetchProviderResponse(
+        this.#fetch,
         appendEndpoint(this.#baseUrl, `models/${encodeURIComponent(request.model)}`),
         {
           method: "GET",
           headers: anthropicHeaders(request.apiKey),
           redirect: "error",
-          signal: request.signal,
         },
+        { signal: request.signal, ...this.#resilience },
       );
     } catch {
       if (request.signal.aborted) {
@@ -338,16 +293,20 @@ export class AnthropicMessagesProvider implements ModelProvider {
 
     let response: Response;
     try {
-      response = await this.#fetch(appendEndpoint(this.#baseUrl, "messages"), {
-        method: "POST",
-        headers: {
-          ...anthropicHeaders(request.apiKey),
-          "Content-Type": "application/json",
+      response = await fetchProviderResponse(
+        this.#fetch,
+        appendEndpoint(this.#baseUrl, "messages"),
+        {
+          method: "POST",
+          headers: {
+            ...anthropicHeaders(request.apiKey),
+            "Content-Type": "application/json",
+          },
+          redirect: "error",
+          body,
         },
-        redirect: "error",
-        signal: request.signal,
-        body,
-      });
+        { signal: request.signal, ...this.#resilience },
+      );
     } catch {
       if (request.signal.aborted) {
         throw request.signal.reason;
@@ -375,7 +334,6 @@ export class AnthropicMessagesProvider implements ModelProvider {
       calls.length > 1 ||
       (calls.length === 1) !== (parsed.data.stop_reason === "tool_use") ||
       parsed.data.stop_reason === "pause_turn" ||
-      parsed.data.stop_reason === "max_tokens" ||
       parsed.data.stop_reason === "model_context_window_exceeded" ||
       (tools.length === 0 && calls.length !== 0)
     ) {
@@ -421,6 +379,8 @@ export class AnthropicMessagesProvider implements ModelProvider {
       };
     }
 
+    // A plain-text answer truncated by max_tokens is still usable fallback text;
+    // only tool calls are unsafe to accept when truncated (see above).
     return {
       type: "final",
       fallbackText: boundedFallbackText(

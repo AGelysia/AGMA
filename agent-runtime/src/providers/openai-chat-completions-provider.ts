@@ -16,10 +16,17 @@ import {
   bearerAuthorization,
   boundedFallbackText,
   discardBody,
+  distinctProviderTools,
   type FetchImplementation,
+  fetchProviderResponse,
+  generationFailure,
+  healthFailure,
   MAXIMUM_PROVIDER_RESPONSE_BYTES,
   MAXIMUM_TOOL_ARGUMENT_CHARACTERS,
   PROVIDER_TOOL_NAME,
+  type ProviderHttpResilience,
+  providerHttpResilience,
+  type ProviderHttpResilienceOptions,
   readBoundedJson,
   serializeProviderRequest,
   strictToolArguments,
@@ -29,7 +36,7 @@ const DEEPSEEK_API_ROOT = "https://api.deepseek.com";
 const MAXIMUM_CONTINUATION_ITEMS = 64;
 type ChatProviderId = Extract<ModelProviderId, "deepseek" | "openai-compatible">;
 
-export interface OpenAiChatCompletionsProviderOptions {
+export interface OpenAiChatCompletionsProviderOptions extends ProviderHttpResilienceOptions {
   readonly provider: ChatProviderId;
   readonly baseUrl?: string;
   readonly fetch?: FetchImplementation;
@@ -92,8 +99,10 @@ const providerResponseSchema = z
             message: z
               .object({
                 role: z.literal("assistant"),
-                content: z.string().max(8192).nullable(),
-                tool_calls: z.array(chatToolCallSchema).max(2).optional(),
+                content: z.string().max(8192).nullish(),
+                // Endpoints may fan out parallel calls even when asked not to;
+                // only the first call is processed and the rest are dropped.
+                tool_calls: z.array(chatToolCallSchema).max(8).optional(),
               })
               .loose(),
           })
@@ -109,35 +118,6 @@ const providerResponseSchema = z
       .optional(),
   })
   .loose();
-
-function healthFailure(status: number): ModelProviderHealthResult {
-  if (status === 401 || status === 403) {
-    return { ok: false, code: "PROVIDER_AUTH_FAILED" };
-  }
-  if (status === 404) {
-    return { ok: false, code: "MODEL_UNAVAILABLE" };
-  }
-  if (status === 408 || status === 429 || status >= 500) {
-    return { ok: false, code: "PROVIDER_UNAVAILABLE" };
-  }
-  return { ok: false, code: "MODEL_HEALTH_FAILED" };
-}
-
-function generationFailure(status: number): ModelGenerationError {
-  if (status === 401 || status === 403) {
-    return new ModelGenerationError("MODEL_AUTHENTICATION_FAILED");
-  }
-  if (status === 404) {
-    return new ModelGenerationError("MODEL_UNAVAILABLE");
-  }
-  if (status === 429) {
-    return new ModelGenerationError("MODEL_RATE_LIMITED");
-  }
-  if (status === 408 || status >= 500) {
-    return new ModelGenerationError("PROVIDER_UNAVAILABLE");
-  }
-  return new ModelGenerationError("MODEL_RESPONSE_INVALID");
-}
 
 function continuationItems(
   request: ModelGenerationRequest,
@@ -197,27 +177,21 @@ function continuationItems(
 }
 
 function providerTools(request: ModelGenerationRequest): readonly Record<string, unknown>[] {
-  const names = new Set<string>();
-  return request.tools.map((tool) => {
-    if (!PROVIDER_TOOL_NAME.test(tool.providerName) || names.has(tool.providerName)) {
-      throw new ModelGenerationError("MODEL_RESPONSE_INVALID", "NOT_BILLABLE");
-    }
-    names.add(tool.providerName);
-    return {
-      type: "function",
-      function: {
-        name: tool.providerName,
-        description: tool.description,
-        parameters: tool.parameters,
-      },
-    };
-  });
+  return distinctProviderTools(request).map((tool) => ({
+    type: "function",
+    function: {
+      name: tool.providerName,
+      description: tool.description,
+      parameters: tool.parameters,
+    },
+  }));
 }
 
 export class OpenAiChatCompletionsProvider implements ModelProvider {
   readonly #provider: ChatProviderId;
   readonly #baseUrl: string;
   readonly #fetch: FetchImplementation;
+  readonly #resilience: ProviderHttpResilience;
 
   public constructor(options: OpenAiChatCompletionsProviderOptions) {
     this.#provider = options.provider;
@@ -229,6 +203,7 @@ export class OpenAiChatCompletionsProvider implements ModelProvider {
             throw new TypeError("The openai-compatible provider requires a base URL.");
           })());
     this.#fetch = options.fetch ?? globalThis.fetch;
+    this.#resilience = providerHttpResilience(options);
   }
 
   public async check(request: ModelProviderHealthRequest): Promise<ModelProviderHealthResult> {
@@ -238,12 +213,16 @@ export class OpenAiChatCompletionsProvider implements ModelProvider {
 
     let response: Response;
     try {
-      response = await this.#fetch(appendEndpoint(this.#baseUrl, "models"), {
-        method: "GET",
-        headers: { Authorization: bearerAuthorization(request.apiKey) },
-        redirect: "error",
-        signal: request.signal,
-      });
+      response = await fetchProviderResponse(
+        this.#fetch,
+        appendEndpoint(this.#baseUrl, "models"),
+        {
+          method: "GET",
+          headers: { Authorization: bearerAuthorization(request.apiKey) },
+          redirect: "error",
+        },
+        { signal: request.signal, ...this.#resilience },
+      );
     } catch {
       if (request.signal.aborted) {
         throw request.signal.reason;
@@ -285,20 +264,25 @@ export class OpenAiChatCompletionsProvider implements ModelProvider {
       stream: false,
       tools,
       tool_choice: tools.length === 0 ? "none" : "auto",
+      parallel_tool_calls: false,
       ...(this.#provider === "deepseek" ? { thinking: { type: "disabled" } } : {}),
     });
     let response: Response;
     try {
-      response = await this.#fetch(appendEndpoint(this.#baseUrl, "chat/completions"), {
-        method: "POST",
-        headers: {
-          Authorization: bearerAuthorization(request.apiKey),
-          "Content-Type": "application/json",
+      response = await fetchProviderResponse(
+        this.#fetch,
+        appendEndpoint(this.#baseUrl, "chat/completions"),
+        {
+          method: "POST",
+          headers: {
+            Authorization: bearerAuthorization(request.apiKey),
+            "Content-Type": "application/json",
+          },
+          redirect: "error",
+          body,
         },
-        redirect: "error",
-        signal: request.signal,
-        body,
-      });
+        { signal: request.signal, ...this.#resilience },
+      );
     } catch {
       if (request.signal.aborted) {
         throw request.signal.reason;
@@ -323,7 +307,7 @@ export class OpenAiChatCompletionsProvider implements ModelProvider {
 
     const choice = parsed.data.choices[0];
     const calls = choice.message.tool_calls ?? [];
-    if (calls.length > 1 || (tools.length === 0 && calls.length !== 0)) {
+    if (tools.length === 0 && calls.length !== 0) {
       throw new ModelGenerationError("MODEL_RESPONSE_INVALID");
     }
     const usage = parsed.data.usage;
@@ -349,7 +333,7 @@ export class OpenAiChatCompletionsProvider implements ModelProvider {
       }
       const currentAssistant = {
         role: "assistant",
-        content: choice.message.content,
+        content: choice.message.content ?? null,
         tool_calls: [
           {
             id: call.id,
@@ -374,9 +358,11 @@ export class OpenAiChatCompletionsProvider implements ModelProvider {
       };
     }
 
-    if (choice.finish_reason !== "stop") {
+    if (choice.finish_reason !== "stop" && choice.finish_reason !== "length") {
       throw new ModelGenerationError("MODEL_RESPONSE_INVALID");
     }
+    // A plain-text answer truncated by max_tokens is still usable fallback text;
+    // only tool calls are unsafe to accept when truncated (see above).
     return {
       type: "final",
       fallbackText: boundedFallbackText(choice.message.content ?? ""),

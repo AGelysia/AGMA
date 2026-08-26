@@ -3,7 +3,7 @@ import { createHmac } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 
 import { RuntimeStartupError } from "../src/bootstrap/startup-error.js";
-import type { RuntimeConfig } from "../src/config/runtime-config.js";
+import type { LoadedRuntimeConfig, RuntimeConfig } from "../src/config/runtime-config.js";
 import type {
   ModelGenerationRequest,
   ModelGenerationResult,
@@ -222,7 +222,7 @@ describe("live provider validation", () => {
 
   it("stops at a health failure and emits only the provider failure code", async () => {
     const fakeProvider = successfulProvider();
-    fakeProvider.check = vi.fn(async () => ({ ok: false, code: "PROVIDER_AUTH_FAILED" }));
+    fakeProvider.check = vi.fn(async () => ({ ok: false, code: "PROVIDER_AUTH_FAILED" }) as const);
 
     const report = await runLiveProviderCheck({
       confirmedBillable: true,
@@ -323,8 +323,22 @@ describe("live provider validation", () => {
 
   it("runs the injectable CLI offline and rejects unknown arguments safely", async () => {
     const output: string[] = [];
-    const loaded = {
-      config: config(),
+    const documentConfig = config();
+    const loaded: LoadedRuntimeConfig = {
+      config: documentConfig,
+      resolved: {
+        profile: "paper",
+        allowedClientTools: [],
+        scopeId: documentConfig.server.id,
+        subjectId: "00000000-0000-4000-8000-000000000000",
+        authenticationSecret: SERVER_TOKEN,
+        transport: documentConfig.transport,
+        model: documentConfig.model,
+        storage: documentConfig.storage,
+        logging: documentConfig.logging,
+        limits: documentConfig.limits,
+        privacy: documentConfig.privacy,
+      },
       paths: {
         configFile: "/private/config.local.yml",
         rootDirectory: "/private",
@@ -363,17 +377,22 @@ describe("live provider validation", () => {
     ]);
 
     output.length = 0;
+    const privacyUnsafe: LoadedRuntimeConfig = {
+      ...loaded,
+      config: {
+        ...documentConfig,
+        privacy: { ...documentConfig.privacy, logToolCalls: true },
+      },
+      resolved: {
+        ...loaded.resolved,
+        privacy: { ...loaded.resolved.privacy, logToolCalls: true },
+      },
+    };
     const privateCreateProvider = vi.fn(() => successfulProvider());
     const unsafePrivacyExitCode = await runLiveProviderCheckCli({
       arguments: ["--confirm-billable", "--config", "/private/config.local.yml"],
       writeLine: (line) => output.push(line),
-      loadConfig: vi.fn(async () => ({
-        ...loaded,
-        config: {
-          ...loaded.config,
-          privacy: { ...loaded.config.privacy, logToolCalls: true },
-        },
-      })),
+      loadConfig: vi.fn(async () => privacyUnsafe),
       createProvider: privateCreateProvider,
     });
     expect(unsafePrivacyExitCode).toBe(1);

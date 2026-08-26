@@ -6,7 +6,6 @@ import type {
 } from "../health/model-provider.js";
 import {
   ModelGenerationError,
-  type ModelGenerationAccountingDisposition,
   type ModelGenerationRequest,
   type ModelGenerationResult,
   type ModelProvider,
@@ -16,10 +15,17 @@ import {
   bearerAuthorization,
   boundedFallbackText,
   discardBody,
+  distinctProviderTools,
   type FetchImplementation,
+  fetchProviderResponse,
+  generationFailure,
+  healthFailure,
   MAXIMUM_PROVIDER_RESPONSE_BYTES,
   MAXIMUM_TOOL_ARGUMENT_CHARACTERS,
   PROVIDER_TOOL_NAME,
+  type ProviderHttpResilience,
+  providerHttpResilience,
+  type ProviderHttpResilienceOptions,
   readBoundedJson,
   serializeProviderRequest,
   strictToolArguments,
@@ -28,7 +34,7 @@ import {
 const OPENAI_API_ROOT = "https://api.openai.com/v1";
 const MAXIMUM_CONTINUATION_ITEMS = 1024;
 
-export interface OpenAiResponsesProviderOptions {
+export interface OpenAiResponsesProviderOptions extends ProviderHttpResilienceOptions {
   readonly fetch?: FetchImplementation;
   readonly baseUrl?: string;
 }
@@ -96,7 +102,13 @@ const continuationItemSchema = z.union([
 
 const providerResponseSchema = z
   .object({
-    status: z.literal("completed"),
+    status: z.enum(["completed", "incomplete"]),
+    incomplete_details: z
+      .object({
+        reason: z.string().min(1).max(64),
+      })
+      .loose()
+      .optional(),
     output: z
       .array(z.union([assistantMessageSchema, functionCallSchema, reasoningItemSchema]))
       .max(64),
@@ -169,63 +181,26 @@ function continuationItems(
 }
 
 function providerTools(request: ModelGenerationRequest): readonly Record<string, unknown>[] {
-  const names = new Set<string>();
-  return (request.tools ?? []).map((tool) => {
-    if (!PROVIDER_TOOL_NAME.test(tool.providerName) || names.has(tool.providerName)) {
-      throw new ModelGenerationError("MODEL_RESPONSE_INVALID", "NOT_BILLABLE");
-    }
-    names.add(tool.providerName);
-    return {
-      type: "function",
-      name: tool.providerName,
-      description: tool.description,
-      parameters: tool.parameters,
-      strict: true,
-    };
-  });
-}
-
-function healthFailure(status: number): ModelProviderHealthResult {
-  if (status === 401 || status === 403) {
-    return { ok: false, code: "PROVIDER_AUTH_FAILED" };
-  }
-  if (status === 404) {
-    return { ok: false, code: "MODEL_UNAVAILABLE" };
-  }
-  if (status === 408 || status === 429 || status >= 500) {
-    return { ok: false, code: "PROVIDER_UNAVAILABLE" };
-  }
-  return { ok: false, code: "MODEL_HEALTH_FAILED" };
-}
-
-function generationFailure(
-  status: number,
-  disposition: ModelGenerationAccountingDisposition,
-): ModelGenerationError {
-  if (status === 401 || status === 403) {
-    return new ModelGenerationError("MODEL_AUTHENTICATION_FAILED", disposition);
-  }
-  if (status === 404) {
-    return new ModelGenerationError("MODEL_UNAVAILABLE", disposition);
-  }
-  if (status === 429) {
-    return new ModelGenerationError("MODEL_RATE_LIMITED", disposition);
-  }
-  if (status === 408 || status >= 500) {
-    return new ModelGenerationError("PROVIDER_UNAVAILABLE", disposition);
-  }
-  return new ModelGenerationError("MODEL_RESPONSE_INVALID", disposition);
+  return distinctProviderTools(request).map((tool) => ({
+    type: "function",
+    name: tool.providerName,
+    description: tool.description,
+    parameters: tool.parameters,
+    strict: true,
+  }));
 }
 
 export class OpenAiResponsesProvider implements ModelProvider {
   readonly #fetch: FetchImplementation;
   readonly #baseUrl: string;
   readonly #officialEndpoint: boolean;
+  readonly #resilience: ProviderHttpResilience;
 
   public constructor(options: OpenAiResponsesProviderOptions = {}) {
     this.#fetch = options.fetch ?? globalThis.fetch;
     this.#baseUrl = options.baseUrl ?? OPENAI_API_ROOT;
     this.#officialEndpoint = options.baseUrl === undefined;
+    this.#resilience = providerHttpResilience(options);
   }
 
   public async check(request: ModelProviderHealthRequest): Promise<ModelProviderHealthResult> {
@@ -234,14 +209,15 @@ export class OpenAiResponsesProvider implements ModelProvider {
     }
     let response: Response;
     try {
-      response = await this.#fetch(
+      response = await fetchProviderResponse(
+        this.#fetch,
         appendEndpoint(this.#baseUrl, `models/${encodeURIComponent(request.model)}`),
         {
           method: "GET",
           headers: { Authorization: bearerAuthorization(request.apiKey) },
           redirect: "error",
-          signal: request.signal,
         },
+        { signal: request.signal, ...this.#resilience },
       );
     } catch {
       if (request.signal.aborted) {
@@ -289,16 +265,20 @@ export class OpenAiResponsesProvider implements ModelProvider {
       include: ["reasoning.encrypted_content"],
     });
     try {
-      response = await this.#fetch(appendEndpoint(this.#baseUrl, "responses"), {
-        method: "POST",
-        headers: {
-          Authorization: bearerAuthorization(request.apiKey),
-          "Content-Type": "application/json",
+      response = await fetchProviderResponse(
+        this.#fetch,
+        appendEndpoint(this.#baseUrl, "responses"),
+        {
+          method: "POST",
+          headers: {
+            Authorization: bearerAuthorization(request.apiKey),
+            "Content-Type": "application/json",
+          },
+          redirect: "error",
+          body,
         },
-        redirect: "error",
-        signal: request.signal,
-        body,
-      });
+        { signal: request.signal, ...this.#resilience },
+      );
     } catch {
       if (request.signal.aborted) {
         throw request.signal.reason;
@@ -337,7 +317,10 @@ export class OpenAiResponsesProvider implements ModelProvider {
           };
     const call = calls[0];
     if (call !== undefined) {
-      if (call.status !== undefined && call.status !== "completed") {
+      if (
+        parsed.data.status !== "completed" ||
+        (call.status !== undefined && call.status !== "completed")
+      ) {
         throw new ModelGenerationError("MODEL_RESPONSE_INVALID");
       }
       const allowedNames = new Set(tools.map((tool) => String(tool["name"])));
@@ -388,6 +371,14 @@ export class OpenAiResponsesProvider implements ModelProvider {
       };
     }
 
+    // A plain-text answer truncated by max_output_tokens is still usable fallback
+    // text; only tool calls are unsafe to accept when truncated (see above).
+    if (
+      parsed.data.status === "incomplete" &&
+      parsed.data.incomplete_details?.reason !== "max_output_tokens"
+    ) {
+      throw new ModelGenerationError("MODEL_RESPONSE_INVALID");
+    }
     const fallbackText = boundedFallbackText(
       parsed.data.output
         .flatMap((item) => (item.type === "message" ? item.content : []))

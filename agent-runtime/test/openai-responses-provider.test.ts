@@ -107,6 +107,7 @@ describe("OpenAI Responses provider", () => {
         apiKey: API_KEY,
         instructions: "trusted module prompt",
         input: [{ role: "user", content: "private player prompt" }],
+        tools: [],
         maxOutputTokens: 1024,
         signal: new AbortController().signal,
       }),
@@ -146,7 +147,10 @@ describe("OpenAI Responses provider", () => {
     const fetchImplementation = vi
       .fn()
       .mockResolvedValue(new Response("private upstream detail", { status }));
-    const provider = new OpenAiResponsesProvider({ fetch: fetchImplementation });
+    const provider = new OpenAiResponsesProvider({
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 0,
+    });
 
     const operation = provider.generate({
       provider: "openai",
@@ -154,6 +158,7 @@ describe("OpenAI Responses provider", () => {
       apiKey: API_KEY,
       instructions: "trusted module prompt",
       input: [{ role: "user", content: "private player prompt" }],
+      tools: [],
       maxOutputTokens: 1024,
       signal: new AbortController().signal,
     });
@@ -191,6 +196,7 @@ describe("OpenAI Responses provider", () => {
           apiKey: API_KEY,
           instructions: "trusted module prompt",
           input: [{ role: "user", content: "private player prompt" }],
+          tools: [],
           maxOutputTokens: 1024,
           signal: new AbortController().signal,
         }),
@@ -215,6 +221,7 @@ describe("OpenAI Responses provider", () => {
       apiKey: API_KEY,
       instructions: "trusted module prompt",
       input: [{ role: "user", content: "private player prompt" }],
+      tools: [],
       maxOutputTokens: 1024,
       signal: controller.signal,
     });
@@ -453,12 +460,48 @@ describe("OpenAI Responses provider", () => {
     ).rejects.toMatchObject({ code: "MODEL_RESPONSE_INVALID" });
   });
 
-  it("does not publish partial text from an incomplete Responses result", async () => {
+  it("accepts a plain-text answer truncated by the output token limit", async () => {
     const provider = new OpenAiResponsesProvider({
       fetch: vi.fn().mockResolvedValue(
         jsonResponse({
           status: "incomplete",
           incomplete_details: { reason: "max_output_tokens" },
+          output: [
+            {
+              type: "message",
+              role: "assistant",
+              content: [{ type: "output_text", text: "Truncated but usable answer." }],
+            },
+          ],
+          usage: { input_tokens: 12, output_tokens: 1024 },
+        }),
+      ),
+    });
+
+    await expect(
+      provider.generate({
+        provider: "openai",
+        model: "gpt-test",
+        apiKey: API_KEY,
+        instructions: "trusted module prompt",
+        input: [{ role: "user", content: "private player prompt" }],
+        tools: [],
+        maxOutputTokens: 1024,
+        signal: new AbortController().signal,
+      }),
+    ).resolves.toEqual({
+      type: "final",
+      fallbackText: "Truncated but usable answer.",
+      usage: { inputTokens: 12, outputTokens: 1024 },
+    });
+  });
+
+  it("does not publish partial text withheld by content filtering", async () => {
+    const provider = new OpenAiResponsesProvider({
+      fetch: vi.fn().mockResolvedValue(
+        jsonResponse({
+          status: "incomplete",
+          incomplete_details: { reason: "content_filter" },
           output: [
             {
               type: "message",
@@ -482,5 +525,315 @@ describe("OpenAI Responses provider", () => {
         signal: new AbortController().signal,
       }),
     ).rejects.toMatchObject({ code: "MODEL_RESPONSE_INVALID" });
+  });
+
+  it("rejects a truncated answer with no usable text", async () => {
+    const provider = new OpenAiResponsesProvider({
+      fetch: vi.fn().mockResolvedValue(
+        jsonResponse({
+          status: "incomplete",
+          incomplete_details: { reason: "max_output_tokens" },
+          output: [
+            {
+              type: "message",
+              role: "assistant",
+              content: [{ type: "output_text", text: "   " }],
+            },
+          ],
+        }),
+      ),
+    });
+
+    await expect(
+      provider.generate({
+        provider: "openai",
+        model: "gpt-test",
+        apiKey: API_KEY,
+        instructions: "trusted module prompt",
+        input: [{ role: "user", content: "private player prompt" }],
+        tools: [],
+        maxOutputTokens: 1024,
+        signal: new AbortController().signal,
+      }),
+    ).rejects.toMatchObject({ code: "MODEL_RESPONSE_INVALID" });
+  });
+
+  it("does not execute a function call reported by a truncated response", async () => {
+    const provider = new OpenAiResponsesProvider({
+      fetch: vi.fn().mockResolvedValue(
+        jsonResponse({
+          status: "incomplete",
+          incomplete_details: { reason: "max_output_tokens" },
+          output: [
+            {
+              type: "function_call",
+              call_id: "provider-call-1",
+              name: "server_info_read",
+              arguments: "{}",
+            },
+          ],
+        }),
+      ),
+    });
+
+    await expect(
+      provider.generate({
+        provider: "openai",
+        model: "gpt-test",
+        apiKey: API_KEY,
+        instructions: "trusted module prompt",
+        input: [{ role: "user", content: "server info" }],
+        tools: [
+          {
+            id: "server.info.read",
+            providerName: "server_info_read",
+            description: "Read server info.",
+            parameters: {
+              type: "object",
+              properties: {},
+              required: [],
+              additionalProperties: false,
+            },
+          },
+        ],
+        maxOutputTokens: 1024,
+        signal: new AbortController().signal,
+      }),
+    ).rejects.toMatchObject({ code: "MODEL_RESPONSE_INVALID" });
+  });
+
+  it("recovers a generation round after one transient 429", async () => {
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("rate limited", { status: 429 }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          status: "completed",
+          output: [
+            {
+              type: "message",
+              role: "assistant",
+              content: [{ type: "output_text", text: "  Place four planks.  " }],
+            },
+          ],
+          usage: { input_tokens: 5, output_tokens: 4, total_tokens: 9 },
+        }),
+      );
+    const provider = new OpenAiResponsesProvider({
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 1,
+    });
+
+    await expect(
+      provider.generate({
+        provider: "openai",
+        model: "gpt-test",
+        apiKey: API_KEY,
+        instructions: "trusted module prompt",
+        input: [{ role: "user", content: "private player prompt" }],
+        tools: [],
+        maxOutputTokens: 1024,
+        signal: new AbortController().signal,
+      }),
+    ).resolves.toEqual({
+      type: "final",
+      fallbackText: "Place four planks.",
+      usage: { inputTokens: 5, outputTokens: 4 },
+    });
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
+  });
+
+  it("recovers a generation round after one transient 503", async () => {
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("unavailable", { status: 503 }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          status: "completed",
+          output: [
+            {
+              type: "message",
+              role: "assistant",
+              content: [{ type: "output_text", text: "  Place four planks.  " }],
+            },
+          ],
+          usage: { input_tokens: 5, output_tokens: 4, total_tokens: 9 },
+        }),
+      );
+    const provider = new OpenAiResponsesProvider({
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 1,
+    });
+
+    await expect(
+      provider.generate({
+        provider: "openai",
+        model: "gpt-test",
+        apiKey: API_KEY,
+        instructions: "trusted module prompt",
+        input: [{ role: "user", content: "private player prompt" }],
+        tools: [],
+        maxOutputTokens: 1024,
+        signal: new AbortController().signal,
+      }),
+    ).resolves.toEqual({
+      type: "final",
+      fallbackText: "Place four planks.",
+      usage: { inputTokens: 5, outputTokens: 4 },
+    });
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
+  });
+
+  it("recovers a generation round after one network-level fetch failure", async () => {
+    const fetchImplementation = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          status: "completed",
+          output: [
+            {
+              type: "message",
+              role: "assistant",
+              content: [{ type: "output_text", text: "  Place four planks.  " }],
+            },
+          ],
+        }),
+      );
+    const provider = new OpenAiResponsesProvider({
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 1,
+    });
+
+    await expect(
+      provider.generate({
+        provider: "openai",
+        model: "gpt-test",
+        apiKey: API_KEY,
+        instructions: "trusted module prompt",
+        input: [{ role: "user", content: "private player prompt" }],
+        tools: [],
+        maxOutputTokens: 1024,
+        signal: new AbortController().signal,
+      }),
+    ).resolves.toEqual({ type: "final", fallbackText: "Place four planks." });
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    [429, "MODEL_RATE_LIMITED"],
+    [503, "PROVIDER_UNAVAILABLE"],
+  ] as const)(
+    "keeps the terminal error when the retry also fails with %s",
+    async (status, code) => {
+      const fetchImplementation = vi
+        .fn()
+        .mockResolvedValue(new Response("private upstream detail", { status }));
+      const provider = new OpenAiResponsesProvider({
+        fetch: fetchImplementation,
+        retryDelayMilliseconds: 1,
+      });
+
+      const operation = provider.generate({
+        provider: "openai",
+        model: "gpt-test",
+        apiKey: API_KEY,
+        instructions: "trusted module prompt",
+        input: [{ role: "user", content: "private player prompt" }],
+        tools: [],
+        maxOutputTokens: 1024,
+        signal: new AbortController().signal,
+      });
+      await expect(operation).rejects.toMatchObject({
+        code,
+        accountingDisposition: "NOT_BILLABLE",
+      });
+      await expect(operation).rejects.not.toThrow(/private upstream detail/u);
+      expect(fetchImplementation).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it.each([
+    [400, "MODEL_RESPONSE_INVALID"],
+    [401, "MODEL_AUTHENTICATION_FAILED"],
+  ] as const)("does not retry a non-transient generation HTTP %s", async (status, code) => {
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValue(new Response("private upstream detail", { status }));
+    const provider = new OpenAiResponsesProvider({
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 1,
+    });
+
+    await expect(
+      provider.generate({
+        provider: "openai",
+        model: "gpt-test",
+        apiKey: API_KEY,
+        instructions: "trusted module prompt",
+        input: [{ role: "user", content: "private player prompt" }],
+        tools: [],
+        maxOutputTokens: 1024,
+        signal: new AbortController().signal,
+      }),
+    ).rejects.toMatchObject({
+      code,
+      accountingDisposition: "NOT_BILLABLE",
+    });
+    expect(fetchImplementation).toHaveBeenCalledOnce();
+  });
+
+  it("abandons the generation retry when the caller aborts during the backoff", async () => {
+    const controller = new AbortController();
+    let releaseFirstRound: (() => void) | undefined;
+    const firstRound = new Promise<void>((resolve) => {
+      releaseFirstRound = resolve;
+    });
+    const fetchImplementation = vi.fn(async (): Promise<Response> => {
+      await firstRound;
+      return new Response("rate limited", { status: 429 });
+    });
+    const provider = new OpenAiResponsesProvider({
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 5000,
+    });
+    const operation = provider.generate({
+      provider: "openai",
+      model: "gpt-test",
+      apiKey: API_KEY,
+      instructions: "trusted module prompt",
+      input: [{ role: "user", content: "private player prompt" }],
+      tools: [],
+      maxOutputTokens: 1024,
+      signal: controller.signal,
+    });
+
+    releaseFirstRound?.();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    controller.abort(new Error("cancelled by request owner"));
+
+    await expect(operation).rejects.toThrow("cancelled by request owner");
+    expect(fetchImplementation).toHaveBeenCalledOnce();
+  });
+
+  it("recovers a health check after one transient 429", async () => {
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("rate limited", { status: 429 }))
+      .mockResolvedValueOnce(jsonResponse({ id: "gpt-test", object: "model" }));
+    const provider = new OpenAiResponsesProvider({
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 1,
+    });
+
+    await expect(
+      provider.check({
+        provider: "openai",
+        model: "gpt-test",
+        apiKey: API_KEY,
+        signal: new AbortController().signal,
+      }),
+    ).resolves.toEqual({ ok: true });
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
   });
 });

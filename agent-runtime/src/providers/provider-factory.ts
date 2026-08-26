@@ -7,18 +7,20 @@ import { OpenAiResponsesProvider } from "./openai-responses-provider.js";
 
 export function createProductionModelProvider(model: RuntimeConfig["model"]): ModelProvider {
   const endpoint = model.baseUrl === undefined ? {} : { baseUrl: model.baseUrl };
+  const resilience = { timeoutMilliseconds: model.timeoutSeconds * 1000 };
   switch (model.provider) {
     case "openai":
-      return new OpenAiResponsesProvider(endpoint);
+      return new OpenAiResponsesProvider({ ...endpoint, ...resilience });
     case "anthropic":
-      return new AnthropicMessagesProvider(endpoint);
+      return new AnthropicMessagesProvider({ ...endpoint, ...resilience });
     case "deepseek":
       return new OpenAiChatCompletionsProvider({
         provider: "deepseek",
         ...endpoint,
+        ...resilience,
       });
     case "gemini":
-      return new GeminiGenerateContentProvider(endpoint);
+      return new GeminiGenerateContentProvider({ ...endpoint, ...resilience });
     case "openai-compatible":
       if (model.baseUrl === undefined) {
         throw new TypeError("The openai-compatible provider requires a base URL.");
@@ -26,6 +28,7 @@ export function createProductionModelProvider(model: RuntimeConfig["model"]): Mo
       return new OpenAiChatCompletionsProvider({
         provider: "openai-compatible",
         baseUrl: model.baseUrl,
+        ...resilience,
       });
   }
 }

@@ -436,6 +436,77 @@ describe("Gemini generateContent provider", () => {
     }
   });
 
+  it("accepts a plain-text answer truncated by the output token limit", async () => {
+    const provider = new GeminiGenerateContentProvider({
+      fetch: vi.fn().mockResolvedValue(
+        jsonResponse({
+          candidates: [
+            {
+              content: { role: "model", parts: [{ text: "Truncated but usable answer." }] },
+              finishReason: "MAX_TOKENS",
+            },
+          ],
+          usageMetadata: { promptTokenCount: 12, candidatesTokenCount: 1024 },
+        }),
+      ),
+    });
+
+    await expect(provider.generate(baseRequest())).resolves.toEqual({
+      type: "final",
+      fallbackText: "Truncated but usable answer.",
+      usage: { inputTokens: 12, outputTokens: 1024 },
+    });
+  });
+
+  it("rejects a truncated answer with no usable text", async () => {
+    const provider = new GeminiGenerateContentProvider({
+      fetch: vi.fn().mockResolvedValue(
+        jsonResponse({
+          candidates: [
+            {
+              content: { role: "model", parts: [{ text: "   " }] },
+              finishReason: "MAX_TOKENS",
+            },
+          ],
+        }),
+      ),
+    });
+
+    await expect(provider.generate(baseRequest())).rejects.toMatchObject({
+      code: "MODEL_RESPONSE_INVALID",
+    });
+  });
+
+  it("never executes a function call reported with a truncated finish reason", async () => {
+    const provider = new GeminiGenerateContentProvider({
+      fetch: vi.fn().mockResolvedValue(
+        jsonResponse({
+          candidates: [
+            {
+              content: {
+                role: "model",
+                parts: [
+                  {
+                    functionCall: {
+                      id: "call-truncated",
+                      name: "server_info_read",
+                      args: {},
+                    },
+                  },
+                ],
+              },
+              finishReason: "MAX_TOKENS",
+            },
+          ],
+        }),
+      ),
+    });
+
+    await expect(
+      provider.generate({ ...baseRequest(), tools: [serverInfoTool] }),
+    ).rejects.toMatchObject({ code: "MODEL_RESPONSE_INVALID" });
+  });
+
   it("rejects mismatched continuations and non-object tool results before fetching", async () => {
     const fetchImplementation = vi.fn();
     const provider = new GeminiGenerateContentProvider({ fetch: fetchImplementation });
@@ -511,6 +582,7 @@ describe("Gemini generateContent provider", () => {
   ] as const)("maps HTTP %s without exposing upstream details", async (status, code) => {
     const provider = new GeminiGenerateContentProvider({
       fetch: vi.fn().mockResolvedValue(new Response("private upstream detail", { status })),
+      retryDelayMilliseconds: 0,
     });
 
     const operation = provider.generate(baseRequest());
@@ -590,5 +662,152 @@ describe("Gemini generateContent provider", () => {
 
     controller.abort(new Error("cancelled by request owner"));
     await expect(operation).rejects.toThrow("cancelled by request owner");
+  });
+
+  it("recovers a generation round after one transient 429", async () => {
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("rate limited", { status: 429 }))
+      .mockResolvedValueOnce(textResponse());
+    const provider = new GeminiGenerateContentProvider({
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 1,
+    });
+
+    await expect(provider.generate(baseRequest())).resolves.toEqual({
+      type: "final",
+      fallbackText: "Place four planks.",
+      usage: { inputTokens: 8, outputTokens: 6 },
+    });
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
+  });
+
+  it("recovers a generation round after one transient 503", async () => {
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("unavailable", { status: 503 }))
+      .mockResolvedValueOnce(textResponse());
+    const provider = new GeminiGenerateContentProvider({
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 1,
+    });
+
+    await expect(provider.generate(baseRequest())).resolves.toEqual({
+      type: "final",
+      fallbackText: "Place four planks.",
+      usage: { inputTokens: 8, outputTokens: 6 },
+    });
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
+  });
+
+  it("recovers a generation round after one network-level fetch failure", async () => {
+    const fetchImplementation = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockResolvedValueOnce(textResponse());
+    const provider = new GeminiGenerateContentProvider({
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 1,
+    });
+
+    await expect(provider.generate(baseRequest())).resolves.toEqual({
+      type: "final",
+      fallbackText: "Place four planks.",
+      usage: { inputTokens: 8, outputTokens: 6 },
+    });
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    [429, "MODEL_RATE_LIMITED"],
+    [503, "PROVIDER_UNAVAILABLE"],
+  ] as const)(
+    "keeps the terminal error when the retry also fails with %s",
+    async (status, code) => {
+      const fetchImplementation = vi
+        .fn()
+        .mockResolvedValue(new Response("private upstream detail", { status }));
+      const provider = new GeminiGenerateContentProvider({
+        fetch: fetchImplementation,
+        retryDelayMilliseconds: 1,
+      });
+
+      const operation = provider.generate(baseRequest());
+      await expect(operation).rejects.toMatchObject({
+        code,
+        accountingDisposition: "NOT_BILLABLE",
+      });
+      await expect(operation).rejects.not.toThrow(/private upstream detail/u);
+      expect(fetchImplementation).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it.each([
+    [400, "MODEL_RESPONSE_INVALID"],
+    [401, "MODEL_AUTHENTICATION_FAILED"],
+  ] as const)("does not retry a non-transient generation HTTP %s", async (status, code) => {
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValue(new Response("private upstream detail", { status }));
+    const provider = new GeminiGenerateContentProvider({
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 1,
+    });
+
+    await expect(provider.generate(baseRequest())).rejects.toMatchObject({
+      code,
+      accountingDisposition: "NOT_BILLABLE",
+    });
+    expect(fetchImplementation).toHaveBeenCalledOnce();
+  });
+
+  it("abandons the generation retry when the caller aborts during the backoff", async () => {
+    const controller = new AbortController();
+    let releaseFirstRound: (() => void) | undefined;
+    const firstRound = new Promise<void>((resolve) => {
+      releaseFirstRound = resolve;
+    });
+    const fetchImplementation = vi.fn(async (): Promise<Response> => {
+      await firstRound;
+      return new Response("rate limited", { status: 429 });
+    });
+    const provider = new GeminiGenerateContentProvider({
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 5000,
+    });
+    const operation = provider.generate({ ...baseRequest(), signal: controller.signal });
+
+    releaseFirstRound?.();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    controller.abort(new Error("cancelled by request owner"));
+
+    await expect(operation).rejects.toThrow("cancelled by request owner");
+    expect(fetchImplementation).toHaveBeenCalledOnce();
+  });
+
+  it("recovers a health check after one transient 429", async () => {
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("rate limited", { status: 429 }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          name: "models/gemini/test",
+          supportedGenerationMethods: ["countTokens", "generateContent"],
+        }),
+      );
+    const provider = new GeminiGenerateContentProvider({
+      fetch: fetchImplementation,
+      retryDelayMilliseconds: 1,
+    });
+
+    await expect(
+      provider.check({
+        provider: "gemini",
+        model: "gemini-test",
+        apiKey: API_KEY,
+        signal: new AbortController().signal,
+      }),
+    ).resolves.toEqual({ ok: true });
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
   });
 });
