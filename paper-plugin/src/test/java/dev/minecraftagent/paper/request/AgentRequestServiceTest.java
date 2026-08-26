@@ -1072,11 +1072,11 @@ class AgentRequestServiceTest {
     }
   }
 
-  private static final class ManualTimeouts implements AgentRequestService.TimeoutScheduler {
+  private static final class ManualTimeouts implements TimeoutScheduler {
     private final List<ScheduledTask> tasks = new ArrayList<>();
 
     @Override
-    public AgentRequestService.Cancellable schedule(Duration delay, Runnable task) {
+    public TimeoutScheduler.Cancellable schedule(Duration delay, Runnable task) {
       var scheduled = new ScheduledTask(task);
       tasks.add(scheduled);
       return scheduled::cancel;
