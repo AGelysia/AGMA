@@ -11,6 +11,7 @@ Group=minecraft
 WorkingDirectory=/srv/minecraft
 EnvironmentFile=/etc/agma/paper.env
 ExecStartPre=/usr/bin/curl --fail --silent --show-error --output /dev/null --retry 90 --retry-delay 1 --retry-connrefused --retry-max-time 120 http://127.0.0.1:38127/health
+# The Paper jar pin mirrors PAPER_BUILD in scripts/paper-smoke.sh; scripts/check-versions.sh asserts they stay aligned.
 ExecStart=/usr/bin/java -Xms1G -Xmx4G -Dpaper.disableStartupVersionCheck=true -jar /srv/minecraft/paper-1.21.11-132.jar --nogui
 Restart=on-failure
 RestartSec=5s
@@ -19,18 +20,30 @@ TimeoutStopSec=120s
 SuccessExitStatus=0 143
 UMask=0077
 LimitNOFILE=65536
+# -Xmx4G plus metaspace and JVM overhead; a deterministic kill-and-restart beats swap thrash.
+MemoryHigh=5G
+MemoryMax=6G
+MemorySwapMax=0
 NoNewPrivileges=true
 PrivateTmp=true
+PrivateDevices=true
 ProtectSystem=strict
 ProtectHome=true
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+ProcSubset=pid
+RestrictNamespaces=true
 LockPersonality=true
 RestrictSUIDSGID=true
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 CapabilityBoundingSet=
 AmbientCapabilities=
+# JVMs occasionally grow beyond @system-service; remove this line first if the JVM exits with a seccomp SIGSYS at startup.
+SystemCallFilter=@system-service
 ReadWritePaths=/srv/minecraft
 
 [Install]

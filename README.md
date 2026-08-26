@@ -71,7 +71,8 @@ model:
 ```
 
 Only literal loopback IP addresses may use HTTP. Remote custom endpoints must use HTTPS. The
-endpoint must provide OpenAI-compatible model discovery, Chat Completions, and serial tool calling.
+endpoint must provide OpenAI-compatible model discovery and Chat Completions. Tool calling is
+serial by design; in a parallel fan-out only the first call is executed and the rest are discarded.
 
 Detailed provider profiles and the separated deployment procedure are in
 [operations.md](docs/operations.md).

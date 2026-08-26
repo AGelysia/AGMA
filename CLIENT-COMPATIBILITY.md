@@ -29,6 +29,9 @@ are shown as unresolved instead of being inferred by the model.
 
 ## Server Companion 0.1.0
 
+The matrix below applies to the server companion. The standalone client's supported matrix is
+maintained separately in [standalone-client/README.md](standalone-client/README.md).
+
 ## Supported Matrix
 
 | Component | Supported or reviewed version |

@@ -38,6 +38,20 @@ Include:
 Never attach a real provider key or Runtime token. Rotate any credential that may have been exposed
 before submitting the report.
 
+## Expectations
+
+Reports are acknowledged within two business days. Fix targets are seven days for a critical issue
+(exposed credentials, remote code execution, sandbox escape) and thirty days otherwise; coordinated
+disclosure follows the fix plus a short release window. The supported lines are exactly those named
+above under [Supported Version](#supported-version).
+
+Dependency vulnerabilities: continuous integration audits `agent-runtime` dependencies with
+`npm audit --audit-level=high` on every push to `main` (and at release time), Gradle and wrapper
+dependencies are pinned and checksum-verified in `gradle/verification-metadata.xml`, and GitHub
+Actions are pinned by commit SHA with automated update proposals. A vulnerable dependency in an
+unreleased line is treated as a normal fix; in a supported release line it follows the windows
+above.
+
 ## Deployment Boundary
 
 Paper and Runtime are designed to run on the same trusted host. Their WebSocket connection and the

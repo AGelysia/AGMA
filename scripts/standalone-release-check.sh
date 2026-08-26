@@ -19,9 +19,10 @@ done
 if git -C "$ROOT" ls-files | grep -Eiq '(^|/)01-standalone-client-development-plan\.md$'; then
   fail "the standalone development plan must remain outside the code repository"
 fi
+"$ROOT/scripts/check-versions.sh"
 OUTPUT="$(realpath -m -- "$OUTPUT_INPUT")"
 [[ "$OUTPUT" == /* && ! -e "$OUTPUT" && ! -L "$OUTPUT" ]] \
-  || fail "release output must be a new absolute directory"
+  || fail "release output must be a new absolute directory (remove '$OUTPUT' first, or pick another name; scripts/clean-local.sh reclaims old local release output)"
 OUTPUT_PARENT="$(dirname "$OUTPUT")"
 if [[ ! -e "$OUTPUT_PARENT" && ! -L "$OUTPUT_PARENT" ]]; then
   [[ "$OUTPUT_PARENT" == "$ROOT/build" && -d "$ROOT" && ! -L "$ROOT" && -O "$ROOT" ]] \

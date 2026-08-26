@@ -10,23 +10,34 @@ Group=agma
 WorkingDirectory=/opt/agma/current
 EnvironmentFile=/etc/agma/runtime.env
 ExecStart=/usr/bin/node /opt/agma/current/runtime/dist/bootstrap/index.js --config /var/lib/agma/runtime/config.yml
-Restart=on-abnormal
+# on-failure (not on-abnormal) so a clean non-zero process exit also restarts the runtime.
+Restart=on-failure
 RestartSec=5s
 TimeoutStartSec=150s
 TimeoutStopSec=30s
 UMask=0077
+MemoryHigh=768M
+MemoryMax=1G
+MemorySwapMax=0
 NoNewPrivileges=true
 PrivateTmp=true
+PrivateDevices=true
 ProtectSystem=strict
 ProtectHome=true
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+ProcSubset=pid
+RestrictNamespaces=true
 LockPersonality=true
 RestrictSUIDSGID=true
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 CapabilityBoundingSet=
 AmbientCapabilities=
+SystemCallFilter=@system-service
 ReadWritePaths=/var/lib/agma/runtime
 
 [Install]

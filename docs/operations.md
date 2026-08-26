@@ -198,10 +198,57 @@ Use this order when setup fails:
 Do not post unredacted YAML, environment files, SQLite data, logs, or provider responses in an issue.
 Use the private process in [SECURITY.md](../SECURITY.md) for a suspected vulnerability.
 
+## Data Locations and Logs
+
+| Location | Mode | Contents | Back up? |
+| --- | --- | --- | --- |
+| `plugins/AGMA/managed/config.yml` | Integrated | Provider credentials and pricing | Yes, privately |
+| `plugins/AGMA/state/` | Integrated | SQLite conversation/usage state | Yes |
+| `plugins/AGMA/managed/logs/` | Integrated | Runtime stdout/stderr capture | Optional |
+| `/var/lib/agma/runtime/config.yml` | Separated | Provider credentials and pricing | Yes, privately |
+| `/var/lib/agma/runtime/state/` | Separated | SQLite conversation/usage state | Yes |
+| `/var/lib/agma/runtime/logs/` | Separated | Runtime structured event log | Optional |
+
+Under systemd, runtime output is captured by journald and rotated automatically; inspect it with
+`journalctl -u agma-runtime.service` and `journalctl -u agma-paper.service`. When the Runtime is
+started with `start-runtime.sh` instead, redirect its output to a file under a private directory and
+arrange rotation (for example `logrotate` with `copytruncate` and mode `0600`).
+
+## Backup and Restore
+
+With Paper stopped (integrated mode) or both services stopped (separated mode):
+
+```sh
+# Integrated: archive everything private in one pass
+tar --create --gzip --file agma-backup-$(date -u +%Y%m%dT%H%M%SZ).tar.gz \
+  -C /srv/minecraft/plugins AGMA
+
+# Separated: plugin data and runtime data are archived separately
+tar --create --gzip --file agma-paper-data-$(date -u +%Y%m%dT%H%M%SZ).tar.gz \
+  -C /srv/minecraft/plugins AGMA
+tar --create --gzip --file agma-runtime-data-$(date -u +%Y%m%dT%H%M%SZ).tar.gz \
+  -C /var/lib/agma runtime
+```
+
+Verify a backup before relying on it: restore it into a scratch directory, start AGMA there against
+a throwaway provider profile, and confirm `/agma doctor` reaches the provider check step. Store
+backups encrypted (they contain conversation history and, in `config.yml`, provider credentials);
+exclude them from world-readable share mounts.
+
 ## Upgrading and Removing
 
-Back up private configuration and state before changing versions. Server and client AGMA versions
-must match, and 0.1.0 must not be installed on another Minecraft line.
+Upgrade steps (both modes):
+
+1. Announce a maintenance window; in-flight `/agent` requests do not survive the restart.
+2. Back up as above and stop Paper (integrated) or both services (separated).
+3. Integrated: replace the plugin JAR in `plugins/`. Separated: stage the new package at
+   `/opt/agma/<version>`, repoint the `/opt/agma/current` symlink, and restart `agma-runtime`
+   before Paper.
+4. Start Paper, run `/agma doctor`, then `/agent doctor`.
+5. Roll back by repeating step 3 with the previous JAR or the previous `/opt/agma/<version>`
+   target — keep at least the previous version until `/agma doctor` is clean on the new one.
+
+Server and client AGMA versions must match, and 0.1.0 must not be installed on another Minecraft line.
 
 To remove AGMA, stop Paper first, remove the plugin JAR, and stop any external Runtime service. Keep
 or securely delete `plugins/AGMA/` and the external Runtime data according to the server's retention
