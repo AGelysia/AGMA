@@ -166,6 +166,17 @@ BUILD_APP="$WORK/build-app"
 mkdir "$BUILD_APP"
 cp "$RUNTIME/package.json" "$RUNTIME/package-lock.json" "$RUNTIME/tsconfig.json" "$BUILD_APP/"
 cp -R "$RUNTIME/src" "$BUILD_APP/src"
+# npm run build chains scripts/build-standalone.mjs after tsc; the script is
+# self-contained (node builtins plus the pinned esbuild devDependency).
+mkdir "$BUILD_APP/scripts"
+cp "$RUNTIME/scripts/build-standalone.mjs" "$BUILD_APP/scripts/build-standalone.mjs"
+# The standalone bootstrap imports these files across the repository tree at
+# build time; stage them as siblings of the build app so the four-level
+# relative imports resolve exactly as they do inside the repository.
+mkdir -p "$WORK/standalone-client/contracts"
+cp "$ROOT/standalone-client/version.json" "$WORK/standalone-client/version.json"
+cp "$ROOT/standalone-client/contracts/runtime-schema-allowlist.json" \
+  "$WORK/standalone-client/contracts/runtime-schema-allowlist.json"
 (
   cd "$BUILD_APP"
   PATH="$NODE_ROOT/bin:$PATH" "$PINNED_NODE" "$NPM_CLI" ci \
