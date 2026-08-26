@@ -7,6 +7,8 @@ import dev.minecraftagent.standalone.common.ClientLifecycleState;
 import dev.minecraftagent.standalone.common.ClientRuntimeController;
 import dev.minecraftagent.standalone.common.ClientSetup;
 import dev.minecraftagent.standalone.common.ClientUsdAmount;
+import dev.minecraftagent.standalone.common.OptionalViewerRegistry;
+import dev.minecraftagent.standalone.common.StandaloneUiState;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;

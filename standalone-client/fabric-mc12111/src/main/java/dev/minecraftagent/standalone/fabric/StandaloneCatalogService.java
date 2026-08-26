@@ -1,6 +1,7 @@
 package dev.minecraftagent.standalone.fabric;
 
 import dev.minecraftagent.standalone.common.CatalogToolSource;
+import dev.minecraftagent.standalone.common.OptionalViewerRegistry;
 import dev.minecraftagent.standalone.core.adapter.CatalogAdapter;
 import dev.minecraftagent.standalone.core.adapter.CatalogAssembler;
 import dev.minecraftagent.standalone.core.catalog.CatalogPublisher;

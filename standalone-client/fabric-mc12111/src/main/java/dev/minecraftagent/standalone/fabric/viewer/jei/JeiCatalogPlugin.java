@@ -1,12 +1,12 @@
 package dev.minecraftagent.standalone.fabric.viewer.jei;
 
+import dev.minecraftagent.standalone.common.OptionalViewerRegistry;
 import dev.minecraftagent.standalone.core.adapter.CatalogAdapter;
 import dev.minecraftagent.standalone.core.catalog.CatalogPublisher;
 import dev.minecraftagent.standalone.core.catalog.CatalogSnapshot;
 import dev.minecraftagent.standalone.core.catalog.ResourceKey;
 import dev.minecraftagent.standalone.core.contract.ProcessRecord;
 import dev.minecraftagent.standalone.core.contract.ResourceRef;
-import dev.minecraftagent.standalone.fabric.OptionalViewerRegistry;
 import dev.minecraftagent.standalone.fabric.StackFingerprint;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;

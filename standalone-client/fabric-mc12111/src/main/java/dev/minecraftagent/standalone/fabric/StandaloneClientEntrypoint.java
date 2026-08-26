@@ -3,6 +3,8 @@ package dev.minecraftagent.standalone.fabric;
 import dev.minecraftagent.standalone.common.CancelReason;
 import dev.minecraftagent.standalone.common.CatalogToolExecutor;
 import dev.minecraftagent.standalone.common.ClientRuntimeController;
+import dev.minecraftagent.standalone.common.OptionalViewerRegistry;
+import dev.minecraftagent.standalone.common.StandaloneUiState;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;

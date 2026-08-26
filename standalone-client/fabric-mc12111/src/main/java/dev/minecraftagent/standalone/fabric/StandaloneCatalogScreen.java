@@ -4,6 +4,8 @@ import dev.minecraftagent.standalone.common.CancelReason;
 import dev.minecraftagent.standalone.common.CatalogToolExecutor;
 import dev.minecraftagent.standalone.common.ClientRuntimeController;
 import dev.minecraftagent.standalone.common.LocalPlanPresentation;
+import dev.minecraftagent.standalone.common.OptionalViewerRegistry;
+import dev.minecraftagent.standalone.common.StandaloneUiState;
 import dev.minecraftagent.standalone.core.catalog.ResourceSearchIndex;
 import dev.minecraftagent.standalone.core.contract.ResourceRef;
 import java.math.BigDecimal;

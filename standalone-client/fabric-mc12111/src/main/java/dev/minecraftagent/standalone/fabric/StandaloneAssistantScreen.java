@@ -3,6 +3,7 @@ package dev.minecraftagent.standalone.fabric;
 import dev.minecraftagent.standalone.common.CatalogToolExecutor;
 import dev.minecraftagent.standalone.common.ClientLifecycleState;
 import dev.minecraftagent.standalone.common.ClientRuntimeController;
+import dev.minecraftagent.standalone.common.StandaloneUiState;
 import dev.minecraftagent.standalone.common.TextCompletion;
 import dev.minecraftagent.standalone.common.TextRequest;
 import java.math.BigDecimal;
