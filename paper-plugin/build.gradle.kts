@@ -160,6 +160,9 @@ tasks.test {
 
 tasks.jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    // Configuration.files drops the producer-task metadata, so without this the embedded
+    // project jars are only found when some other invocation already built them.
+    dependsOn(embedded)
     from(rootProject.file("LICENSE")) {
         into("META-INF")
     }
