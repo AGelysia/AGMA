@@ -3,6 +3,10 @@ package dev.minecraftagent.standalone.fabric;
 import dev.minecraftagent.standalone.common.CancelReason;
 import dev.minecraftagent.standalone.common.CatalogToolExecutor;
 import dev.minecraftagent.standalone.common.ClientRuntimeController;
+import dev.minecraftagent.standalone.common.OptionalViewerRegistry;
+import dev.minecraftagent.standalone.common.StandaloneUiState;
+import dev.minecraftagent.standalone.ui.StandaloneCatalogService;
+import dev.minecraftagent.standalone.ui.StandaloneScreenNavigation;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -22,7 +26,8 @@ import org.lwjgl.glfw.GLFW;
 public final class StandaloneClientEntrypoint implements ClientModInitializer {
   public static final String MOD_ID = "agma_standalone";
   private static final AtomicBoolean INITIALIZED = new AtomicBoolean();
-  private static final StandaloneCatalogService CATALOG = new StandaloneCatalogService();
+  private static final StandaloneCatalogService CATALOG =
+      new StandaloneCatalogService(new FabricModMetadataSource());
   private static final StandaloneUiState UI_STATE = new StandaloneUiState();
   private static ClientRuntimeController runtime;
   private static CatalogToolExecutor tools;
@@ -32,6 +37,9 @@ public final class StandaloneClientEntrypoint implements ClientModInitializer {
     if (!INITIALIZED.compareAndSet(false, true)) {
       return;
     }
+    StandaloneScreenNavigation.assistant(
+        (catalog, runtime, tools, state) ->
+            new StandaloneAssistantScreen(catalog, runtime, tools, state));
     var version =
         net.fabricmc.loader.api.FabricLoader.getInstance()
             .getModContainer(MOD_ID)

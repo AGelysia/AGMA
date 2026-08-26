@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import dev.minecraftagent.standalone.ui.ModMetadataSource;
+import dev.minecraftagent.standalone.ui.StandaloneCatalogService;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -50,7 +52,7 @@ class StandaloneModMetadataTest {
   @Test
   void primaryClassesLoadWithoutViewerApisAndDoNotLinkThem() throws Exception {
     assertNotNull(StandaloneClientEntrypoint.class.getDeclaredConstructor());
-    assertNotNull(StandaloneCatalogService.class.getDeclaredConstructor());
+    assertNotNull(StandaloneCatalogService.class.getDeclaredConstructor(ModMetadataSource.class));
     for (var type : List.of(StandaloneClientEntrypoint.class, StandaloneCatalogService.class)) {
       var path = "/" + type.getName().replace('.', '/') + ".class";
       try (var input = type.getResourceAsStream(path)) {

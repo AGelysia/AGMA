@@ -3,6 +3,10 @@ package dev.minecraftagent.standalone.forge;
 import dev.minecraftagent.standalone.common.CancelReason;
 import dev.minecraftagent.standalone.common.CatalogToolExecutor;
 import dev.minecraftagent.standalone.common.ClientRuntimeController;
+import dev.minecraftagent.standalone.common.OptionalViewerRegistry;
+import dev.minecraftagent.standalone.common.StandaloneUiState;
+import dev.minecraftagent.standalone.ui.StandaloneCatalogService;
+import dev.minecraftagent.standalone.ui.StandaloneScreenNavigation;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.client.KeyMapping;
@@ -23,7 +27,8 @@ import org.lwjgl.glfw.GLFW;
 final class StandaloneForgeClient {
   private static final AtomicBoolean INITIALIZED = new AtomicBoolean();
   private static final AtomicBoolean CLOSED = new AtomicBoolean();
-  private static final StandaloneCatalogService CATALOG = new StandaloneCatalogService();
+  private static final StandaloneCatalogService CATALOG =
+      new StandaloneCatalogService(new ForgeModMetadataSource());
   private static final StandaloneUiState UI_STATE = new StandaloneUiState();
   private static final KeyMapping OPEN =
       new KeyMapping("key.agma_standalone.open", GLFW.GLFW_KEY_G, "key.categories.agma_standalone");
@@ -35,6 +40,9 @@ final class StandaloneForgeClient {
 
   static void bootstrap() {
     var client = new StandaloneForgeClient();
+    StandaloneScreenNavigation.assistant(
+        (catalog, runtime, tools, state) ->
+            new StandaloneAssistantScreen(catalog, runtime, tools, state));
     var modBus = FMLJavaModLoadingContext.get().getModEventBus();
     modBus.addListener(client::clientSetup);
     modBus.addListener(client::registerReloadListeners);

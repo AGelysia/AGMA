@@ -1,4 +1,4 @@
-package dev.minecraftagent.standalone.fabric;
+package dev.minecraftagent.standalone.ui;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

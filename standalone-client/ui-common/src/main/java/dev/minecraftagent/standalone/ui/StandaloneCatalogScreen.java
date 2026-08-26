@@ -1,10 +1,12 @@
-package dev.minecraftagent.standalone.forge;
+package dev.minecraftagent.standalone.ui;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.minecraftagent.standalone.common.CancelReason;
 import dev.minecraftagent.standalone.common.CatalogToolExecutor;
 import dev.minecraftagent.standalone.common.ClientRuntimeController;
 import dev.minecraftagent.standalone.common.LocalPlanPresentation;
+import dev.minecraftagent.standalone.common.OptionalViewerRegistry;
+import dev.minecraftagent.standalone.common.StandaloneUiState;
 import dev.minecraftagent.standalone.core.catalog.ResourceSearchIndex;
 import dev.minecraftagent.standalone.core.contract.ResourceRef;
 import java.math.BigDecimal;
@@ -197,7 +199,7 @@ public final class StandaloneCatalogScreen extends Screen {
             new TranslatableComponent("screen.agma_standalone.tab_ask"),
             ignored ->
                 minecraft.setScreen(
-                    new StandaloneAssistantScreen(catalog, runtime, tools, uiState))));
+                    StandaloneScreenNavigation.assistantScreen(catalog, runtime, tools, uiState))));
     addRenderableWidget(
         new Button(
             left + 16 + tabWidth * 2,

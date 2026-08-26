@@ -1,4 +1,4 @@
-package dev.minecraftagent.standalone.forge;
+package dev.minecraftagent.standalone.common;
 
 import dev.minecraftagent.standalone.core.adapter.CatalogAdapter;
 import java.util.Comparator;

@@ -1,4 +1,4 @@
-package dev.minecraftagent.standalone.forge;
+package dev.minecraftagent.standalone.ui;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.minecraftagent.standalone.common.CatalogToolExecutor;
@@ -8,6 +8,8 @@ import dev.minecraftagent.standalone.common.ClientLifecycleState;
 import dev.minecraftagent.standalone.common.ClientRuntimeController;
 import dev.minecraftagent.standalone.common.ClientSetup;
 import dev.minecraftagent.standalone.common.ClientUsdAmount;
+import dev.minecraftagent.standalone.common.OptionalViewerRegistry;
+import dev.minecraftagent.standalone.common.StandaloneUiState;
 import java.net.URI;
 import java.util.List;
 import java.util.Locale;
@@ -166,7 +168,7 @@ public final class StandaloneSettingsScreen extends Screen {
             tr("screen.agma_standalone.tab_ask"),
             ignored ->
                 minecraft.setScreen(
-                    new StandaloneAssistantScreen(catalog, runtime, tools, state))));
+                    StandaloneScreenNavigation.assistantScreen(catalog, runtime, tools, state))));
     var settings =
         button(
             left + 16 + tabWidth * 2,

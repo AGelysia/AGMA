@@ -7,7 +7,14 @@ plugins {
     alias(libs.plugins.spotless)
 }
 
-version = providers.gradleProperty("standaloneVersion").orElse("0.3.2").get()
+version =
+    providers
+        .gradleProperty("standaloneVersion")
+        .orElse(
+            // The standalone client version is owned by standalone-client/version.json
+            // so the standalone module builds cannot drift from the released client version.
+            (groovy.json.JsonSlurper().parse(file("../version.json")) as Map<*, *>)["version"].toString(),
+        ).get()
 
 base {
     archivesName = "AGMA-Standalone-Client-mc1.18.2-forge"
@@ -58,6 +65,13 @@ dependencies {
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(21)
     withSourcesJar()
+}
+
+// The loader-agnostic Minecraft 1.18.2 screens and catalog service are compiled from the
+// ui-common sources into this jar so Architectury Loom remaps them with this loader's SRG
+// runtime namespace; a shared prebuilt jar cannot be remapped per loader.
+sourceSets.main {
+    java.srcDir(project(":standalone-client:ui-common").projectDir.resolve("src/main/java"))
 }
 
 tasks.withType<JavaCompile>().configureEach {

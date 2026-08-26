@@ -1,6 +1,7 @@
-package dev.minecraftagent.standalone.fabric;
+package dev.minecraftagent.standalone.ui;
 
 import dev.minecraftagent.standalone.common.CatalogToolSource;
+import dev.minecraftagent.standalone.common.OptionalViewerRegistry;
 import dev.minecraftagent.standalone.core.adapter.CatalogAdapter;
 import dev.minecraftagent.standalone.core.adapter.CatalogAssembler;
 import dev.minecraftagent.standalone.core.catalog.CatalogPublisher;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -25,8 +27,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
@@ -45,6 +45,7 @@ public final class StandaloneCatalogService implements AutoCloseable, CatalogToo
   private static final int MAXIMUM_ALTERNATIVES = 64;
   private static final String PROVIDER_ID = "vanilla_client";
 
+  private final ModMetadataSource metadataSource;
   private final AtomicLong generationSequence = new AtomicLong();
   private final CatalogPublisher publisher = new CatalogPublisher();
   private final ExecutorService executor =
@@ -56,6 +57,10 @@ public final class StandaloneCatalogService implements AutoCloseable, CatalogToo
           });
 
   private volatile ResourceSearchIndex searchIndex;
+
+  public StandaloneCatalogService(ModMetadataSource metadataSource) {
+    this.metadataSource = Objects.requireNonNull(metadataSource, "metadataSource");
+  }
 
   public void refresh(Minecraft minecraft) {
     var generationId = "mc1182-" + generationSequence.incrementAndGet();
@@ -436,7 +441,7 @@ public final class StandaloneCatalogService implements AutoCloseable, CatalogToo
                     base.source()));
   }
 
-  private static ResourceRef resource(
+  private ResourceRef resource(
       Item item, ResourceLocation id, BigDecimal amount, ResourceRef.Source source) {
     var metadata = modMetadata(id.getNamespace());
     return new ResourceRef(
@@ -453,10 +458,9 @@ public final class StandaloneCatalogService implements AutoCloseable, CatalogToo
         source);
   }
 
-  private static ModMetadata modMetadata(String namespace) {
-    return FabricLoader.getInstance()
-        .getModContainer(namespace)
-        .map(StandaloneCatalogService::metadata)
+  private ModMetadata modMetadata(String namespace) {
+    return metadataSource
+        .find(namespace)
         .orElseGet(
             () -> {
               var safeId = namespace.matches("^[a-z][a-z0-9_.-]{0,127}$") ? namespace : "unknown";
@@ -464,22 +468,10 @@ public final class StandaloneCatalogService implements AutoCloseable, CatalogToo
             });
   }
 
-  private static ModMetadata metadata(ModContainer container) {
-    var metadata = container.getMetadata();
-    return new ModMetadata(
-        metadata.getId(),
-        bounded(metadata.getName(), 128),
-        bounded(metadata.getVersion().getFriendlyString(), 128));
-  }
-
-  private static String packFingerprint() {
+  private String packFingerprint() {
     var entries =
-        FabricLoader.getInstance().getAllMods().stream()
-            .map(
-                container ->
-                    container.getMetadata().getId()
-                        + "="
-                        + container.getMetadata().getVersion().getFriendlyString())
+        metadataSource.all().stream()
+            .map(metadata -> metadata.id() + "=" + metadata.version())
             .sorted()
             .toList();
     return sha256(String.join("\n", entries));
@@ -508,8 +500,6 @@ public final class StandaloneCatalogService implements AutoCloseable, CatalogToo
       pointed = Optional.ofNullable(pointed).orElseGet(Optional::empty);
     }
   }
-
-  private record ModMetadata(String id, String name, String version) {}
 
   private record InventoryKey(String resourceId, String componentsFingerprint)
       implements Comparable<InventoryKey> {

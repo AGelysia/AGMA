@@ -9,6 +9,8 @@ import com.electronwill.nightconfig.core.UnmodifiableConfig;
 import com.electronwill.nightconfig.toml.TomlParser;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import dev.minecraftagent.standalone.ui.ModMetadataSource;
+import dev.minecraftagent.standalone.ui.StandaloneCatalogService;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -52,7 +54,7 @@ class StandaloneForgeMetadataTest {
   @Test
   void primaryClassesLoadWithoutViewerApisAndDoNotLinkThem() throws Exception {
     assertNotNull(StandaloneForgeMod.class.getDeclaredConstructor());
-    assertNotNull(StandaloneCatalogService.class.getDeclaredConstructor());
+    assertNotNull(StandaloneCatalogService.class.getDeclaredConstructor(ModMetadataSource.class));
     for (var type :
         List.of(
             StandaloneForgeMod.class,
