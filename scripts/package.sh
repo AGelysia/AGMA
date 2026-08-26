@@ -8,7 +8,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST="$ROOT/dist"
 RELEASE="$ROOT/release"
 VERSION="$(node -p "require('$ROOT/agent-runtime/package.json').version")"
-MINECRAFT_VERSION="1.21.11"
+MINECRAFT_VERSION="$(sed -nE 's/^minecraft = "([^"]+)".*/\1/p' "$ROOT/gradle/libs.versions.toml" | head -1)"
 PLATFORM="linux-x86_64"
 SKIP_TESTS="${AGMA_PACKAGE_SKIP_TESTS:-0}"
 PACKAGE_NAME="AGMA-Server-Separated-${VERSION}-mc${MINECRAFT_VERSION}"
@@ -25,8 +25,8 @@ fail() {
   || fail "AGMA_PACKAGE_SKIP_TESTS must be 0 or 1"
 [[ "$(uname -s)" == Linux && "$(uname -m)" == x86_64 ]] \
   || fail "the integrated release can only be packaged on Linux x86_64"
-grep -Fqx 'minecraft = "1.21.11"' "$ROOT/gradle/libs.versions.toml" \
-  || fail "the locked Minecraft version is not $MINECRAFT_VERSION"
+[[ "$MINECRAFT_VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]] \
+  || fail "could not read the locked Minecraft version from gradle/libs.versions.toml"
 
 for program in find java node npm sha256sum sort touch unzip zip; do
   command -v "$program" >/dev/null 2>&1 \

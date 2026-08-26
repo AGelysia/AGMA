@@ -5,9 +5,14 @@ plugins {
     alias(libs.plugins.spotless) apply false
 }
 
+// The server product version is owned by agent-runtime/package.json so the
+// runtime npm package and the JVM artifacts cannot drift apart.
+val serverVersion =
+    (groovy.json.JsonSlurper().parse(file("agent-runtime/package.json")) as Map<*, *>)["version"].toString()
+
 allprojects {
     group = "dev.minecraftagent"
-    version = "0.1.0"
+    version = serverVersion
 
     tasks.withType<AbstractArchiveTask>().configureEach {
         isPreserveFileTimestamps = false

@@ -3,7 +3,14 @@ plugins {
     alias(libs.plugins.spotless)
 }
 
-version = providers.gradleProperty("standaloneVersion").orElse("0.3.2").get()
+version =
+    providers
+        .gradleProperty("standaloneVersion")
+        .orElse(
+            // The standalone client version is owned by standalone-client/version.json
+            // so the standalone module builds cannot drift from the released client version.
+            (groovy.json.JsonSlurper().parse(file("../version.json")) as Map<*, *>)["version"].toString(),
+        ).get()
 
 base {
     archivesName = "AGMA-Standalone-Fabric-Common"
