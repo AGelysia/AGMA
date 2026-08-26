@@ -18,7 +18,8 @@ final class VerifyReleaseJar {
   private enum Kind {
     PAPER,
     FABRIC,
-    EMBEDDED_JCS
+    EMBEDDED_JCS,
+    EMBEDDED_PROTOCOL
   }
 
   private static final class Budget {
@@ -63,6 +64,7 @@ final class VerifyReleaseJar {
     var entries = new ArrayList<String>();
     var names = new HashSet<String>();
     var nested = new ArrayList<Path>();
+    var nestedProtocol = new ArrayList<Path>();
     try (var archive = new ZipFile(jar.toFile(), StandardCharsets.UTF_8)) {
       if (archive.getComment() != null && !archive.getComment().isEmpty()) {
         fail("JAR comments are forbidden");
@@ -108,6 +110,9 @@ final class VerifyReleaseJar {
         if (kind == Kind.FABRIC && name.equals("META-INF/jars/java-json-canonicalization-1.1.jar")) {
           nested.add(output);
         }
+        if (kind == Kind.FABRIC && protocolJar(name)) {
+          nestedProtocol.add(output);
+        }
       }
     }
     if (kind == Kind.FABRIC && nested.size() != 1) {
@@ -117,6 +122,14 @@ final class VerifyReleaseJar {
       var nestedRoot = extractRoot.resolve(".expanded-jcs");
       Files.createDirectory(nestedRoot);
       inspect(nestedJar, Kind.EMBEDDED_JCS, nestedRoot, budget, depth + 1);
+    }
+    if (kind == Kind.FABRIC && nestedProtocol.size() != 1) {
+      fail("Fabric JAR must contain exactly one embedded protocol JAR");
+    }
+    for (var nestedJar : nestedProtocol) {
+      var nestedRoot = extractRoot.resolve(".expanded-protocol");
+      Files.createDirectory(nestedRoot);
+      inspect(nestedJar, Kind.EMBEDDED_PROTOCOL, nestedRoot, budget, depth + 1);
     }
     return entries;
   }
@@ -169,11 +182,14 @@ final class VerifyReleaseJar {
               || name.equals("paper-plugin.yml")
               || isCanonicalizationMetadata(name)
               || classFile(name, "dev/minecraftagent/paper/")
+              || classFile(name, "dev/minecraftagent/protocol/")
+              || classFile(name, "dev/minecraftagent/standalone/supervisor/")
               || classFile(name, "org/erdtman/jcs/")
               || schema(name);
       case FABRIC ->
           name.equals("META-INF/MANIFEST.MF")
               || name.equals("META-INF/jars/java-json-canonicalization-1.1.jar")
+              || protocolJar(name)
               || name.equals("LICENSE_client-mod")
               || name.equals("assets/minecraftagent/lang/en_us.json")
               || name.equals("fabric.mod.json")
@@ -184,6 +200,10 @@ final class VerifyReleaseJar {
               || name.equals("fabric.mod.json")
               || isCanonicalizationMetadata(name)
               || classFile(name, "org/erdtman/jcs/");
+      case EMBEDDED_PROTOCOL ->
+          name.equals("META-INF/MANIFEST.MF")
+              || name.equals("fabric.mod.json")
+              || classFile(name, "dev/minecraftagent/protocol/");
     };
   }
 
@@ -200,6 +220,9 @@ final class VerifyReleaseJar {
               || name.equals("managed-runtime/")
               || name.equals("dev/")
               || name.equals("dev/minecraftagent/")
+              || name.equals("dev/minecraftagent/protocol/")
+              || name.equals("dev/minecraftagent/standalone/")
+              || name.startsWith("dev/minecraftagent/standalone/supervisor/")
               || name.startsWith("dev/minecraftagent/paper/")
               || name.equals("org/")
               || name.equals("org/erdtman/")
@@ -219,11 +242,24 @@ final class VerifyReleaseJar {
               || name.equals("org/")
               || name.equals("org/erdtman/")
               || name.equals("org/erdtman/jcs/");
+      case EMBEDDED_PROTOCOL ->
+          name.equals("META-INF/")
+              || name.equals("dev/")
+              || name.equals("dev/minecraftagent/")
+              || name.equals("dev/minecraftagent/protocol/");
     };
   }
 
   private static boolean classFile(String name, String prefix) {
     return name.startsWith(prefix) && name.endsWith(".class") && name.length() > prefix.length();
+  }
+
+  private static boolean protocolJar(String name) {
+    var prefix = "META-INF/jars/AGMA-Protocol-Jvm-";
+    return name.startsWith(prefix)
+        && name.endsWith(".jar")
+        && name.indexOf('/', prefix.length()) < 0
+        && name.length() > prefix.length() + ".jar".length();
   }
 
   private static boolean schema(String name) {
