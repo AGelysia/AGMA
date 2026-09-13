@@ -55,6 +55,20 @@ function indexedUuid(index: number): string {
   return `aaaaaaaa-aaaa-4aaa-8aaa-${index.toString(16).padStart(12, "0")}`;
 }
 
+it("admits offline-mode v3 name-based player UUIDs", () => {
+  const database = migratedDatabase();
+  try {
+    const usage = new SqliteUsageAccounting(database, options());
+    // Offline-mode servers derive version-3 name-based player UUIDs.
+    const offlinePlayerUuid = "3f0e2a1c-4b5d-3e8f-9a1b-2c3d4e5f6a7b";
+    expect(usage.admitRequest(request(REQUEST_ONE, offlinePlayerUuid))).toEqual({
+      accepted: true,
+    });
+  } finally {
+    database.close();
+  }
+});
+
 afterEach(async () => {
   await Promise.all(
     temporaryDirectories

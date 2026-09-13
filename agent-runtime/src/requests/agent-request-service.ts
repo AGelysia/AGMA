@@ -678,6 +678,10 @@ export class AgentRequestService {
         ? manifest.instructions
         : `${manifest.instructions}\nTrusted single-use inventory authorization: call game_inventory_snapshot at most once, using exactly authorizationId=${inventoryAuthorization.authorizationId}, generationId=${inventoryAuthorization.generationId}, and resourceIds=${JSON.stringify(inventoryAuthorization.resourceIds)}. Do not reveal the authorization ID.`;
     let sequence = 0;
+    // Wire tool-call sequence numbers only calls actually sent to the remote executor; the Paper
+    // binding requires them to be consecutive per request, so runtime-local rounds must not
+    // consume a number.
+    let wireToolSequence = 0;
     let continuation: ModelGenerationContinuation | undefined;
     let toolOutput: ModelToolOutput | undefined;
     let recipeToolAttempted = false;
@@ -894,8 +898,9 @@ export class AgentRequestService {
           module: record.input.module,
           tool: descriptor.id,
           arguments: result.arguments,
-          sequence,
+          sequence: wireToolSequence,
         };
+        wireToolSequence += 1;
         toolResult = await this.#lifecycle.awaitToolResult(record, descriptor, payload);
       }
       if (descriptor.execution === "connector_remote" && toolResult.status === "succeeded") {

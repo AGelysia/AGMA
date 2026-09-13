@@ -23,6 +23,7 @@ import { SchemaRegistry } from "../src/protocol/schema-registry.js";
 import { SqliteConversationRepository } from "../src/storage/conversation-repository.js";
 import { migrateRuntimeStorage } from "../src/storage/migrations.js";
 import { ToolRegistry } from "../src/tools/tool-registry.js";
+import type { LocalToolExecution } from "../src/tools/local-tool-executor.js";
 import type { ToolExecutionResult } from "../src/tools/tool-types.js";
 import { SqliteUsageAccounting, type UsageAccounting } from "../src/usage/usage-accounting.js";
 
@@ -193,6 +194,120 @@ async function runRecipeRound(options: {
 describe("Agent request service", () => {
   beforeEach(() => {
     vi.useRealTimers();
+  });
+
+  it("numbers wire tool calls consecutively across runtime-local rounds", async () => {
+    let generation = 0;
+    const adapter = provider(async () => {
+      generation += 1;
+      if (generation === 1) {
+        return {
+          type: "tool_call",
+          providerCallId: "call-context",
+          providerName: "player_context_read",
+          arguments: {},
+          continuation: { provider: "openai", items: [] },
+        };
+      }
+      if (generation === 2) {
+        return {
+          type: "tool_call",
+          providerCallId: "call-project",
+          providerName: "project_read",
+          arguments: { projectId: "3ac5e823-4917-4309-9ded-bf6b37ca2c9e" },
+          continuation: { provider: "openai", items: [] },
+        };
+      }
+      if (generation === 3) {
+        return {
+          type: "tool_call",
+          providerCallId: "call-info",
+          providerName: "server_info_read",
+          arguments: {},
+          continuation: { provider: "openai", items: [] },
+        };
+      }
+      return { type: "final", fallbackText: "done" };
+    });
+    const localTools: LocalToolExecution = {
+      execute: async () => ({
+        status: "succeeded",
+        source: "runtime_storage",
+        trust: "verified",
+        result: { project: null },
+        error: null,
+      }),
+    };
+    const service = agentService({ provider: adapter, config: config(), localTools });
+    const responses: AgentRuntimeResponse[] = [];
+    service.submit({ ...request(PERSISTENT_REQUEST_ONE), module: "project" }, (response) =>
+      responses.push(response),
+    );
+
+    const supply = (
+      call: Extract<AgentRuntimeResponse, { type: "tool.call" }>,
+      result: Readonly<Record<string, unknown>>,
+    ) =>
+      service.acceptToolResult(PERSISTENT_REQUEST_ONE, {
+        status: "succeeded",
+        source: "paper_api",
+        trust: "authoritative",
+        result,
+        error: null,
+        toolCallId: call.payload.toolCallId,
+        sessionId: call.payload.sessionId,
+        playerUuid: call.payload.playerUuid,
+        tool: call.payload.tool,
+        sequence: call.payload.sequence,
+      });
+
+    await vi.waitFor(() => expect(responses.length).toBe(1));
+    const first = responses[0];
+    if (first?.type !== "tool.call") {
+      throw new Error("expected the remote context call first");
+    }
+    expect(first.payload.tool).toBe("player.context.read");
+    expect(first.payload.sequence).toBe(0);
+    expect(
+      supply(first, {
+        online: true,
+        playerName: "Player",
+        worldId: "minecraft:overworld",
+        position: { x: 0, y: 64, z: 0, yaw: 0, pitch: 0 },
+        gameMode: "survival",
+        health: 20,
+        maxHealth: 20,
+        foodLevel: 20,
+        saturation: 5,
+        experienceLevel: 0,
+      }),
+    ).toBe("accepted");
+
+    await vi.waitFor(() => expect(responses.length).toBe(2));
+    const second = responses[1];
+    if (second?.type !== "tool.call") {
+      throw new Error(
+        "expected the remote info call after the runtime-local round, got: " +
+          JSON.stringify(second).slice(0, 400),
+      );
+    }
+    // The Paper binding requires consecutive wire sequences; the runtime-local project.read
+    // round between the two remote rounds must not consume a number.
+    expect(second.payload.tool).toBe("server.info.read");
+    expect(second.payload.sequence).toBe(1);
+    expect(
+      supply(second, {
+        serverName: "test",
+        minecraftVersion: "1.21.11",
+        serverVersion: "1.0.0",
+        onlinePlayers: 1,
+        maxPlayers: 20,
+        viewDistance: 4,
+        simulationDistance: 4,
+      }),
+    ).toBe("accepted");
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+    expect(responses[2]?.type).toBe("agent.complete");
   });
 
   it("bounds global work, queues FIFO, and permits only one outstanding request per player", async () => {

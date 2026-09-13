@@ -2,7 +2,9 @@ import type { DatabaseSync, StatementSync } from "node:sqlite";
 
 import type { ModelGenerationUsage } from "../providers/model-provider.js";
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
+// Player UUIDs come from the server and may be any RFC 4122 variant: online-mode accounts are
+// v4, but offline-mode servers derive v3 name-based UUIDs. Internal request IDs are always v4.
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u;
 const SERVER_ID = /^[a-z0-9][a-z0-9._-]{0,63}$/u;
 const PROVIDER_ID = /^[a-z0-9][a-z0-9._-]{0,31}$/u;
 const MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/u;
