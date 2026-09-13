@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/project-create-arguments.schema.json",
+  "title": "Project Create Arguments",
+  "$ref": "project-common.schema.json#/$defs/plan"
+}

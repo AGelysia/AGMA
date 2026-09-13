@@ -44,5 +44,123 @@
       "minecraftVersion": "1.21.11",
       "url": "https://attacker.invalid/metadata"
     }
+  },
+  "clearShapeWithBlockState": {
+    "projectId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    "revision": 1,
+    "operation": "create",
+    "dimension": "minecraft:overworld",
+    "origin": {
+      "x": 0,
+      "y": -60,
+      "z": 0
+    },
+    "rotation": 0,
+    "mirror": "NONE",
+    "shapes": [
+      {
+        "bounds": {
+          "min": {
+            "x": 0,
+            "y": -60,
+            "z": 0
+          },
+          "max": {
+            "x": 3,
+            "y": -60,
+            "z": 3
+          }
+        },
+        "pattern": "clear",
+        "blockState": "minecraft:stone"
+      }
+    ]
+  },
+  "emptyShapes": {
+    "projectId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    "revision": 1,
+    "operation": "create",
+    "dimension": "minecraft:overworld",
+    "origin": {
+      "x": 0,
+      "y": -60,
+      "z": 0
+    },
+    "rotation": 0,
+    "mirror": "NONE",
+    "shapes": []
+  },
+  "oversizedPreviewResult": {
+    "previewId": "ffffffff-ffff-4fff-8fff-ffffffffffff",
+    "projectId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    "revision": 1,
+    "dimension": "minecraft:overworld",
+    "bounds": {
+      "min": {
+        "x": 8,
+        "y": -60,
+        "z": 8
+      },
+      "max": {
+        "x": 12,
+        "y": -55,
+        "z": 12
+      }
+    },
+    "baseRegionHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "changeSetHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "targetBlockCount": 16385,
+    "changeCount": 105,
+    "difference": {
+      "added": 105,
+      "replaced": 0,
+      "removed": 4
+    },
+    "previewStatus": "client_validated",
+    "worldWriteEnabled": false
+  },
+  "serverValidatedStatus": {
+    "previewId": "ffffffff-ffff-4fff-8fff-ffffffffffff",
+    "projectId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    "revision": 1,
+    "dimension": "minecraft:overworld",
+    "bounds": {
+      "min": {
+        "x": 8,
+        "y": -60,
+        "z": 8
+      },
+      "max": {
+        "x": 12,
+        "y": -55,
+        "z": 12
+      }
+    },
+    "baseRegionHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "changeSetHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "targetBlockCount": 105,
+    "changeCount": 105,
+    "difference": {
+      "added": 105,
+      "replaced": 0,
+      "removed": 4
+    },
+    "previewStatus": "server_validated",
+    "worldWriteEnabled": false
+  },
+  "playerContextMissingPosition": {
+    "dimension": "minecraft:overworld",
+    "yaw": 0.0,
+    "pitch": 0.0
+  },
+  "playerContextBadDimension": {
+    "dimension": "overworld",
+    "position": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "yaw": 0.0,
+    "pitch": 0.0
   }
 }

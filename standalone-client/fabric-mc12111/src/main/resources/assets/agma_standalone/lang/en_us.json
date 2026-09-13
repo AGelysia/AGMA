@@ -1,5 +1,7 @@
 {
   "key.agma_standalone.open": "Open AGMA Standalone",
+  "key.agma_standalone.preview_toggle": "Toggle build preview overlay",
+  "key.agma_standalone.hologram_toggle": "Toggle build preview hologram",
   "key.categories.agma_standalone": "AGMA Standalone",
   "screen.agma_standalone.catalog": "AGMA Standalone Catalog",
   "screen.agma_standalone.search": "Search",
@@ -126,5 +128,15 @@
   "screen.agma_standalone.plan_workstations": "Workstations",
   "screen.agma_standalone.plan_steps": "Steps and requirements",
   "screen.agma_standalone.plan_unresolved": "Unresolved",
-  "screen.agma_standalone.plan_issues": "Route issues"
+  "screen.agma_standalone.plan_issues": "Route issues",
+  "screen.agma_standalone.preview_hint": "Press %s to hide the preview overlay",
+  "preview.agma_standalone.operation.create": "CREATE",
+  "preview.agma_standalone.operation.modify": "MODIFY",
+  "preview.agma_standalone.summary": "%s %s × %s × %s · %s · rev %s",
+  "preview.agma_standalone.origin": "origin %s %s %s · %s°",
+  "preview.agma_standalone.mirrored": " · mirrored",
+  "preview.agma_standalone.diff.added": "added",
+  "preview.agma_standalone.diff.replaced": "replaced",
+  "preview.agma_standalone.diff.removed": "removed",
+  "preview.agma_standalone.top_blocks": "Top blocks"
 }

@@ -37,7 +37,7 @@ final class ClientProfileStoreTest {
     assertFalse(source.contains("provider-secret-value"));
     assertTrue(source.contains("secrets/model-api-key"));
     assertTrue(source.contains("secrets/connector-token"));
-    assertEquals(5, configured.toolPolicy().allowed().size());
+    assertEquals(11, configured.toolPolicy().allowed().size());
     assertFalse(configured.toolPolicy().inventoryDefaultEnabled());
 
     String first;

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { DatabaseSync } from "node:sqlite";
 
 import type { EvidenceClaim } from "../src/evidence/evidence-normalizer.js";
 import type { WebEvidenceCollector } from "../src/evidence/web-evidence-pipeline.js";
@@ -14,7 +15,10 @@ import {
 } from "../src/requests/client-agent-request-service.js";
 import type { AgentRuntimeResponse } from "../src/requests/agent-request-service.js";
 import { SchemaRegistry } from "../src/protocol/schema-registry.js";
+import { migrateRuntimeStorage } from "../src/storage/migrations.js";
+import { SqliteProjectRepository } from "../src/storage/project-repository.js";
 import { ClientToolRegistry } from "../src/tools/client-tool-registry.js";
+import { ProjectToolExecutor } from "../src/tools/project-tool-executor.js";
 import type { UsageAccounting } from "../src/usage/usage-accounting.js";
 
 const REQUEST_ID = "11111111-1111-4111-8111-111111111111";
@@ -507,10 +511,12 @@ describe("client-only Agent request service", () => {
     ).toBe("accepted");
     await vi.waitFor(() => expect(service.activeCount).toBe(0));
 
-    expect(events).toEqual(["generate:1", "collect", "generate:2"]);
+    expect(events).toEqual(["generate:1", "generate:2", "collect", "generate:3"]);
     expect(generated[0]?.input.at(-1)?.content).not.toContain(evidence.claimId);
-    expect(generated[1]).toMatchObject({ tools: [] });
-    expect(generated[1]?.input.at(-1)?.content).toContain(evidence.claimId);
+    // The local phase continues after the search result so multi-round flows (e.g. build
+    // preview) can chain Tools; web synthesis still never receives Tool calls.
+    expect(generated[2]).toMatchObject({ tools: [] });
+    expect(generated[2]?.input.at(-1)?.content).toContain(evidence.claimId);
     expect(responses.filter((response) => response.type === "tool.call")).toHaveLength(1);
     const completion = responses.at(-1);
     if (completion?.type !== "agent.complete") throw new Error("missing controlled completion");
@@ -987,5 +993,426 @@ describe("client-only Agent request service", () => {
     expect(logs).toContain('"code":"TRANSPORT_RESPONSE_FAILED"');
     expect(logs).toContain(`"requestId":"${REQUEST_ID}"`);
     expect(logs).toContain("connector socket closed");
+  });
+});
+
+describe("client build preview flow", () => {
+  const ALL_CLIENT_TOOLS = [
+    "game.resource.search",
+    "game.process.lookup",
+    "game.process.uses",
+    "game.process.plan",
+    "game.inventory.snapshot",
+    "game.player.context.read",
+    "project.list",
+    "project.read",
+    "project.create",
+    "project.update",
+    "build.preview.create",
+  ];
+  const PROJECT_ID = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
+  const PREVIEW_ID = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
+
+  function localProjectTools(): {
+    readonly localTools: ProjectToolExecutor;
+    readonly projects: SqliteProjectRepository;
+  } {
+    const database = new DatabaseSync(":memory:");
+    migrateRuntimeStorage(database, "2026-07-17T00:00:00.000Z");
+    const ids = [PROJECT_ID, "55555555-5555-4555-8555-555555555555"];
+    const projects = new SqliteProjectRepository(database, {
+      randomUuid: () => ids.shift() ?? "66666666-6666-4666-8666-666666666666",
+    });
+    return { localTools: new ProjectToolExecutor(projects), projects };
+  }
+
+  function previewArguments(): Readonly<Record<string, unknown>> {
+    return {
+      projectId: PROJECT_ID,
+      revision: 1,
+      operation: "create",
+      dimension: "minecraft:overworld",
+      origin: { x: 0, y: -60, z: 0 },
+      rotation: 0,
+      mirror: "NONE",
+      shapes: [
+        {
+          bounds: { min: { x: 0, y: -60, z: 0 }, max: { x: 4, y: -53, z: 4 } },
+          pattern: "solid",
+          blockState: "minecraft:stone",
+        },
+      ],
+    };
+  }
+
+  function previewResult(): Readonly<Record<string, unknown>> {
+    return {
+      previewId: PREVIEW_ID,
+      projectId: PROJECT_ID,
+      revision: 1,
+      dimension: "minecraft:overworld",
+      bounds: { min: { x: 0, y: -60, z: 0 }, max: { x: 4, y: -53, z: 4 } },
+      baseRegionHash: "a".repeat(64),
+      changeSetHash: "b".repeat(64),
+      targetBlockCount: 200,
+      changeCount: 200,
+      difference: { added: 200, replaced: 0, removed: 0 },
+      previewStatus: "client_validated",
+      worldWriteEnabled: false,
+    };
+  }
+
+  function playerContextResult(): Readonly<Record<string, unknown>> {
+    return {
+      dimension: "minecraft:overworld",
+      position: { x: 8, y: -60, z: 8 },
+      yaw: 90.0,
+      pitch: -5.5,
+    };
+  }
+
+  function buildAdapter(): ModelProvider {
+    let round = 0;
+    return {
+      check: vi.fn().mockResolvedValue({ ok: true }),
+      generate: vi.fn(async () => {
+        round += 1;
+        if (round === 1) {
+          return {
+            type: "tool_call" as const,
+            providerCallId: "context",
+            providerName: "game_player_context_read",
+            arguments: {},
+            continuation: { provider: "openai" as const, items: [] },
+          };
+        }
+        if (round === 2) {
+          return {
+            type: "tool_call" as const,
+            providerCallId: "create",
+            providerName: "project_create",
+            arguments: {
+              name: "Stone tower",
+              summary: "A 5x8x5 solid stone tower.",
+              goals: ["build the tower"],
+              constraints: [],
+            },
+            continuation: { provider: "openai" as const, items: [] },
+          };
+        }
+        if (round === 3) {
+          return {
+            type: "tool_call" as const,
+            providerCallId: "read",
+            providerName: "project_read",
+            arguments: { projectId: PROJECT_ID },
+            continuation: { provider: "openai" as const, items: [] },
+          };
+        }
+        if (round === 4) {
+          return {
+            type: "tool_call" as const,
+            providerCallId: "preview",
+            providerName: "build_preview_create",
+            arguments: previewArguments(),
+            continuation: { provider: "openai" as const, items: [] },
+          };
+        }
+        return { type: "final" as const, fallbackText: "The tower preview is ready." };
+      }),
+    };
+  }
+
+  async function respondToPreviewCall(
+    service: ClientAgentRequestService,
+    responses: readonly AgentRuntimeResponse[],
+  ): Promise<void> {
+    await vi.waitFor(() => expect(responses.length).toBeGreaterThan(0));
+    const contextCall = responses[0];
+    if (contextCall?.type !== "tool.call") throw new Error("missing player context Tool call");
+    expect(contextCall.payload.tool).toBe("game.player.context.read");
+    expect(
+      service.acceptToolResult(REQUEST_ID, {
+        toolCallId: contextCall.payload.toolCallId,
+        sessionId: contextCall.payload.sessionId,
+        playerUuid: SUBJECT_ID,
+        tool: contextCall.payload.tool,
+        sequence: contextCall.payload.sequence,
+        status: "succeeded",
+        source: "client_context",
+        trust: "client_visible",
+        result: playerContextResult(),
+        error: null,
+      }),
+    ).toBe("accepted");
+    await vi.waitFor(() => expect(responses.length).toBeGreaterThan(1));
+    const call = responses[1];
+    if (call?.type !== "tool.call") throw new Error("missing preview Tool call");
+    expect(call.payload.tool).toBe("build.preview.create");
+    expect(call.payload.arguments).toMatchObject({
+      projectId: PROJECT_ID,
+      revision: 1,
+      shapes: [{ pattern: "solid", blockState: "minecraft:stone" }],
+    });
+    expect(
+      service.acceptToolResult(REQUEST_ID, {
+        toolCallId: call.payload.toolCallId,
+        sessionId: call.payload.sessionId,
+        playerUuid: SUBJECT_ID,
+        tool: call.payload.tool,
+        sequence: call.payload.sequence,
+        status: "succeeded",
+        source: "client_context",
+        trust: "client_visible",
+        result: previewResult(),
+        error: null,
+      }),
+    ).toBe("accepted");
+  }
+
+  it("creates a preview through the multi-round project flow and forces an honest completion", async () => {
+    const { localTools, projects } = localProjectTools();
+    const adapter = buildAdapter();
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registryWith(ALL_CLIENT_TOOLS),
+      localTools,
+    });
+    const responses: AgentRuntimeResponse[] = [];
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "保存项目：建一座 5x8x5 的石塔，并给我投影预览。",
+        webAuthorization: "off",
+      },
+      (response) => responses.push(response),
+    );
+    await respondToPreviewCall(service, responses);
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    const completion = responses.at(-1);
+    if (completion?.type !== "agent.complete") throw new Error("missing completion");
+    expect(completion.payload.fallbackText).toContain(PREVIEW_ID);
+    expect(completion.payload.fallbackText).toContain(PROJECT_ID);
+    expect(completion.payload.fallbackText).toContain("未改动任何方块");
+    expect(completion.payload.fallbackText).not.toContain("The tower preview is ready.");
+    expect(adapter.generate).toHaveBeenCalledTimes(5);
+    const stored = projects.findOwned(PROJECT_ID, {
+      serverId: "client-installation",
+      playerUuid: SUBJECT_ID,
+    });
+    expect(stored?.name).toBe("Stone tower");
+    expect(stored?.revision).toBe(1);
+    // Runtime-local project rounds never reach the connector.
+    expect(
+      responses.filter(
+        (response) => response.type === "tool.call" && response.payload.tool.startsWith("project."),
+      ),
+    ).toHaveLength(0);
+  });
+
+  it("permits project creation from build intent without explicit save verbs", async () => {
+    const { localTools } = localProjectTools();
+    const adapter = buildAdapter();
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registryWith(ALL_CLIENT_TOOLS),
+      localTools,
+    });
+    const responses: AgentRuntimeResponse[] = [];
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "帮我建一座石塔并投影预览",
+        webAuthorization: "off",
+      },
+      (response) => responses.push(response),
+    );
+    await respondToPreviewCall(service, responses);
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+    expect(responses.at(-1)?.type).toBe("agent.complete");
+  });
+
+  it("feeds an unverified preview back so the model can bind the project and retry", async () => {
+    const { localTools, projects } = localProjectTools();
+    let round = 0;
+    const toolOutputs: string[] = [];
+    const adapter: ModelProvider = {
+      check: vi.fn().mockResolvedValue({ ok: true }),
+      generate: vi.fn(async (request: ModelGenerationRequest) => {
+        round += 1;
+        if (request.toolOutput !== undefined) toolOutputs.push(request.toolOutput.output);
+        if (round === 1) {
+          return {
+            type: "tool_call" as const,
+            providerCallId: "preview-early",
+            providerName: "build_preview_create",
+            arguments: previewArguments(),
+            continuation: { provider: "openai" as const, items: [] },
+          };
+        }
+        if (round === 2) {
+          return {
+            type: "tool_call" as const,
+            providerCallId: "create",
+            providerName: "project_create",
+            arguments: {
+              name: "Stone tower",
+              summary: "A 5x8x5 solid stone tower.",
+              goals: ["build the tower"],
+              constraints: [],
+            },
+            continuation: { provider: "openai" as const, items: [] },
+          };
+        }
+        if (round === 3) {
+          return {
+            type: "tool_call" as const,
+            providerCallId: "read",
+            providerName: "project_read",
+            arguments: { projectId: PROJECT_ID },
+            continuation: { provider: "openai" as const, items: [] },
+          };
+        }
+        if (round === 4) {
+          return {
+            type: "tool_call" as const,
+            providerCallId: "preview",
+            providerName: "build_preview_create",
+            arguments: previewArguments(),
+            continuation: { provider: "openai" as const, items: [] },
+          };
+        }
+        return { type: "final" as const, fallbackText: "Preview ready." };
+      }),
+    };
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registryWith(ALL_CLIENT_TOOLS),
+      localTools,
+    });
+    const responses: AgentRuntimeResponse[] = [];
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "保存项目：直接投影预览石塔。",
+        webAuthorization: "off",
+      },
+      (response) => responses.push(response),
+    );
+    await vi.waitFor(() => expect(responses.length).toBeGreaterThan(0));
+    const call = responses[0];
+    if (call?.type !== "tool.call") throw new Error("missing preview Tool call");
+    expect(call.payload.tool).toBe("build.preview.create");
+    expect(
+      service.acceptToolResult(REQUEST_ID, {
+        toolCallId: call.payload.toolCallId,
+        sessionId: call.payload.sessionId,
+        playerUuid: SUBJECT_ID,
+        tool: call.payload.tool,
+        sequence: call.payload.sequence,
+        status: "succeeded",
+        source: "client_context",
+        trust: "client_visible",
+        result: previewResult(),
+        error: null,
+      }),
+    ).toBe("accepted");
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    // The first premature preview was returned as a recoverable failure, and the model then
+    // walked project_create -> project_read -> preview to success.
+    expect(toolOutputs[0]).toContain("PREVIEW_PROJECT_UNVERIFIED");
+    expect(
+      projects.findOwned(PROJECT_ID, {
+        serverId: "client-installation",
+        playerUuid: SUBJECT_ID,
+      }),
+    ).toBeDefined();
+    const completion = responses.at(-1);
+    if (completion?.type !== "agent.complete") throw new Error("missing completion");
+    expect(completion.payload.fallbackText).toContain(PREVIEW_ID);
+  });
+
+  it("permits project creation when a direct build request carries a leftover question", async () => {
+    const { localTools } = localProjectTools();
+    const adapter = buildAdapter();
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registryWith(ALL_CLIENT_TOOLS),
+      localTools,
+    });
+    const responses: AgentRuntimeResponse[] = [];
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        // A draft question left in the box makes the whole typed message carry a trailing
+        // question; the direct build request at the start still permits the local project.
+        message: "这个物品保存项目：在我身旁建一座两层小楼并给我投影预览。怎么获得？",
+        webAuthorization: "off",
+      },
+      (response) => responses.push(response),
+    );
+    await respondToPreviewCall(service, responses);
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+    expect(responses.at(-1)?.type).toBe("agent.complete");
+  });
+
+  it("rejects project persistence for plain questions", async () => {
+    const { localTools } = localProjectTools();
+    const adapter: ModelProvider = {
+      check: vi.fn().mockResolvedValue({ ok: true }),
+      generate: vi.fn().mockResolvedValue({
+        type: "tool_call",
+        providerCallId: "create",
+        providerName: "project_create",
+        arguments: {
+          name: "Stone tower",
+          summary: "A 5x8x5 solid stone tower.",
+          goals: [],
+          constraints: [],
+        },
+        continuation: { provider: "openai", items: [] },
+      }),
+    };
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registryWith(ALL_CLIENT_TOOLS),
+      localTools,
+    });
+    const responses: AgentRuntimeResponse[] = [];
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "How do I build a stone tower?",
+        webAuthorization: "off",
+      },
+      (response) => responses.push(response),
+    );
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    const terminal = responses.at(-1);
+    if (terminal?.type !== "agent.error") throw new Error("missing error terminal");
+    expect(terminal.payload.code).toBe("TOOL_REJECTED");
   });
 });

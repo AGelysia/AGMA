@@ -15,7 +15,7 @@ export interface ClientToolDescriptor extends ModelToolDefinition {
   readonly resultSchema: string;
   readonly source: ToolResultSource;
   readonly trust: ToolResultTrust;
-  readonly execution: "connector_remote";
+  readonly execution: "connector_remote" | "runtime_local";
 }
 
 const sources = [
@@ -26,6 +26,7 @@ const sources = [
       "Search the bounded client-visible Minecraft resource catalog and preserve ambiguous candidates.",
     source: "client_catalog",
     trust: "client_visible",
+    execution: "connector_remote",
   },
   {
     id: "game.process.lookup",
@@ -34,6 +35,7 @@ const sources = [
       "Look up client-visible processes producing an exact resource in a pinned generation.",
     source: "client_catalog",
     trust: "client_visible",
+    execution: "connector_remote",
   },
   {
     id: "game.process.uses",
@@ -42,6 +44,7 @@ const sources = [
       "Look up client-visible processes consuming an exact resource in a pinned generation.",
     source: "client_catalog",
     trust: "client_visible",
+    execution: "connector_remote",
   },
   {
     id: "game.process.plan",
@@ -50,6 +53,7 @@ const sources = [
       "Request a bounded deterministic process plan with final materials and workstation requirements.",
     source: "client_planner",
     trust: "deterministic",
+    execution: "connector_remote",
   },
   {
     id: "game.inventory.snapshot",
@@ -57,6 +61,59 @@ const sources = [
     description: "Read a bounded, single-use-authorized subset of the local player's inventory.",
     source: "client_context",
     trust: "client_visible",
+    execution: "connector_remote",
+  },
+  {
+    id: "game.player.context.read",
+    providerName: "game_player_context_read",
+    description:
+      "Read the local player's current dimension, block position, and view rotation. Call this before placing a build preview so the projection lands near the player.",
+    source: "client_context",
+    trust: "client_visible",
+    execution: "connector_remote",
+  },
+  {
+    id: "project.list",
+    providerName: "project_list",
+    description: "List the local player's stored client-side build projects.",
+    source: "runtime_storage",
+    trust: "verified",
+    execution: "runtime_local",
+  },
+  {
+    id: "project.read",
+    providerName: "project_read",
+    description: "Read one stored client-side build project by its exact projectId.",
+    source: "runtime_storage",
+    trust: "verified",
+    execution: "runtime_local",
+  },
+  {
+    id: "project.create",
+    providerName: "project_create",
+    description:
+      "Persist a new client-side build project plan for the local player. The project stores plan text only, never world data.",
+    source: "runtime_storage",
+    trust: "verified",
+    execution: "runtime_local",
+  },
+  {
+    id: "project.update",
+    providerName: "project_update",
+    description:
+      "Update an existing client-side build project plan, preserving its exact expected revision.",
+    source: "runtime_storage",
+    trust: "verified",
+    execution: "runtime_local",
+  },
+  {
+    id: "build.preview.create",
+    providerName: "build_preview_create",
+    description:
+      "Create a bounded client-local build preview (projection) from an owned project revision. The preview renders on the local client and never changes the world.",
+    source: "client_context",
+    trust: "client_visible",
+    execution: "connector_remote",
   },
 ] as const;
 
@@ -95,6 +152,61 @@ function providerParameters(id: ClientToolId): Readonly<Record<string, unknown>>
         topK: { type: "integer" },
       },
       ["resourceId", "amount", "generationId", "maxDepth", "maxNodes", "topK"],
+    );
+  }
+  if (id === "project.list" || id === "game.player.context.read") {
+    return closedObject({}, []);
+  }
+  if (id === "project.read") {
+    return closedObject({ projectId: { type: "string" } }, ["projectId"]);
+  }
+  if (id === "project.create" || id === "project.update") {
+    const properties: Record<string, unknown> = {
+      name: { type: "string" },
+      summary: { type: "string" },
+      goals: { type: "array", items: { type: "string" } },
+      constraints: { type: "array", items: { type: "string" } },
+    };
+    const required = ["name", "summary", "goals", "constraints"];
+    if (id === "project.update") {
+      properties["projectId"] = { type: "string" };
+      properties["expectedRevision"] = { type: "integer" };
+      required.unshift("projectId", "expectedRevision");
+    }
+    return closedObject(properties, required);
+  }
+  if (id === "build.preview.create") {
+    const position = closedObject(
+      {
+        x: { type: "integer" },
+        y: { type: "integer" },
+        z: { type: "integer" },
+      },
+      ["x", "y", "z"],
+    );
+    const bounds = closedObject({ min: position, max: position }, ["min", "max"]);
+    return closedObject(
+      {
+        projectId: { type: "string" },
+        revision: { type: "integer" },
+        operation: { enum: ["create", "modify"] },
+        dimension: { type: "string" },
+        origin: position,
+        rotation: { enum: [0, 90, 180, 270] },
+        mirror: { enum: ["NONE", "LEFT_RIGHT", "FRONT_BACK"] },
+        shapes: {
+          type: "array",
+          items: closedObject(
+            {
+              bounds,
+              pattern: { enum: ["solid", "hollow", "walls", "floor", "clear"] },
+              blockState: { type: ["string", "null"] },
+            },
+            ["bounds", "pattern", "blockState"],
+          ),
+        },
+      },
+      ["projectId", "revision", "operation", "dimension", "origin", "rotation", "mirror", "shapes"],
     );
   }
   return closedObject(
@@ -161,51 +273,95 @@ function semanticResult(
   result: Readonly<Record<string, unknown>>,
   argumentsValue?: Readonly<Record<string, unknown>>,
 ): boolean {
-  const generationId = result["generationId"];
-  if (typeof generationId !== "string") return false;
-  if (descriptor.id === "game.resource.search") {
-    return (
-      Array.isArray(result["candidates"]) &&
-      result["candidates"].every(
-        (candidate) =>
-          isRecord(candidate) && resourceGeneration(candidate["resource"], generationId),
-      )
-    );
-  }
-  if (descriptor.id === "game.process.lookup" || descriptor.id === "game.process.uses") {
-    return (
-      Array.isArray(result["processes"]) &&
-      result["processes"].every((process) => processGeneration(process, generationId))
-    );
-  }
-  if (descriptor.id === "game.inventory.snapshot") {
-    const authorized = argumentsValue?.["resourceIds"];
-    const entries = result["entries"];
-    if (!Array.isArray(entries)) return false;
-    if (argumentsValue === undefined) return entries.every(isRecord);
-    if (
-      result["authorizationId"] !== argumentsValue["authorizationId"] ||
-      result["generationId"] !== argumentsValue["generationId"] ||
-      !Array.isArray(authorized) ||
-      !authorized.every((entry): entry is string => typeof entry === "string")
-    ) {
-      return false;
+  // Catalog-generation pinning only applies to client catalog game.* tools; Runtime-local project
+  // storage, build previews, and the live player context carry no catalog generation.
+  if (descriptor.id.startsWith("game.")) {
+    if (descriptor.id === "game.player.context.read") {
+      const position = result["position"];
+      return (
+        typeof result["dimension"] === "string" &&
+        isRecord(position) &&
+        Number.isSafeInteger(position["x"]) &&
+        Number.isSafeInteger(position["y"]) &&
+        Number.isSafeInteger(position["z"])
+      );
     }
-    const allowed = new Set(authorized);
-    return entries.every(
-      (entry) =>
-        isRecord(entry) &&
-        typeof entry["resourceId"] === "string" &&
-        allowed.has(entry["resourceId"]),
+    const generationId = result["generationId"];
+    if (typeof generationId !== "string") return false;
+    if (descriptor.id === "game.resource.search") {
+      return (
+        Array.isArray(result["candidates"]) &&
+        result["candidates"].every(
+          (candidate) =>
+            isRecord(candidate) && resourceGeneration(candidate["resource"], generationId),
+        )
+      );
+    }
+    if (descriptor.id === "game.process.lookup" || descriptor.id === "game.process.uses") {
+      return (
+        Array.isArray(result["processes"]) &&
+        result["processes"].every((process) => processGeneration(process, generationId))
+      );
+    }
+    if (descriptor.id === "game.inventory.snapshot") {
+      const authorized = argumentsValue?.["resourceIds"];
+      const entries = result["entries"];
+      if (!Array.isArray(entries)) return false;
+      if (argumentsValue === undefined) return entries.every(isRecord);
+      if (
+        result["authorizationId"] !== argumentsValue["authorizationId"] ||
+        result["generationId"] !== argumentsValue["generationId"] ||
+        !Array.isArray(authorized) ||
+        !authorized.every((entry): entry is string => typeof entry === "string")
+      ) {
+        return false;
+      }
+      const allowed = new Set(authorized);
+      return entries.every(
+        (entry) =>
+          isRecord(entry) &&
+          typeof entry["resourceId"] === "string" &&
+          allowed.has(entry["resourceId"]),
+      );
+    }
+    if (descriptor.id === "game.process.plan" && argumentsValue !== undefined) {
+      const target = result["target"];
+      return (
+        result["generationId"] === argumentsValue["generationId"] &&
+        isRecord(target) &&
+        target["resourceId"] === argumentsValue["resourceId"] &&
+        target["amount"] === argumentsValue["amount"]
+      );
+    }
+    return true;
+  }
+  if (descriptor.id === "project.read" && argumentsValue !== undefined) {
+    const project = result["project"];
+    return (
+      project === null ||
+      (isRecord(project) && project["projectId"] === argumentsValue["projectId"])
     );
   }
-  if (descriptor.id === "game.process.plan" && argumentsValue !== undefined) {
-    const target = result["target"];
+  if (
+    (descriptor.id === "project.create" || descriptor.id === "project.update") &&
+    argumentsValue !== undefined
+  ) {
+    const outcome = result["outcome"];
+    const project = result["project"];
     return (
-      result["generationId"] === argumentsValue["generationId"] &&
-      isRecord(target) &&
-      target["resourceId"] === argumentsValue["resourceId"] &&
-      target["amount"] === argumentsValue["amount"]
+      typeof outcome === "string" &&
+      (project === null ||
+        (isRecord(project) &&
+          typeof project["projectId"] === "string" &&
+          Number.isSafeInteger(project["revision"])))
+    );
+  }
+  if (descriptor.id === "build.preview.create" && argumentsValue !== undefined) {
+    return (
+      result["projectId"] === argumentsValue["projectId"] &&
+      result["revision"] === argumentsValue["revision"] &&
+      result["previewStatus"] === "client_validated" &&
+      result["worldWriteEnabled"] === false
     );
   }
   return true;
@@ -232,7 +388,6 @@ export class ClientToolRegistry {
       if (!allowlist.has(source.id)) continue;
       const descriptor: ClientToolDescriptor = Object.freeze({
         ...source,
-        execution: "connector_remote",
         argumentsSchema: schemaReference(source.id, "arguments"),
         resultSchema: schemaReference(source.id, "result"),
         parameters: providerParameters(source.id),
@@ -249,7 +404,13 @@ export class ClientToolRegistry {
   public activateClientCapabilities(capabilityIds: readonly string[]): void {
     this.#active.clear();
     const advertised = new Set(capabilityIds);
-    for (const id of this.#configured) if (advertised.has(id)) this.#active.add(id);
+    for (const id of this.#configured) {
+      const descriptor = this.#byId.get(id);
+      if (descriptor === undefined) continue;
+      // Runtime-local tools never cross the connector, so the client cannot
+      // advertise them; they are active whenever configured.
+      if (descriptor.execution === "runtime_local" || advertised.has(id)) this.#active.add(id);
+    }
   }
 
   public clearClientCapabilities(): void {

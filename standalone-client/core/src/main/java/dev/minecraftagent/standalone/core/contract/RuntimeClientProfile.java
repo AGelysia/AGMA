@@ -180,7 +180,7 @@ public record RuntimeClientProfile(
     public Limits {
       bounded(maxConcurrentRequests, 1, 8, "maxConcurrentRequests");
       bounded(maxQueuedRequests, 0, 128, "maxQueuedRequests");
-      bounded(maxToolRounds, 1, 8, "maxToolRounds");
+      bounded(maxToolRounds, 1, 12, "maxToolRounds");
       bounded(maxContextMessages, 1, 100, "maxContextMessages");
       bounded(maxContextCharacters, 4096, 65_536, "maxContextCharacters");
       bounded(requestCooldownSeconds, 0, 3600, "requestCooldownSeconds");
@@ -214,7 +214,13 @@ public record RuntimeClientProfile(
             "game.process.lookup",
             "game.process.uses",
             "game.process.plan",
-            "game.inventory.snapshot");
+            "game.inventory.snapshot",
+            "game.player.context.read",
+            "project.list",
+            "project.read",
+            "project.create",
+            "project.update",
+            "build.preview.create");
     private static final Set<String> REQUIRED_DENIALS =
         Set.of("paper.command", "server.payload", "world.write", "arbitrary.web.fetch");
     private static final Set<String> KNOWN_DENIALS =
@@ -226,7 +232,7 @@ public record RuntimeClientProfile(
             "arbitrary.web.fetch");
 
     public ToolPolicy {
-      allowed = uniqueIdentifiers(allowed, "allowed tools", 5);
+      allowed = uniqueIdentifiers(allowed, "allowed tools", 11);
       denied = uniqueIdentifiers(denied, "denied capabilities", 16);
       if (!KNOWN_TOOLS.containsAll(allowed)) {
         throw new IllegalArgumentException("allowed contains an unreviewed client tool");

@@ -13,7 +13,7 @@ const PRODUCT = "agma-standalone-runtime";
 const ENTRYPOINT = "app/dist/standalone/bootstrap/index.js";
 const MANIFEST = "sidecar-manifest.json";
 const SCHEMA_ALLOWLIST = "standalone-client/contracts/runtime-schema-allowlist.json";
-const SCHEMA_ALLOWLIST_SHA256 = "1f84cb4b8e5a5525af1d0bf9e4b33e4518358780ed1a8d89a2d5c1fb65f43bc3";
+const SCHEMA_ALLOWLIST_SHA256 = "81d5c6616bd43750c5ccde7245da88622a2fb8b0511ece5818344a2e1b9895cc";
 const PLATFORMS = new Map([
   ["linux-x86_64", "bin/node"],
   ["windows-x86_64", "bin/node.exe"],
@@ -152,7 +152,7 @@ function readSchemaAllowlist(path) {
     !exactKeys(manifest, ["schemaVersion", "schemas"]) ||
     manifest.schemaVersion !== 1 ||
     !Array.isArray(manifest.schemas) ||
-    manifest.schemas.length !== 28
+    manifest.schemas.length !== 41
   ) {
     fail("standalone Runtime schema allowlist is invalid");
   }
@@ -221,6 +221,14 @@ function requirePayloadIdentity(root, platform, runtimeVersion, nodeVersion, fil
     fail("standalone Runtime bundle is empty or exceeds its byte limit");
   }
   for (const marker of FORBIDDEN_BUNDLE_MARKERS) {
+    if (marker === "player.context.read") {
+      // The server-line core Tool id is forbidden, while the client-scoped
+      // game.player.context.read is a different, permitted client Tool.
+      if (/(?<!game\.)player\.context\.read/u.test(bundle)) {
+        fail(`standalone Runtime bundle contains forbidden server graph: ${marker}`);
+      }
+      continue;
+    }
     if (bundle.includes(marker)) fail(`standalone Runtime bundle contains forbidden server graph: ${marker}`);
   }
 

@@ -16,7 +16,9 @@ final class ClientToolPayloads {
           "game.process.lookup",
           "game.process.uses",
           "game.process.plan",
-          "game.inventory.snapshot");
+          "game.inventory.snapshot",
+          "game.player.context.read",
+          "build.preview.create");
 
   private ClientToolPayloads() {}
 
@@ -72,6 +74,31 @@ final class ClientToolPayloads {
         }
         if (Set.copyOf(resources).size() != resources.size()) {
           throw invalid();
+        }
+      }
+      case "game.player.context.read" -> exact(arguments);
+      case "build.preview.create" -> {
+        exact(
+            arguments,
+            "projectId",
+            "revision",
+            "operation",
+            "dimension",
+            "origin",
+            "rotation",
+            "mirror",
+            "shapes");
+        uuid(arguments.get("projectId"));
+        integer(arguments.get("revision"), 1, Integer.MAX_VALUE);
+        oneOf(arguments.get("operation"), "create", "modify");
+        namespacedId(arguments.get("dimension"));
+        position(arguments.get("origin"));
+        if (integer(arguments.get("rotation"), 0, 270) % 90 != 0) {
+          throw invalid();
+        }
+        oneOf(arguments.get("mirror"), "NONE", "LEFT_RIGHT", "FRONT_BACK");
+        for (var shape : array(arguments.get("shapes"), 1, 24)) {
+          previewShape(shape);
         }
       }
       default -> throw invalid();
@@ -136,6 +163,47 @@ final class ClientToolPayloads {
         array(result.get("entries"), 0, 64);
         bool(result.get("truncated"));
         warnings(result.get("warnings"), 32);
+      }
+      case "game.player.context.read" -> {
+        exact(result, "dimension", "position", "yaw", "pitch");
+        namespacedId(result.get("dimension"));
+        position(result.get("position"));
+        decimalRange(result.get("yaw"), BigDecimal.valueOf(-180), BigDecimal.valueOf(180));
+        decimalRange(result.get("pitch"), BigDecimal.valueOf(-90), BigDecimal.valueOf(90));
+      }
+      case "build.preview.create" -> {
+        exact(
+            result,
+            "previewId",
+            "projectId",
+            "revision",
+            "dimension",
+            "bounds",
+            "baseRegionHash",
+            "changeSetHash",
+            "targetBlockCount",
+            "changeCount",
+            "difference",
+            "previewStatus",
+            "worldWriteEnabled");
+        uuid(result.get("previewId"));
+        uuid(result.get("projectId"));
+        integer(result.get("revision"), 1, Integer.MAX_VALUE);
+        namespacedId(result.get("dimension"));
+        previewResultBounds(result.get("bounds"));
+        sha256(result.get("baseRegionHash"));
+        sha256(result.get("changeSetHash"));
+        integer(result.get("targetBlockCount"), 0, 16_384);
+        integer(result.get("changeCount"), 0, 16_384);
+        var difference = object(result.get("difference"));
+        exact(difference, "added", "replaced", "removed");
+        integer(difference.get("added"), 0, 16_384);
+        integer(difference.get("replaced"), 0, 16_384);
+        integer(difference.get("removed"), 0, 16_384);
+        oneOf(result.get("previewStatus"), "client_validated");
+        if (!Boolean.FALSE.equals(result.get("worldWriteEnabled"))) {
+          throw invalid();
+        }
       }
       default -> throw invalid();
     }
@@ -253,6 +321,68 @@ final class ClientToolPayloads {
     }
   }
 
+  private static void sha256(Object value) {
+    if (!string(value, 64).matches("[0-9a-f]{64}")) {
+      throw invalid();
+    }
+  }
+
+  private static void blockState(Object value) {
+    if (!string(value, 512)
+        .matches(
+            "[a-z0-9_.-]+:[a-z0-9_./-]+(\\[[a-z0-9_]+=[A-Za-z0-9_.-]+(,[a-z0-9_]+=[A-Za-z0-9_.-]+)*\\])?")) {
+      throw invalid();
+    }
+  }
+
+  private static int[] position(Object value) {
+    var position = object(value);
+    exact(position, "x", "y", "z");
+    return new int[] {
+      integer(position.get("x"), -30_000_000, 30_000_000),
+      integer(position.get("y"), -2_048, 2_048),
+      integer(position.get("z"), -30_000_000, 30_000_000)
+    };
+  }
+
+  private static void previewShape(Object value) {
+    var shape = object(value);
+    exact(shape, "bounds", "pattern", "blockState");
+    var bounds = object(shape.get("bounds"));
+    exact(bounds, "min", "max");
+    var min = position(bounds.get("min"));
+    var max = position(bounds.get("max"));
+    var volume = 1L;
+    for (var axis = 0; axis < 3; axis++) {
+      var size = (long) max[axis] - min[axis] + 1;
+      if (size < 1 || size > 64) {
+        throw invalid();
+      }
+      volume *= size;
+    }
+    if (volume > 16_384) {
+      throw invalid();
+    }
+    oneOf(shape.get("pattern"), "solid", "hollow", "walls", "floor", "clear");
+    if ("clear".equals(shape.get("pattern"))) {
+      if (shape.get("blockState") != null) {
+        throw invalid();
+      }
+    } else {
+      blockState(shape.get("blockState"));
+    }
+  }
+
+  private static void previewResultBounds(Object value) {
+    var bounds = object(value);
+    exact(bounds, "min", "max");
+    var min = position(bounds.get("min"));
+    var max = position(bounds.get("max"));
+    if (min[0] > max[0] || min[1] > max[1] || min[2] > max[2]) {
+      throw invalid();
+    }
+  }
+
   private static int integer(Object value, int minimum, int maximum) {
     try {
       if (!(value instanceof Number)) {
@@ -277,6 +407,20 @@ final class ClientToolPayloads {
       var number = value instanceof BigDecimal decimal ? decimal : new BigDecimal(value.toString());
       if ((zeroAllowed ? number.signum() < 0 : number.signum() <= 0)
           || number.compareTo(maximum) > 0) {
+        throw invalid();
+      }
+    } catch (RuntimeException exception) {
+      throw invalid();
+    }
+  }
+
+  private static void decimalRange(Object value, BigDecimal minimum, BigDecimal maximum) {
+    try {
+      if (!(value instanceof Number)) {
+        throw invalid();
+      }
+      var number = value instanceof BigDecimal decimal ? decimal : new BigDecimal(value.toString());
+      if (number.compareTo(minimum) < 0 || number.compareTo(maximum) > 0) {
         throw invalid();
       }
     } catch (RuntimeException exception) {

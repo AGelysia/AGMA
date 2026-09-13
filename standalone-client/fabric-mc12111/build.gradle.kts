@@ -59,6 +59,29 @@ java {
     withSourcesJar()
 }
 
+sourceSets {
+    create("gametest") {
+        compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
+        runtimeClasspath += sourceSets.main.get().output + sourceSets.main.get().runtimeClasspath
+        // Built by scripts/build-standalone-managed-runtime.sh + standalone-client-artifact.mjs;
+        // supplies the embedded managed Runtime for Ask-flow game tests (absent is fine: those
+        // tests then skip the runtime stage).
+        runtimeClasspath += files("build/gametest-runtime")
+    }
+}
+
+loom {
+    runs {
+        create("clientGametest") {
+            client()
+            name("Client Gametest")
+            property("fabric.client.gametest", "")
+            runDir("run-gametest")
+            source(sourceSets["gametest"])
+        }
+    }
+}
+
 tasks.withType<JavaCompile>().configureEach {
     options.release = 21
 }

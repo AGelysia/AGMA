@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "agma_standalone_gametest",
+  "version": "1.0.0",
+  "name": "AGMA Standalone Client GameTest",
+  "description": "Client game tests for the AGMA standalone catalog surface.",
+  "environment": "client",
+  "license": "Apache-2.0",
+  "entrypoints": {
+    "fabric-client-gametest": [
+      "dev.minecraftagent.standalone.fabric.gametest.AgmaCatalogGameTest",
+      "dev.minecraftagent.standalone.fabric.gametest.AgmaAskE2eGameTest",
+      "dev.minecraftagent.standalone.fabric.gametest.AgmaBuildE2eGameTest"
+    ]
+  },
+  "depends": {
+    "fabric-client-gametest-api-v1": "*",
+    "agma_standalone": "*",
+    "minecraft": "~1.21.11"
+  }
+}

@@ -21,7 +21,7 @@ import {
  * Shared bound for every provider generation request. Both audiences must agree
  * on this limit so a provider can never reason about an unbounded response.
  */
-export const MAXIMUM_MODEL_OUTPUT_TOKENS = 1024;
+export const MAXIMUM_MODEL_OUTPUT_TOKENS = 4096;
 
 const SHUTDOWN_PROVIDER_GRACE_MILLISECONDS = 1_000;
 

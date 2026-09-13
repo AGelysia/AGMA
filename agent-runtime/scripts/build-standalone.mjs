@@ -57,6 +57,14 @@ for (const forbidden of forbiddenInputs) {
 }
 const output = await readFile(outputFile, "utf8");
 for (const forbidden of forbiddenOutput) {
+  if (forbidden === "player.context.read") {
+    // The server-line core Tool id is forbidden, while the client-scoped
+    // game.player.context.read is a different, permitted client Tool.
+    if (/(?<!game\.)player\.context\.read/u.test(output)) {
+      throw new Error(`Standalone Runtime output contains forbidden capability: ${forbidden}`);
+    }
+    continue;
+  }
   if (output.includes(forbidden)) {
     throw new Error(`Standalone Runtime output contains forbidden capability: ${forbidden}`);
   }

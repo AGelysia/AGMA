@@ -65,7 +65,9 @@ describe("standalone Runtime build graph", () => {
     expect(bundle).not.toContain("paper_remote");
     expect(bundle).not.toContain("server.recipe.lookup");
     expect(bundle).not.toContain("server.payload");
-    expect(bundle).not.toContain("player.context.read");
+    // The server-line core Tool id; the client-scoped game.player.context.read is permitted.
+    expect(bundle).not.toMatch(/(?<!game\.)player\.context\.read/u);
+    expect(bundle).toContain("game.player.context.read");
     expect(bundle).not.toContain("agent-request.schema.json");
     expect(bundle).toContain("connector-request.schema.json");
     expect(bundle).toContain("evidence-claim.schema.json");

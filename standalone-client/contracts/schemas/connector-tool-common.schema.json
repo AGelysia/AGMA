@@ -9,13 +9,15 @@
         "game.process.lookup",
         "game.process.uses",
         "game.process.plan",
-        "game.inventory.snapshot"
+        "game.inventory.snapshot",
+        "game.player.context.read",
+        "build.preview.create"
       ]
     },
     "sequence": {
       "type": "integer",
       "minimum": 0,
-      "maximum": 7
+      "maximum": 63
     }
   }
 }

@@ -20,6 +20,12 @@ export const clientToolIds = [
   "game.process.uses",
   "game.process.plan",
   "game.inventory.snapshot",
+  "game.player.context.read",
+  "project.list",
+  "project.read",
+  "project.create",
+  "project.update",
+  "build.preview.create",
 ] as const;
 
 export type ClientToolId = (typeof clientToolIds)[number];

@@ -39,7 +39,9 @@ import {
   SqliteConversationRepository,
 } from "../../storage/conversation-repository.js";
 import { migrateRuntimeStorage } from "../../storage/migrations.js";
+import { SqliteProjectRepository } from "../../storage/project-repository.js";
 import { ClientToolRegistry } from "../../tools/client-tool-registry.js";
+import { ProjectToolExecutor } from "../../tools/project-tool-executor.js";
 import { registerConnectorHandshakeRoute } from "../../transport/connector-handshake.js";
 import { SqliteUsageAccounting, type UsageAccounting } from "../../usage/usage-accounting.js";
 import { runtimeIdentity, type RuntimeIdentity } from "../../version.js";
@@ -211,6 +213,7 @@ export async function bootstrapStandaloneClient(
       conversations,
       usage: costs,
       logger,
+      localTools: new ProjectToolExecutor(new SqliteProjectRepository(sqlite.database)),
       ...(webEvidence === undefined ? {} : { webEvidence }),
       ...(options.now === undefined ? {} : { now: () => options.now?.().getTime() ?? Date.now() }),
     });

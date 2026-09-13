@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/project-update-arguments.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "projectId",
+    "expectedRevision",
+    "name",
+    "summary",
+    "goals",
+    "constraints"
+  ],
+  "properties": {
+    "projectId": { "$ref": "project-common.schema.json#/$defs/uuid" },
+    "expectedRevision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483646
+    },
+    "name": { "$ref": "project-common.schema.json#/$defs/name" },
+    "summary": { "$ref": "project-common.schema.json#/$defs/summary" },
+    "goals": { "$ref": "project-common.schema.json#/$defs/textList" },
+    "constraints": { "$ref": "project-common.schema.json#/$defs/textList" }
+  }
+}

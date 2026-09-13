@@ -172,7 +172,7 @@
       "properties": {
         "allowed": {
           "type": "array",
-          "maxItems": 5,
+          "maxItems": 11,
           "uniqueItems": true,
           "items": {
             "enum": [
@@ -180,7 +180,13 @@
               "game.process.lookup",
               "game.process.uses",
               "game.process.plan",
-              "game.inventory.snapshot"
+              "game.inventory.snapshot",
+              "game.player.context.read",
+              "project.list",
+              "project.read",
+              "project.create",
+              "project.update",
+              "build.preview.create"
             ]
           }
         },

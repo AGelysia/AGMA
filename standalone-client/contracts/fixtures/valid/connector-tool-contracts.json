@@ -10,7 +10,9 @@
     "candidates": [],
     "ambiguous": false,
     "truncated": false,
-    "warnings": ["Enter a world before searching the dynamic catalog."]
+    "warnings": [
+      "Enter a world before searching the dynamic catalog."
+    ]
   },
   "processLookupArguments": {
     "resourceId": "minecraft:iron_pickaxe",
@@ -22,7 +24,9 @@
     "status": "unavailable",
     "processes": [],
     "truncated": false,
-    "warnings": ["No client-visible process source is ready."]
+    "warnings": [
+      "No client-visible process source is ready."
+    ]
   },
   "processUsesArguments": {
     "resourceId": "minecraft:iron_ingot",
@@ -34,7 +38,9 @@
     "status": "unavailable",
     "processes": [],
     "truncated": false,
-    "warnings": ["No client-visible process source is ready."]
+    "warnings": [
+      "No client-visible process source is ready."
+    ]
   },
   "processPlanArguments": {
     "resourceId": "minecraft:iron_pickaxe",
@@ -47,7 +53,10 @@
   "processPlanResult": {
     "generationId": "generation-001",
     "status": "partial",
-    "target": { "resourceId": "minecraft:iron_pickaxe", "amount": 1 },
+    "target": {
+      "resourceId": "minecraft:iron_pickaxe",
+      "amount": 1
+    },
     "routes": [
       {
         "rank": 1,
@@ -59,10 +68,17 @@
           "stable_process_identity_tiebreak"
         ],
         "steps": [],
-        "materials": [{ "resourceId": "minecraft:iron_ingot", "amount": 3 }],
+        "materials": [
+          {
+            "resourceId": "minecraft:iron_ingot",
+            "amount": 3
+          }
+        ],
         "inventoryUsed": [],
         "unresolved": [],
-        "workstations": ["minecraft:crafting_table"],
+        "workstations": [
+          "minecraft:crafting_table"
+        ],
         "issues": []
       }
     ],
@@ -70,12 +86,16 @@
     "cycles": [],
     "exploredNodes": 0,
     "inventoryApplied": false,
-    "warnings": ["No deterministic route is available in this generation."]
+    "warnings": [
+      "No deterministic route is available in this generation."
+    ]
   },
   "inventorySnapshotArguments": {
     "authorizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
     "generationId": "generation-001",
-    "resourceIds": ["minecraft:iron_pickaxe"]
+    "resourceIds": [
+      "minecraft:iron_pickaxe"
+    ]
   },
   "inventorySnapshotResult": {
     "generationId": "generation-001",
@@ -116,12 +136,17 @@
           "modId": "examplemod",
           "modVersion": "4.2.0"
         },
-        "modPack": { "name": "Example Pack", "version": "9.1" }
+        "modPack": {
+          "name": "Example Pack",
+          "version": "9.1"
+        }
       },
       "inventoryAuthorization": {
         "authorizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
         "generationId": "generation-001",
-        "resourceIds": ["minecraft:iron_ingot"]
+        "resourceIds": [
+          "minecraft:iron_ingot"
+        ]
       }
     }
   },
@@ -141,7 +166,10 @@
       "subjectId": "11111111-1111-4111-8111-111111111111",
       "tool": "game.resource.search",
       "sequence": 0,
-      "arguments": { "query": "iron pickaxe", "limit": 5 }
+      "arguments": {
+        "query": "iron pickaxe",
+        "limit": 5
+      }
     }
   },
   "toolResult": {
@@ -211,5 +239,189 @@
       "sequence": 0,
       "reason": "REQUEST_CANCELLED"
     }
+  },
+  "buildPreviewCreateArguments": {
+    "projectId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    "revision": 1,
+    "operation": "create",
+    "dimension": "minecraft:overworld",
+    "origin": {
+      "x": 8,
+      "y": -60,
+      "z": 8
+    },
+    "rotation": 0,
+    "mirror": "NONE",
+    "shapes": [
+      {
+        "bounds": {
+          "min": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "max": {
+            "x": 4,
+            "y": 0,
+            "z": 4
+          }
+        },
+        "pattern": "floor",
+        "blockState": "minecraft:stone_bricks"
+      },
+      {
+        "bounds": {
+          "min": {
+            "x": 0,
+            "y": 1,
+            "z": 0
+          },
+          "max": {
+            "x": 4,
+            "y": 5,
+            "z": 4
+          }
+        },
+        "pattern": "walls",
+        "blockState": "minecraft:oak_planks"
+      },
+      {
+        "bounds": {
+          "min": {
+            "x": 2,
+            "y": 2,
+            "z": 0
+          },
+          "max": {
+            "x": 2,
+            "y": 3,
+            "z": 0
+          }
+        },
+        "pattern": "clear",
+        "blockState": null
+      }
+    ]
+  },
+  "buildPreviewCreateResult": {
+    "previewId": "ffffffff-ffff-4fff-8fff-ffffffffffff",
+    "projectId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    "revision": 1,
+    "dimension": "minecraft:overworld",
+    "bounds": {
+      "min": {
+        "x": 8,
+        "y": -60,
+        "z": 8
+      },
+      "max": {
+        "x": 12,
+        "y": -55,
+        "z": 12
+      }
+    },
+    "baseRegionHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "changeSetHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "targetBlockCount": 105,
+    "changeCount": 105,
+    "difference": {
+      "added": 105,
+      "replaced": 0,
+      "removed": 4
+    },
+    "previewStatus": "client_validated",
+    "worldWriteEnabled": false
+  },
+  "previewToolCall": {
+    "schemaVersion": "1.0",
+    "connectorKind": "standalone_client",
+    "protocolVersion": "client-1.0",
+    "messageId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    "requestId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    "scopeId": "11111111-1111-4111-8111-111111111111",
+    "type": "client.tool.call",
+    "timestamp": "2026-07-17T00:00:00Z",
+    "nonce": "KKKKKKKKKKKKKKKKKKKKKA",
+    "payload": {
+      "requestId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+      "toolCallId": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      "subjectId": "11111111-1111-4111-8111-111111111111",
+      "tool": "build.preview.create",
+      "sequence": 5,
+      "arguments": {
+        "projectId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+        "revision": 1,
+        "operation": "create",
+        "dimension": "minecraft:overworld",
+        "origin": {
+          "x": 8,
+          "y": -60,
+          "z": 8
+        },
+        "rotation": 0,
+        "mirror": "NONE",
+        "shapes": [
+          {
+            "bounds": {
+              "min": {
+                "x": 8,
+                "y": -60,
+                "z": 8
+              },
+              "max": {
+                "x": 12,
+                "y": -60,
+                "z": 12
+              }
+            },
+            "pattern": "floor",
+            "blockState": "minecraft:stone_bricks"
+          },
+          {
+            "bounds": {
+              "min": {
+                "x": 8,
+                "y": -59,
+                "z": 8
+              },
+              "max": {
+                "x": 12,
+                "y": -55,
+                "z": 12
+              }
+            },
+            "pattern": "walls",
+            "blockState": "minecraft:oak_planks"
+          },
+          {
+            "bounds": {
+              "min": {
+                "x": 10,
+                "y": -58,
+                "z": 8
+              },
+              "max": {
+                "x": 10,
+                "y": -57,
+                "z": 8
+              }
+            },
+            "pattern": "clear",
+            "blockState": null
+          }
+        ]
+      }
+    }
+  },
+  "playerContextReadArguments": {},
+  "playerContextReadResult": {
+    "dimension": "minecraft:overworld",
+    "position": {
+      "x": 8,
+      "y": -60,
+      "z": 8
+    },
+    "yaw": 90.0,
+    "pitch": -5.5
   }
 }

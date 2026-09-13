@@ -26,7 +26,13 @@ public final class ClientProfileStore {
           "game.process.lookup",
           "game.process.uses",
           "game.process.plan",
-          "game.inventory.snapshot");
+          "game.inventory.snapshot",
+          "game.player.context.read",
+          "project.list",
+          "project.read",
+          "project.create",
+          "project.update",
+          "build.preview.create");
   private static final List<String> DENIED_CAPABILITIES =
       List.of(
           "paper.command",
@@ -282,7 +288,7 @@ public final class ClientProfileStore {
         new RuntimeClientProfile.Limits(
             1,
             8,
-            4,
+            12,
             30,
             32_768,
             2,

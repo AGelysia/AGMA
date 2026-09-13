@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/build-preview-create-result.schema.json",
+  "title": "Client build.preview.create Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "previewId",
+    "projectId",
+    "revision",
+    "dimension",
+    "bounds",
+    "baseRegionHash",
+    "changeSetHash",
+    "targetBlockCount",
+    "changeCount",
+    "difference",
+    "previewStatus",
+    "worldWriteEnabled"
+  ],
+  "properties": {
+    "previewId": { "$ref": "project-common.schema.json#/$defs/uuid" },
+    "projectId": { "$ref": "project-common.schema.json#/$defs/uuid" },
+    "revision": { "type": "integer", "minimum": 1, "maximum": 2147483647 },
+    "dimension": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 256,
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+    },
+    "bounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min", "max"],
+      "properties": {
+        "min": { "$ref": "#/$defs/position" },
+        "max": { "$ref": "#/$defs/position" }
+      }
+    },
+    "baseRegionHash": { "$ref": "#/$defs/sha256" },
+    "changeSetHash": { "$ref": "#/$defs/sha256" },
+    "targetBlockCount": { "type": "integer", "minimum": 0, "maximum": 16384 },
+    "changeCount": { "type": "integer", "minimum": 0, "maximum": 16384 },
+    "difference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["added", "replaced", "removed"],
+      "properties": {
+        "added": { "type": "integer", "minimum": 0, "maximum": 16384 },
+        "replaced": { "type": "integer", "minimum": 0, "maximum": 16384 },
+        "removed": { "type": "integer", "minimum": 0, "maximum": 16384 }
+      }
+    },
+    "previewStatus": { "const": "client_validated" },
+    "worldWriteEnabled": { "const": false }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "position": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "z"],
+      "properties": {
+        "x": { "type": "integer", "minimum": -30000000, "maximum": 30000000 },
+        "y": { "type": "integer", "minimum": -2048, "maximum": 2048 },
+        "z": { "type": "integer", "minimum": -30000000, "maximum": 30000000 }
+      }
+    }
+  }
+}

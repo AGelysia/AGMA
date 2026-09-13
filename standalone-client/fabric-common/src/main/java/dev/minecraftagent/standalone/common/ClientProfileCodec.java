@@ -170,7 +170,7 @@ public final class ClientProfileCodec {
               "country",
               "searchLanguage");
     }
-    var allowed = JsonFields.stringArray(tools.get("allowed"), "/toolPolicy/allowed", 5);
+    var allowed = JsonFields.stringArray(tools.get("allowed"), "/toolPolicy/allowed", 11);
 
     final URI baseUrl;
     var baseUrlValue = JsonFields.nullableString(model.get("baseUrl"), "/model/baseUrl", 2048);

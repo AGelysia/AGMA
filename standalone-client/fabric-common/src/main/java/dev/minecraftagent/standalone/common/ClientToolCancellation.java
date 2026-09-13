@@ -10,7 +10,7 @@ public record ClientToolCancellation(
     Objects.requireNonNull(toolCallId, "toolCallId");
     Objects.requireNonNull(subjectId, "subjectId");
     tool = ClientToolPayloads.requireTool(tool);
-    if (sequence < 0 || sequence > 7 || requestId.equals(toolCallId)) {
+    if (sequence < 0 || sequence > 63 || requestId.equals(toolCallId)) {
       throw new IllegalArgumentException("Client tool cancellation identity is invalid");
     }
     Objects.requireNonNull(reason, "reason");

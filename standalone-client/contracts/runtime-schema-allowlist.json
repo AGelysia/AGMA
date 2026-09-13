@@ -18,9 +18,13 @@
     "guide-answer-v1.schema.json",
     "process-record.schema.json",
     "resource-ref.schema.json",
+    "tools/build-preview-create-arguments.schema.json",
+    "tools/build-preview-create-result.schema.json",
     "tools/client-tool-common.schema.json",
     "tools/game-inventory-snapshot-arguments.schema.json",
     "tools/game-inventory-snapshot-result.schema.json",
+    "tools/game-player-context-read-arguments.schema.json",
+    "tools/game-player-context-read-result.schema.json",
     "tools/game-process-lookup-arguments.schema.json",
     "tools/game-process-lookup-result.schema.json",
     "tools/game-process-plan-arguments.schema.json",
@@ -28,6 +32,15 @@
     "tools/game-process-uses-arguments.schema.json",
     "tools/game-process-uses-result.schema.json",
     "tools/game-resource-search-arguments.schema.json",
-    "tools/game-resource-search-result.schema.json"
+    "tools/game-resource-search-result.schema.json",
+    "tools/project-common.schema.json",
+    "tools/project-create-arguments.schema.json",
+    "tools/project-create-result.schema.json",
+    "tools/project-list-arguments.schema.json",
+    "tools/project-list-result.schema.json",
+    "tools/project-read-arguments.schema.json",
+    "tools/project-read-result.schema.json",
+    "tools/project-update-arguments.schema.json",
+    "tools/project-update-result.schema.json"
   ]
 }

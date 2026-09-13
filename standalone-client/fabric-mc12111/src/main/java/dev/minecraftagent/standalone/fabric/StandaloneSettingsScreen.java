@@ -6,6 +6,7 @@ import dev.minecraftagent.standalone.common.ClientDiagnosticExporter;
 import dev.minecraftagent.standalone.common.ClientLifecycleState;
 import dev.minecraftagent.standalone.common.ClientRuntimeController;
 import dev.minecraftagent.standalone.common.ClientSetup;
+import dev.minecraftagent.standalone.common.ClientToolHandler;
 import dev.minecraftagent.standalone.common.ClientUsdAmount;
 import dev.minecraftagent.standalone.common.OptionalViewerRegistry;
 import dev.minecraftagent.standalone.common.StandaloneUiState;
@@ -35,6 +36,7 @@ public final class StandaloneSettingsScreen extends Screen {
   private final StandaloneCatalogService catalog;
   private final ClientRuntimeController runtime;
   private final CatalogToolExecutor tools;
+  private final ClientToolHandler toolRouter;
   private final StandaloneUiState state;
   private Page page = Page.MODEL;
   private String provider = "openai";
@@ -64,11 +66,13 @@ public final class StandaloneSettingsScreen extends Screen {
       StandaloneCatalogService catalog,
       ClientRuntimeController runtime,
       CatalogToolExecutor tools,
+      ClientToolHandler toolRouter,
       StandaloneUiState state) {
     super(Component.translatable("screen.agma_standalone.settings"));
     this.catalog = Objects.requireNonNull(catalog, "catalog");
     this.runtime = Objects.requireNonNull(runtime, "runtime");
     this.tools = Objects.requireNonNull(tools, "tools");
+    this.toolRouter = Objects.requireNonNull(toolRouter, "toolRouter");
     this.state = Objects.requireNonNull(state, "state");
     loadExisting();
   }
@@ -147,7 +151,7 @@ public final class StandaloneSettingsScreen extends Screen {
                 Component.translatable("screen.agma_standalone.tab_catalog"),
                 ignored ->
                     minecraft.setScreen(
-                        new StandaloneCatalogScreen(catalog, runtime, tools, state)))
+                        new StandaloneCatalogScreen(catalog, runtime, tools, toolRouter, state)))
             .bounds(left + 16, top + 12, tabWidth, 20)
             .build());
     addRenderableWidget(
@@ -155,7 +159,7 @@ public final class StandaloneSettingsScreen extends Screen {
                 Component.translatable("screen.agma_standalone.tab_ask"),
                 ignored ->
                     minecraft.setScreen(
-                        new StandaloneAssistantScreen(catalog, runtime, tools, state)))
+                        new StandaloneAssistantScreen(catalog, runtime, tools, toolRouter, state)))
             .bounds(left + 16 + tabWidth, top + 12, tabWidth, 20)
             .build());
     var settings =

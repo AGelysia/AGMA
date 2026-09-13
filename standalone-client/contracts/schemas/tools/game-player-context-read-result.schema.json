@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/game-player-context-read-result.schema.json",
+  "title": "AGMA Client Player Context Read Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["dimension", "position", "yaw", "pitch"],
+  "properties": {
+    "dimension": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 256,
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+    },
+    "position": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "z"],
+      "properties": {
+        "x": { "type": "integer", "minimum": -30000000, "maximum": 30000000 },
+        "y": { "type": "integer", "minimum": -2048, "maximum": 2048 },
+        "z": { "type": "integer", "minimum": -30000000, "maximum": 30000000 }
+      }
+    },
+    "yaw": { "type": "number", "minimum": -180, "maximum": 180 },
+    "pitch": { "type": "number", "minimum": -90, "maximum": 90 }
+  }
+}

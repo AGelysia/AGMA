@@ -252,6 +252,36 @@
           "schema": "connector-tool-cancel.schema.json",
           "documentPointer": "/toolCancel/payload",
           "expectedValid": true
+        },
+        {
+          "schema": "tools/build-preview-create-arguments.schema.json",
+          "documentPointer": "/buildPreviewCreateArguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/build-preview-create-result.schema.json",
+          "documentPointer": "/buildPreviewCreateResult",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-envelope.schema.json",
+          "documentPointer": "/previewToolCall",
+          "expectedValid": true
+        },
+        {
+          "schema": "connector-tool-call.schema.json",
+          "documentPointer": "/previewToolCall/payload",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/game-player-context-read-arguments.schema.json",
+          "documentPointer": "/playerContextReadArguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/game-player-context-read-result.schema.json",
+          "documentPointer": "/playerContextReadResult",
+          "expectedValid": true
         }
       ]
     },
@@ -278,6 +308,36 @@
         {
           "schema": "connector-request.schema.json",
           "documentPointer": "/arbitraryWebUrl",
+          "expectedValid": false
+        },
+        {
+          "schema": "tools/build-preview-create-arguments.schema.json",
+          "documentPointer": "/clearShapeWithBlockState",
+          "expectedValid": false
+        },
+        {
+          "schema": "tools/build-preview-create-arguments.schema.json",
+          "documentPointer": "/emptyShapes",
+          "expectedValid": false
+        },
+        {
+          "schema": "tools/build-preview-create-result.schema.json",
+          "documentPointer": "/oversizedPreviewResult",
+          "expectedValid": false
+        },
+        {
+          "schema": "tools/build-preview-create-result.schema.json",
+          "documentPointer": "/serverValidatedStatus",
+          "expectedValid": false
+        },
+        {
+          "schema": "tools/game-player-context-read-result.schema.json",
+          "documentPointer": "/playerContextMissingPosition",
+          "expectedValid": false
+        },
+        {
+          "schema": "tools/game-player-context-read-result.schema.json",
+          "documentPointer": "/playerContextBadDimension",
           "expectedValid": false
         }
       ]

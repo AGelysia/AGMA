@@ -16,7 +16,7 @@ public record ClientToolCall(
     Objects.requireNonNull(toolCallId, "toolCallId");
     Objects.requireNonNull(subjectId, "subjectId");
     tool = ClientToolPayloads.requireTool(tool);
-    if (sequence < 0 || sequence > 7 || requestId.equals(toolCallId)) {
+    if (sequence < 0 || sequence > 63 || requestId.equals(toolCallId)) {
       throw new IllegalArgumentException("Client tool call identity is invalid");
     }
     arguments = ClientToolPayloads.copyObject(arguments, 8);

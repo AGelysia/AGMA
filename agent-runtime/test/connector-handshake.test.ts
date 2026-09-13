@@ -448,7 +448,11 @@ describe("standalone connector WebSocket", () => {
           usage: { inputTokens: 2, outputTokens: 1 },
         };
       }
-      return { type: "final", fallbackText: "The local catalog is not ready." };
+      return {
+        type: "final",
+        fallbackText: "The local catalog is not ready.",
+        usage: { inputTokens: 2, outputTokens: 1 },
+      };
     });
     const { url } = await startClient(adapter, clientConfigWithTools("game.resource.search"));
     const socket = await openClient(url);
@@ -477,11 +481,13 @@ describe("standalone connector WebSocket", () => {
       type: "client.complete",
       payload: {
         text: "Local catalog result:\n- No client-visible match was found.",
-        costMicroUsd: 6,
+        costMicroUsd: 12,
         costKind: "reported",
       },
     });
-    expect(generated).toHaveLength(1);
+    // The local phase continues for one final model round after the search result so
+    // multi-round flows can chain Tools; the deterministic rendering still wins offline.
+    expect(generated).toHaveLength(2);
   });
 
   it("passes a bounded client Tool error to the model without trusting client provenance", async () => {
@@ -630,13 +636,15 @@ describe("standalone connector WebSocket", () => {
     let generation = 0;
     const adapter = provider(async () => {
       generation += 1;
-      return {
-        type: "tool_call",
-        providerCallId: "provider-search-1",
-        providerName: "game_resource_search",
-        arguments: { query: "iron", limit: 5 },
-        continuation: { provider: "openai", items: [] },
-      };
+      return generation === 1
+        ? {
+            type: "tool_call",
+            providerCallId: "provider-search-1",
+            providerName: "game_resource_search",
+            arguments: { query: "iron", limit: 5 },
+            continuation: { provider: "openai", items: [] },
+          }
+        : { type: "final", fallbackText: "Done." };
     });
     const { url } = await startClient(adapter, clientConfigWithTools("game.resource.search"));
     const socket = await openClient(url);
@@ -650,7 +658,7 @@ describe("standalone connector WebSocket", () => {
       JSON.stringify(toolTerminal(call, "client.tool.result", { result: EMPTY_SEARCH_RESULT })),
     );
     await expect(completion).resolves.toMatchObject({ type: "client.complete" });
-    expect(generation).toBe(1);
+    expect(generation).toBe(2);
 
     const closed = nextClose(socket);
     socket.send(

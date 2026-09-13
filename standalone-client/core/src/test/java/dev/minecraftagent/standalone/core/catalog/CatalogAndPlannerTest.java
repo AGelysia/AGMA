@@ -211,6 +211,56 @@ final class CatalogAndPlannerTest {
   }
 
   @Test
+  void plannerTreatsFluidInputsAsPlannableMaterials() {
+    var dust = item("fixture:dust", "Dust", 1);
+    var alloy = item("fixture:alloy", "Alloy", 1);
+    var bucket = item("minecraft:bucket", "Bucket", 1);
+    var water = fluid("minecraft:water", "Water", 1000);
+
+    var waterProcess = process("fixture:water_collection", water, List.of(itemAmount(bucket, 1)));
+    var alloyProcess =
+        process(
+            "fixture:alloy_smelting",
+            itemAmount(alloy, 1),
+            List.of(itemAmount(dust, 2), itemAmount(water, 1000)));
+    var planner =
+        new ProcessPlanner(
+            snapshot(List.of(dust, alloy, bucket, water), List.of(waterProcess, alloyProcess)));
+
+    var planning =
+        planner.plan(
+            GENERATION,
+            ResourceKey.from(alloy),
+            new BigDecimal("2"),
+            Map.of(),
+            PlannerBudget.DEFAULT);
+    assertEquals(ProcessPlanner.Status.COMPLETE, planning.status());
+    var route = planning.routes().get(0);
+    assertEquals(new BigDecimal("4"), route.materials().get(ResourceKey.from(dust)));
+    assertEquals(new BigDecimal("2"), route.materials().get(ResourceKey.from(bucket)));
+    assertFalse(route.materials().containsKey(ResourceKey.from(water)));
+    var alloyStep =
+        route.steps().stream()
+            .filter(step -> step.processId().equals("fixture:alloy_smelting"))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(new BigDecimal("2E+3"), alloyStep.inputs().get(ResourceKey.from(water)));
+
+    var withoutProducer =
+        new ProcessPlanner(snapshot(List.of(dust, alloy, bucket, water), List.of(alloyProcess)));
+    var leafPlan =
+        withoutProducer.plan(
+            GENERATION,
+            ResourceKey.from(alloy),
+            new BigDecimal("2"),
+            Map.of(),
+            PlannerBudget.DEFAULT);
+    assertEquals(ProcessPlanner.Status.COMPLETE, leafPlan.status());
+    assertEquals(
+        new BigDecimal("2E+3"), leafPlan.routes().get(0).materials().get(ResourceKey.from(water)));
+  }
+
+  @Test
   void plannerReusesBatchSurplusCoproductsAndReturnedContainers() {
     var log = item("fixture:log", "Log", 1);
     var plank = item("fixture:plank", "Plank", 1);
@@ -397,6 +447,22 @@ final class CatalogAndPlannerTest {
         "1.0.0",
         BigDecimal.valueOf(amount),
         "item",
+        registrySource(GENERATION));
+  }
+
+  private static ResourceRef fluid(String id, String name, int amount) {
+    var modId = id.substring(0, id.indexOf(':'));
+    return new ResourceRef(
+        ResourceRef.Kind.FLUID,
+        id,
+        null,
+        name,
+        "fluid." + id.replace(':', '.'),
+        modId,
+        modId,
+        "1.0.0",
+        BigDecimal.valueOf(amount),
+        "millibucket",
         registrySource(GENERATION));
   }
 

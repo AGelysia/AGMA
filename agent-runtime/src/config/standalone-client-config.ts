@@ -110,7 +110,7 @@ const schema = z
       .object({
         maxConcurrentRequests: z.number().int().min(1).max(8),
         maxQueuedRequests: z.number().int().min(0).max(128),
-        maxToolRounds: z.number().int().min(1).max(8),
+        maxToolRounds: z.number().int().min(1).max(12),
         maxContextMessages: z.number().int().min(1).max(100),
         maxContextCharacters: z.number().int().min(4096).max(65_536),
         requestCooldownSeconds: z.number().int().min(0).max(3600),
@@ -137,9 +137,15 @@ const schema = z
               "game.process.uses",
               "game.process.plan",
               "game.inventory.snapshot",
+              "game.player.context.read",
+              "project.list",
+              "project.read",
+              "project.create",
+              "project.update",
+              "build.preview.create",
             ]),
           )
-          .max(5),
+          .max(11),
         denied: z
           .array(
             z

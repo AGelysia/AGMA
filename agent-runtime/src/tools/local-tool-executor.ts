@@ -4,11 +4,21 @@ import type {
   ProjectRepository,
   StoredProject,
 } from "../storage/project-repository.js";
-import type { CoreToolDescriptor } from "./tool-registry.js";
-import type { ToolExecutionResult } from "./tool-types.js";
+import type { ToolExecutionResult, ToolResultSource, ToolResultTrust } from "./tool-types.js";
+
+/**
+ * The structural subset of a Tool descriptor that bounded in-Runtime execution needs. Both the
+ * Paper-line core descriptors and the standalone client descriptors satisfy it.
+ */
+export interface LocalToolDescriptor {
+  readonly id: string;
+  readonly source: ToolResultSource;
+  readonly trust: ToolResultTrust;
+  readonly execution: string;
+}
 
 export interface LocalToolCall {
-  readonly descriptor: CoreToolDescriptor;
+  readonly descriptor: LocalToolDescriptor;
   readonly serverId: string;
   readonly playerUuid: string;
   readonly requestId: string;
@@ -73,7 +83,7 @@ function projectRecord(project: StoredProject): Readonly<Record<string, unknown>
 }
 
 function success(
-  descriptor: CoreToolDescriptor,
+  descriptor: LocalToolDescriptor,
   result: Readonly<Record<string, unknown>>,
 ): ToolExecutionResult {
   return {
@@ -85,7 +95,7 @@ function success(
   };
 }
 
-function failure(descriptor: CoreToolDescriptor): ToolExecutionResult {
+function failure(descriptor: LocalToolDescriptor): ToolExecutionResult {
   return {
     status: "failed",
     source: descriptor.source,
