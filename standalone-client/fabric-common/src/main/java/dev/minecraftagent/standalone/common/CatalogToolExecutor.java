@@ -372,7 +372,10 @@ public final class CatalogToolExecutor implements ClientToolHandler, AutoCloseab
             "visibility", wire(view.visibility()),
             "completeness", wire(view.completeness()),
             "candidates", List.copyOf(candidates),
-            "ambiguous", indexed.requiresPlayerSelection(),
+            // The contract requires ambiguous results to carry at least two candidates; a single
+            // (fuzzy) match is not a choice the player must make, so it must not be marked as
+            // ambiguous on the wire.
+            "ambiguous", indexed.requiresPlayerSelection() && candidates.size() >= 2,
             "truncated", truncated,
             "warnings", limitedWarnings(view.warnings(), 32)));
   }

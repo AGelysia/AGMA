@@ -9,6 +9,7 @@ import dev.minecraftagent.standalone.core.contract.ProcessRecord;
 import dev.minecraftagent.standalone.core.contract.ResourceRef;
 import dev.minecraftagent.standalone.fabric.StackFingerprint;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -20,12 +21,16 @@ import java.util.List;
 import java.util.Optional;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
+import mezz.jei.api.constants.VanillaTypes;
+import mezz.jei.api.fabric.constants.FabricTypes;
 import mezz.jei.api.gui.IRecipeLayoutDrawable;
 import mezz.jei.api.gui.ingredient.IRecipeSlotView;
+import mezz.jei.api.ingredients.ITypedIngredient;
 import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.IRecipeManager;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.category.IRecipeCategory;
+import mezz.jei.api.runtime.IIngredientManager;
 import mezz.jei.api.runtime.IJeiRuntime;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
@@ -130,6 +135,7 @@ public final class JeiCatalogPlugin implements IModPlugin {
         CatalogPublisher.ProgressListener progress)
         throws InterruptedException {
       var manager = runtime.getRecipeManager();
+      var ingredientManager = runtime.getIngredientManager();
       var categories =
           manager
               .createRecipeCategoryLookup()
@@ -151,6 +157,7 @@ public final class JeiCatalogPlugin implements IModPlugin {
         cancellation.throwIfCancelled();
         captureCategory(
             manager,
+            ingredientManager,
             category,
             runtime.getJeiHelpers().getFocusFactory().getEmptyFocusGroup(),
             source,
@@ -173,6 +180,7 @@ public final class JeiCatalogPlugin implements IModPlugin {
 
     private static <T> void captureCategory(
         IRecipeManager manager,
+        IIngredientManager ingredientManager,
         IRecipeCategory<T> category,
         IFocusGroup focuses,
         ResourceRef.Source source,
@@ -207,6 +215,7 @@ public final class JeiCatalogPlugin implements IModPlugin {
                   recipe,
                   index,
                   layout.getRecipeSlotsView().getSlotViews(),
+                  ingredientManager,
                   stations,
                   source,
                   resources,
@@ -225,6 +234,7 @@ public final class JeiCatalogPlugin implements IModPlugin {
         T recipe,
         int recipeIndex,
         List<IRecipeSlotView> slots,
+        IIngredientManager ingredientManager,
         List<ItemStack> registeredStations,
         ResourceRef.Source source,
         LinkedHashMap<ResourceKey, ResourceRef> resources,
@@ -234,31 +244,50 @@ public final class JeiCatalogPlugin implements IModPlugin {
       var stations = new LinkedHashMap<ResourceKey, ResourceRef>();
       var plannable = true;
       for (var slot : slots) {
-        var slotResources =
-            itemResources(slot.getItemStacks().limit(65).toList(), source, resources);
-        if (slot.getAllIngredients().count() > slotResources.size()) {
+        var slotResources = new LinkedHashMap<ResourceKey, ResourceRef>();
+        itemResources(slot.getItemStacks().limit(65).toList(), source, resources)
+            .forEach(value -> slotResources.putIfAbsent(ResourceKey.from(value), value));
+        var unsupported = false;
+        for (var typed : slot.getAllIngredients().toList()) {
+          if (typed.getType() == VanillaTypes.ITEM_STACK) {
+            continue;
+          }
+          if (typed.getType() == FabricTypes.FLUID_STACK
+              && slot.getRole() != RecipeIngredientRole.CRAFTING_STATION) {
+            var fluid = fluidResource(typed, ingredientManager, source, resources);
+            if (fluid == null) {
+              unsupported = true;
+            } else {
+              slotResources.putIfAbsent(ResourceKey.from(fluid), fluid);
+            }
+          } else {
+            unsupported = true;
+          }
+        }
+        if (unsupported) {
           contributionWarnings.add("JEI_NON_ITEM_INGREDIENTS_OMITTED");
           plannable = false;
         }
-        if (slotResources.size() > MAXIMUM_ALTERNATIVES) {
-          slotResources = slotResources.subList(0, MAXIMUM_ALTERNATIVES);
+        List<ResourceRef> alternatives = new ArrayList<>(slotResources.values());
+        if (alternatives.size() > MAXIMUM_ALTERNATIVES) {
+          alternatives = alternatives.subList(0, MAXIMUM_ALTERNATIVES);
           plannable = false;
         }
         if (slot.getRole() == RecipeIngredientRole.INPUT) {
-          if (slotResources.isEmpty()) {
+          if (alternatives.isEmpty()) {
             plannable = false;
           } else if (inputs.size() < 128) {
-            inputs.add(new ProcessRecord.InputGroup("input_" + inputs.size(), slotResources));
+            inputs.add(new ProcessRecord.InputGroup("input_" + inputs.size(), alternatives));
           } else {
             plannable = false;
           }
         } else if (slot.getRole() == RecipeIngredientRole.OUTPUT) {
-          if (!slotResources.isEmpty() && outputs.size() < 64) {
-            outputs.add(slotResources);
+          if (!alternatives.isEmpty() && outputs.size() < 64) {
+            outputs.add(alternatives);
           }
         } else if (slot.getRole() == RecipeIngredientRole.CRAFTING_STATION) {
-          slotResources.forEach(value -> stations.putIfAbsent(ResourceKey.from(value), value));
-        } else if (!slotResources.isEmpty()) {
+          alternatives.forEach(value -> stations.putIfAbsent(ResourceKey.from(value), value));
+        } else if (!alternatives.isEmpty()) {
           contributionWarnings.add("JEI_RENDER_ONLY_INGREDIENTS_OMITTED");
           plannable = false;
         }
@@ -362,6 +391,55 @@ public final class JeiCatalogPlugin implements IModPlugin {
         result.putIfAbsent(key, resource);
       }
       return new ArrayList<>(result.values());
+    }
+
+    private static <V> ResourceRef fluidResource(
+        ITypedIngredient<V> typed,
+        IIngredientManager ingredientManager,
+        ResourceRef.Source source,
+        LinkedHashMap<ResourceKey, ResourceRef> resources) {
+      var helper = ingredientManager.getIngredientHelper(typed.getType());
+      V ingredient = typed.getIngredient();
+      if (ingredient == null) {
+        return null;
+      }
+      Identifier identifier;
+      String displayName;
+      long amount;
+      try {
+        identifier = helper.getIdentifier(ingredient);
+        displayName = helper.getDisplayName(ingredient);
+        amount = helper.getAmount(ingredient);
+      } catch (RuntimeException failure) {
+        return null;
+      }
+      if (identifier == null || amount <= 0) {
+        return null;
+      }
+      // JEI Fabric fluid amounts are droplets: 81000 droplets = 1000 millibuckets = one bucket.
+      var millibuckets =
+          BigDecimal.valueOf(amount)
+              .divide(BigDecimal.valueOf(81), 6, RoundingMode.HALF_UP)
+              .stripTrailingZeros();
+      if (millibuckets.signum() <= 0) {
+        return null;
+      }
+      var metadata = modMetadata(identifier.getNamespace());
+      var resource =
+          new ResourceRef(
+              ResourceRef.Kind.FLUID,
+              identifier.toString(),
+              null,
+              bounded(displayName, 512),
+              null,
+              metadata.id(),
+              metadata.name(),
+              metadata.version(),
+              millibuckets,
+              "millibucket",
+              source);
+      resources.putIfAbsent(ResourceKey.from(resource), resource);
+      return resource;
     }
 
     private static ResourceRef resource(

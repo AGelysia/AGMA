@@ -168,6 +168,15 @@ class CatalogToolExecutorTest {
       assertEquals("exact_id", candidate.get("matchedBy"));
       assertEquals("minecraft:iron_pickaxe", object(candidate.get("resource")).get("id"));
 
+      // A single fuzzy match is not a disambiguation choice; the wire must not mark it as
+      // ambiguous because the contract requires ambiguous results to carry at least two
+      // candidates.
+      var fuzzySingle =
+          result(
+              executor, call(12, "game.resource.search", Map.of("query", "iron_pick", "limit", 5)));
+      assertEquals(1, list(fuzzySingle.get("candidates")).size());
+      assertFalse((boolean) fuzzySingle.get("ambiguous"));
+
       var lookup =
           result(
               executor,

@@ -23,9 +23,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
@@ -51,6 +53,8 @@ import net.minecraft.world.phys.EntityHitResult;
 public final class StandaloneCatalogService implements AutoCloseable, CatalogToolSource {
   private static final int MAXIMUM_ALTERNATIVES = 64;
   private static final String PROVIDER_ID = "vanilla_client";
+  private static final org.slf4j.Logger LOGGER =
+      org.slf4j.LoggerFactory.getLogger("agma-standalone-catalog");
 
   private final AtomicLong generationSequence = new AtomicLong();
   private final CatalogPublisher publisher = new CatalogPublisher();
@@ -66,14 +70,18 @@ public final class StandaloneCatalogService implements AutoCloseable, CatalogToo
 
   public void refresh(Minecraft minecraft) {
     var generationId = "mc12111-" + generationSequence.incrementAndGet();
-    var entries = new LinkedHashMap<Integer, RecipeDisplayEntry>();
+    var fallbackEntries = new LinkedHashMap<Integer, RecipeDisplayEntry>();
     if (minecraft.player != null) {
       for (var collection : minecraft.player.getRecipeBook().getCollections()) {
         for (var entry : collection.getRecipes()) {
-          entries.putIfAbsent(entry.id().index(), entry);
+          fallbackEntries.putIfAbsent(entry.id().index(), entry);
         }
       }
     }
+    // Only a cheap reference read on the client thread; the blocking server-thread capture
+    // happens inside build() on the catalog executor so the render thread never waits on
+    // the integrated server while it is itself waiting on the client.
+    var server = minecraft.hasSingleplayerServer() ? minecraft.getSingleplayerServer() : null;
     ContextMap displayContext =
         minecraft.level == null ? null : SlotDisplayContext.fromLevel(minecraft.level);
     var handle =
@@ -82,7 +90,8 @@ public final class StandaloneCatalogService implements AutoCloseable, CatalogToo
             (cancellation, progress) ->
                 build(
                     generationId,
-                    List.copyOf(entries.values()),
+                    server,
+                    List.copyOf(fallbackEntries.values()),
                     displayContext,
                     cancellation,
                     progress));
@@ -99,6 +108,39 @@ public final class StandaloneCatalogService implements AutoCloseable, CatalogToo
                 searchIndex = new ResourceSearchIndex(snapshot);
               }
             });
+  }
+
+  /**
+   * Captures the full recipe display set of the integrated logical server on its own thread, or
+   * {@code null} when the capture cannot complete. Must be called from the catalog executor, never
+   * from the client render thread: blocking the render thread on the server deadlocks the login
+   * rendezvous. The fallback caller path then uses the partial client recipe book instead.
+   */
+  private static List<RecipeDisplayEntry> captureIntegratedDisplays(
+      net.minecraft.client.server.IntegratedServer server) {
+    if (server.isStopped()) {
+      return null;
+    }
+    try {
+      return server
+          .submit(
+              () -> {
+                var recipeManager = server.getRecipeManager();
+                var entries = new ArrayList<RecipeDisplayEntry>();
+                for (var holder : recipeManager.getRecipes()) {
+                  recipeManager.listDisplaysForRecipe(holder.id(), entries::add);
+                }
+                return List.copyOf(entries);
+              })
+          .get(10, TimeUnit.SECONDS);
+    } catch (InterruptedException failure) {
+      Thread.currentThread().interrupt();
+      return null;
+    } catch (ExecutionException | TimeoutException | RuntimeException failure) {
+      LOGGER.warn(
+          "integrated recipe capture failed; falling back to the client recipe book", failure);
+      return null;
+    }
   }
 
   public void invalidate() {
@@ -246,7 +288,8 @@ public final class StandaloneCatalogService implements AutoCloseable, CatalogToo
 
   private CatalogSnapshot build(
       String generationId,
-      List<RecipeDisplayEntry> entries,
+      net.minecraft.client.server.IntegratedServer server,
+      List<RecipeDisplayEntry> fallbackEntries,
       ContextMap displayContext,
       CatalogPublisher.Cancellation cancellation,
       CatalogPublisher.ProgressListener progress)
@@ -264,6 +307,9 @@ public final class StandaloneCatalogService implements AutoCloseable, CatalogToo
             ResourceRef.Trust.L0B,
             ResourceRef.Completeness.COMPLETE,
             generationId);
+    var integratedDisplays = server == null ? null : captureIntegratedDisplays(server);
+    var integratedServer = integratedDisplays != null;
+    var entries = integratedServer ? integratedDisplays : fallbackEntries;
     var total = (long) itemIds.size() + Math.min(entries.size(), CatalogSnapshot.MAXIMUM_PROCESSES);
     for (var index = 0; index < itemIds.size(); index++) {
       cancellation.throwIfCancelled();
@@ -281,10 +327,12 @@ public final class StandaloneCatalogService implements AutoCloseable, CatalogToo
         itemIds.stream().map(Identifier::toString).collect(java.util.stream.Collectors.toSet());
     var processSource =
         new ResourceRef.Source(
-            ResourceRef.Layer.CLIENT_RECIPE,
+            integratedServer
+                ? ResourceRef.Layer.INTEGRATED_SERVER
+                : ResourceRef.Layer.CLIENT_RECIPE,
             PROVIDER_ID,
-            ResourceRef.Trust.L1,
-            ResourceRef.Completeness.PARTIAL,
+            integratedServer ? ResourceRef.Trust.L0A : ResourceRef.Trust.L1,
+            integratedServer ? ResourceRef.Completeness.COMPLETE : ResourceRef.Completeness.PARTIAL,
             generationId);
     var processes = new ArrayList<ProcessRecord>();
     if (displayContext != null) {
@@ -294,7 +342,7 @@ public final class StandaloneCatalogService implements AutoCloseable, CatalogToo
           .forEach(
               entry -> {
                 if (!cancellation.cancelled()) {
-                  toProcess(entry, displayContext, processSource, knownIds)
+                  toProcess(entry, displayContext, processSource, integratedServer, knownIds)
                       .ifPresent(processes::add);
                 }
               });
@@ -327,6 +375,7 @@ public final class StandaloneCatalogService implements AutoCloseable, CatalogToo
       RecipeDisplayEntry entry,
       ContextMap context,
       ResourceRef.Source source,
+      boolean integratedServer,
       java.util.Set<String> knownIds) {
     var display = entry.display();
     var results = stacks(display.result(), context, source, knownIds);
@@ -354,11 +403,15 @@ public final class StandaloneCatalogService implements AutoCloseable, CatalogToo
         display instanceof FurnaceRecipeDisplay furnace ? (long) furnace.duration() : null;
     var warnings =
         plannable
-            ? List.of("Client recipe display is partial and may omit server-only conditions")
+            ? List.of(
+                integratedServer
+                    ? "Integrated server recipe display may omit display-incapable recipes"
+                    : "Client recipe display is partial and may omit server-only conditions")
             : List.of("Recipe display is ambiguous, opaque, or exceeds bounded alternatives");
     return Optional.of(
         new ProcessRecord(
-            "agma:client_display_" + entry.id().index(),
+            (integratedServer ? "agma:server_display_" : "agma:client_display_")
+                + entry.id().index(),
             categoryId(display),
             bounded(result.displayName(), 220) + " recipe",
             workstations.isEmpty() ? List.of() : List.of(workstations.getFirst()),

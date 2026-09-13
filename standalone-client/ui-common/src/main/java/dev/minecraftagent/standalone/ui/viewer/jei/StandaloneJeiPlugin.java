@@ -11,6 +11,7 @@ import dev.minecraftagent.standalone.ui.ModMetadata;
 import dev.minecraftagent.standalone.ui.ModMetadataSource;
 import dev.minecraftagent.standalone.ui.StackFingerprint;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -21,11 +22,13 @@ import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.IRecipeLayoutDrawable;
 import mezz.jei.api.gui.ingredient.IGuiIngredient;
 import mezz.jei.api.ingredients.IIngredientType;
+import mezz.jei.api.ingredients.IIngredientTypeWithSubtypes;
 import mezz.jei.api.recipe.IRecipeManager;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import mezz.jei.api.runtime.IJeiRuntime;
@@ -33,6 +36,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.Fluid;
 
 /**
  * Public-API-only JEI bridge shared by the 1.18.2 mod shells; JEI loads the discovered subclass
@@ -60,6 +64,7 @@ public class StandaloneJeiPlugin implements IModPlugin {
   private static final class JeiAdapter implements CatalogAdapter {
     private static final String REVIEWED_VERSION = "10.2.1.1010";
     private static final int MAXIMUM_ALTERNATIVES = 64;
+    private static final Pattern NAMESPACED_ID = Pattern.compile("^[a-z0-9_.-]+:[a-z0-9_./-]+$");
     private final ModMetadataSource metadataSource;
     private final IJeiRuntime runtime;
 
@@ -173,14 +178,7 @@ public class StandaloneJeiPlugin implements IModPlugin {
           IRecipeLayoutDrawable layout = manager.createRecipeLayoutDrawable(category, recipe, null);
           var process =
               toProcess(
-                  category,
-                  recipe,
-                  index,
-                  layout.getItemStacks().getGuiIngredients().values(),
-                  hasNonItemIngredients(layout, ingredientTypes),
-                  stations,
-                  source,
-                  resources);
+                  category, recipe, index, layout, ingredientTypes, stations, source, resources);
           if (process != null) {
             processes.putIfAbsent(process.processId(), process);
           }
@@ -194,15 +192,15 @@ public class StandaloneJeiPlugin implements IModPlugin {
         IRecipeCategory<T> category,
         T recipe,
         int recipeIndex,
-        Iterable<? extends IGuiIngredient<ItemStack>> slots,
-        boolean hasNonItemIngredients,
+        IRecipeLayoutDrawable layout,
+        Collection<IIngredientType<?>> ingredientTypes,
         List<ItemStack> registeredStations,
         ResourceRef.Source source,
         LinkedHashMap<ResourceKey, ResourceRef> resources) {
       var inputs = new ArrayList<ProcessRecord.InputGroup>();
       var outputs = new ArrayList<List<ResourceRef>>();
-      var plannable = !hasNonItemIngredients;
-      for (var slot : slots) {
+      var plannable = true;
+      for (var slot : layout.getItemStacks().getGuiIngredients().values()) {
         var slotResources = itemResources(slot.getAllIngredients(), source, resources);
         if (slotResources.size() > MAXIMUM_ALTERNATIVES) {
           slotResources = slotResources.subList(0, MAXIMUM_ALTERNATIVES);
@@ -218,6 +216,14 @@ public class StandaloneJeiPlugin implements IModPlugin {
           }
         } else if (!slotResources.isEmpty() && outputs.size() < 64) {
           outputs.add(slotResources);
+        }
+      }
+      for (var ingredientType : ingredientTypes) {
+        if (ingredientType == VanillaTypes.ITEM_STACK) {
+          continue;
+        }
+        if (!captureTypedSlots(layout, ingredientType, inputs, outputs, source, resources)) {
+          plannable = false;
         }
       }
       if (outputs.isEmpty()) {
@@ -270,19 +276,127 @@ public class StandaloneJeiPlugin implements IModPlugin {
                   "JEI recipe is display-only because it contains unsupported, ambiguous, or incomplete ingredients"));
     }
 
-    private static boolean hasNonItemIngredients(
-        IRecipeLayoutDrawable layout, Collection<IIngredientType<?>> ingredientTypes) {
-      for (var ingredientType : ingredientTypes) {
-        if (ingredientType == VanillaTypes.ITEM_STACK) {
-          continue;
-        }
-        var group = layout.getIngredientsGroup(ingredientType);
-        if (group.getGuiIngredients().values().stream()
-            .anyMatch(ingredient -> !ingredient.getAllIngredients().isEmpty())) {
-          return true;
+    /**
+     * Captures the slots of one non-item ingredient type. Fluid slots become plannable resources;
+     * any other custom type keeps the recipe display-only, matching the previous behavior.
+     *
+     * @return false when the recipe must stay display-only
+     */
+    private <V> boolean captureTypedSlots(
+        IRecipeLayoutDrawable layout,
+        IIngredientType<V> type,
+        List<ProcessRecord.InputGroup> inputs,
+        List<List<ResourceRef>> outputs,
+        ResourceRef.Source source,
+        LinkedHashMap<ResourceKey, ResourceRef> resources) {
+      var guiIngredients = new ArrayList<IGuiIngredient<V>>();
+      for (var gui : layout.getIngredientsGroup(type).getGuiIngredients().values()) {
+        if (!gui.getAllIngredients().isEmpty()) {
+          guiIngredients.add(gui);
         }
       }
-      return false;
+      if (guiIngredients.isEmpty()) {
+        return true;
+      }
+      if (!isFluidType(type)) {
+        return false;
+      }
+      var plannable = true;
+      for (var gui : guiIngredients) {
+        var slotResources = new LinkedHashMap<ResourceKey, ResourceRef>();
+        for (V ingredient : gui.getAllIngredients()) {
+          var resource = fluidResource(type, ingredient, source, resources);
+          if (resource == null) {
+            plannable = false;
+          } else {
+            slotResources.putIfAbsent(ResourceKey.from(resource), resource);
+          }
+        }
+        List<ResourceRef> alternatives = new ArrayList<>(slotResources.values());
+        if (alternatives.size() > MAXIMUM_ALTERNATIVES) {
+          alternatives = alternatives.subList(0, MAXIMUM_ALTERNATIVES);
+          plannable = false;
+        }
+        if (gui.isInput()) {
+          if (alternatives.isEmpty()) {
+            plannable = false;
+          } else if (inputs.size() < 128) {
+            inputs.add(new ProcessRecord.InputGroup("input_" + inputs.size(), alternatives));
+          } else {
+            plannable = false;
+          }
+        } else if (!alternatives.isEmpty() && outputs.size() < 64) {
+          outputs.add(alternatives);
+        }
+      }
+      return plannable;
+    }
+
+    private static boolean isFluidType(IIngredientType<?> type) {
+      return type instanceof IIngredientTypeWithSubtypes<?, ?> withSubtypes
+          && withSubtypes.getIngredientBaseClass() == Fluid.class;
+    }
+
+    private <V> ResourceRef fluidResource(
+        IIngredientType<V> type,
+        V ingredient,
+        ResourceRef.Source source,
+        LinkedHashMap<ResourceKey, ResourceRef> resources) {
+      try {
+        var helper = runtime.getIngredientManager().getIngredientHelper(type);
+        var id = helper.getResourceId(ingredient);
+        if (id == null || !NAMESPACED_ID.matcher(id).matches()) {
+          return null;
+        }
+        var amount = fluidAmount(ingredient);
+        if (amount == null) {
+          return null;
+        }
+        var millibuckets = toMillibuckets(amount.longValue(), type);
+        if (millibuckets.signum() <= 0) {
+          return null;
+        }
+        var metadata = modMetadata(id.substring(0, id.indexOf(':')));
+        var resource =
+            new ResourceRef(
+                ResourceRef.Kind.FLUID,
+                id,
+                null,
+                bounded(helper.getDisplayName(ingredient), 512),
+                null,
+                metadata.id(),
+                metadata.name(),
+                metadata.version(),
+                millibuckets,
+                "millibucket",
+                source);
+        resources.putIfAbsent(ResourceKey.from(resource), resource);
+        return resource;
+      } catch (RuntimeException failure) {
+        return null;
+      }
+    }
+
+    private static BigDecimal toMillibuckets(long amount, IIngredientType<?> type) {
+      var raw = BigDecimal.valueOf(amount);
+      // JEI Fabric fluid amounts are droplets: 81000 droplets = 1000 millibuckets = one bucket.
+      if (!type.getIngredientClass().getName().startsWith("mezz.jei.api.fabric.")) {
+        return raw;
+      }
+      return raw.divide(BigDecimal.valueOf(81), 6, RoundingMode.HALF_UP).stripTrailingZeros();
+    }
+
+    private static Number fluidAmount(Object ingredient) {
+      try {
+        var method = ingredient.getClass().getMethod("getAmount");
+        if (!method.canAccess(ingredient)) {
+          method.setAccessible(true);
+        }
+        var value = method.invoke(ingredient);
+        return value instanceof Number number ? number : null;
+      } catch (ReflectiveOperationException | RuntimeException failure) {
+        return null;
+      }
     }
 
     private static String stableRecipeIdentity(

@@ -1,30 +1,40 @@
 package dev.minecraftagent.standalone.ui;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.minecraftagent.standalone.common.CancelReason;
 import dev.minecraftagent.standalone.common.CatalogToolExecutor;
 import dev.minecraftagent.standalone.common.ClientRuntimeController;
 import dev.minecraftagent.standalone.common.LocalPlanPresentation;
 import dev.minecraftagent.standalone.common.OptionalViewerRegistry;
+import dev.minecraftagent.standalone.common.RouteTreeModel;
 import dev.minecraftagent.standalone.common.StandaloneUiState;
 import dev.minecraftagent.standalone.core.catalog.ResourceSearchIndex;
 import dev.minecraftagent.standalone.core.contract.ResourceRef;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.Registry;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 /** Search and disambiguation surface that remains usable when the Runtime is offline. */
 public final class StandaloneCatalogScreen extends Screen {
   private static final int PANEL_MAXIMUM_WIDTH = 560;
   private static final int ROW_HEIGHT = 22;
+  private static final int PLAN_ROW_HEIGHT = 12;
+  private static final int TREE_INDENT = 10;
   private static final int MAXIMUM_VISIBLE_RESULTS = 7;
   private static final int MAXIMUM_PLAN_AMOUNT = 999;
   private static final int PANEL_BACKGROUND = 0xEB15191D;
@@ -33,6 +43,10 @@ public final class StandaloneCatalogScreen extends Screen {
   private static final int PRIMARY_TEXT = 0xFFF2F5F6;
   private static final int SECONDARY_TEXT = 0xFFADB7BC;
   private static final int WARNING_TEXT = 0xFFE5B567;
+  private static final int MISSING_ITEM = 0xFFFF5C6C;
+  private static final int TREE_LINE = 0xFF4A565E;
+  private static final int FLUID_MARKER = 0xFF5B9BD5;
+  private static final int STEP_MARKER = 0xFF4DAA91;
 
   private final StandaloneCatalogService catalog;
   private final ClientRuntimeController runtime;
@@ -45,6 +59,7 @@ public final class StandaloneCatalogScreen extends Screen {
   private String status = "";
   private boolean planning;
   private boolean planFailed;
+  private List<PlanLine> planLines;
 
   public StandaloneCatalogScreen(
       StandaloneCatalogService catalog,
@@ -64,6 +79,7 @@ public final class StandaloneCatalogScreen extends Screen {
 
   @Override
   protected void init() {
+    planLines = null;
     var panelWidth = Math.min(PANEL_MAXIMUM_WIDTH, Math.max(280, width - 24));
     var left = (width - panelWidth) / 2;
     var panelHeight = Math.min(410, Math.max(180, height - 24));
@@ -425,11 +441,12 @@ public final class StandaloneCatalogScreen extends Screen {
         left + 16,
         bottom - 14,
         SECONDARY_TEXT);
-    renderPlan(pose, left, top, bottom, panelWidth);
+    renderPlan(pose, left, top, bottom, panelWidth, mouseX, mouseY);
     super.render(pose, mouseX, mouseY, partialTick);
   }
 
-  private void renderPlan(PoseStack pose, int left, int top, int bottom, int panelWidth) {
+  private void renderPlan(
+      PoseStack pose, int left, int top, int bottom, int panelWidth, int mouseX, int mouseY) {
     if (!candidates.isEmpty() || !statePlanIsCurrent()) {
       return;
     }
@@ -437,27 +454,208 @@ public final class StandaloneCatalogScreen extends Screen {
     if (snapshot == null) {
       return;
     }
-    var lines = new ArrayList<String>();
-    for (var section :
-        LocalPlanPresentation.sections(uiState.localPlan, snapshot, uiState.selectedRoute)) {
-      lines.add(new TranslatableComponent(section.titleKey()).getString());
-      section.entries().forEach(entry -> lines.add("  " + entry));
+    if (planLines == null) {
+      planLines = buildPlanLines(snapshot);
     }
     var startY = top + 164;
-    var visibleLines = Math.max(0, (bottom - startY - 48) / 10);
-    var maximumScroll = Math.max(0, lines.size() - visibleLines);
+    var visibleLines = Math.max(0, (bottom - startY - 48) / PLAN_ROW_HEIGHT);
+    var maximumScroll = Math.max(0, planLines.size() - visibleLines);
     uiState.localPlanScroll = Math.min(uiState.localPlanScroll, maximumScroll);
+    var iconCache = new HashMap<String, ItemStack>();
     for (var index = 0;
-        index < Math.min(visibleLines, lines.size() - uiState.localPlanScroll);
+        index < Math.min(visibleLines, planLines.size() - uiState.localPlanScroll);
         index++) {
-      var line = lines.get(uiState.localPlanScroll + index);
+      var line = planLines.get(uiState.localPlanScroll + index);
+      var rowY = startY + index * PLAN_ROW_HEIGHT;
+      if (line instanceof PlanLine.TextLine text) {
+        font.draw(
+            pose,
+            font.plainSubstrByWidth(text.text(), panelWidth - 32),
+            left + 16,
+            rowY + 1,
+            text.header() ? ACCENT : PRIMARY_TEXT);
+      } else if (line instanceof PlanLine.TreeLine tree) {
+        renderTreeRow(pose, tree.row(), left + 16, rowY, panelWidth, mouseX, mouseY, iconCache);
+      }
+    }
+  }
+
+  private List<PlanLine> buildPlanLines(
+      dev.minecraftagent.standalone.core.catalog.CatalogSnapshot snapshot) {
+    var lines = new ArrayList<PlanLine>();
+    for (var section :
+        LocalPlanPresentation.sections(uiState.localPlan, snapshot, uiState.selectedRoute)) {
+      lines.add(
+          new PlanLine.TextLine(new TranslatableComponent(section.titleKey()).getString(), true));
+      if (section.titleKey().equals("screen.agma_standalone.plan_steps")) {
+        for (var row : RouteTreeModel.rows(uiState.localPlan, snapshot, uiState.selectedRoute)) {
+          lines.add(new PlanLine.TreeLine(row));
+        }
+      } else {
+        section.entries().forEach(entry -> lines.add(new PlanLine.TextLine("  " + entry, false)));
+      }
+    }
+    return lines;
+  }
+
+  private void renderTreeRow(
+      PoseStack pose,
+      RouteTreeModel.Row row,
+      int x,
+      int y,
+      int panelWidth,
+      int mouseX,
+      int mouseY,
+      Map<String, ItemStack> iconCache) {
+    var guides = row.guides();
+    var depth = guides.depth();
+    for (var level = 0; level < depth; level++) {
+      if (guides.ancestorContinues().get(level)) {
+        fill(
+            pose,
+            x + level * TREE_INDENT + 1,
+            y,
+            x + level * TREE_INDENT + 2,
+            y + PLAN_ROW_HEIGHT,
+            TREE_LINE);
+      }
+    }
+    if (depth > 0) {
+      var connectorX = x + (depth - 1) * TREE_INDENT + 1;
+      fill(
+          pose,
+          connectorX,
+          y,
+          connectorX + 1,
+          y + (guides.hasNextSibling() ? PLAN_ROW_HEIGHT : PLAN_ROW_HEIGHT / 2),
+          TREE_LINE);
+      fill(
+          pose,
+          connectorX,
+          y + PLAN_ROW_HEIGHT / 2,
+          connectorX + TREE_INDENT - 2,
+          y + PLAN_ROW_HEIGHT / 2 + 1,
+          TREE_LINE);
+    }
+    var contentX = x + depth * TREE_INDENT + 3;
+    var textWidth = Math.max(8, panelWidth - 48 - depth * TREE_INDENT);
+    if (row instanceof RouteTreeModel.TargetRow target) {
+      fill(pose, contentX + 1, y + 4, contentX + 7, y + 10, ACCENT);
+      var text =
+          decimal(target.requested())
+              + " x "
+              + target.resource().displayName()
+              + " ["
+              + target.resource().id()
+              + "]";
+      font.draw(pose, font.plainSubstrByWidth(text, textWidth), contentX + 11, y + 2, ACCENT);
+    } else if (row instanceof RouteTreeModel.StepRow step) {
+      fill(pose, contentX + 1, y + 4, contentX + 7, y + 10, STEP_MARKER);
+      var text = decimal(step.batches()) + " × " + step.displayName() + "  " + step.categoryId();
       font.draw(
           pose,
-          font.plainSubstrByWidth(line, panelWidth - 32),
-          left + 16,
-          startY + index * 10,
-          line.startsWith("  ") ? PRIMARY_TEXT : ACCENT);
+          font.plainSubstrByWidth(text, textWidth),
+          contentX + 11,
+          y + 2,
+          step.plannable() ? PRIMARY_TEXT : WARNING_TEXT);
+    } else if (row instanceof RouteTreeModel.ResourceRow resource) {
+      var textX =
+          contentX
+              + drawResourceIcon(pose, resource.resource(), contentX, y, mouseX, mouseY, iconCache);
+      var text =
+          decimal(resource.amount())
+              + " x "
+              + resource.resource().displayName()
+              + stateSuffix(resource.state());
+      font.draw(
+          pose,
+          font.plainSubstrByWidth(text, textWidth),
+          textX,
+          y + 2,
+          stateColor(resource.state()));
+    } else if (row instanceof RouteTreeModel.InfoRow info) {
+      font.draw(
+          pose,
+          font.plainSubstrByWidth(info.text(), textWidth),
+          contentX + 11,
+          y + 2,
+          SECONDARY_TEXT);
     }
+  }
+
+  private int drawResourceIcon(
+      PoseStack pose,
+      ResourceRef resource,
+      int x,
+      int y,
+      int mouseX,
+      int mouseY,
+      Map<String, ItemStack> iconCache) {
+    if (resource.kind() == ResourceRef.Kind.ITEM) {
+      var stack = iconCache.computeIfAbsent(resource.id(), StandaloneCatalogScreen::resolveStack);
+      if (mouseX >= x && mouseX < x + 12 && mouseY >= y && mouseY < y + PLAN_ROW_HEIGHT) {
+        if (stack.isEmpty()) {
+          renderTooltip(pose, new TextComponent("Missing item: " + resource.id()), mouseX, mouseY);
+        } else {
+          renderTooltip(pose, stack, mouseX, mouseY);
+        }
+      }
+      if (!stack.isEmpty()) {
+        var modelView = RenderSystem.getModelViewStack();
+        modelView.pushPose();
+        modelView.translate(x, y, 0);
+        modelView.scale(0.75f, 0.75f, 1.0f);
+        RenderSystem.applyModelViewMatrix();
+        minecraft.getItemRenderer().renderAndDecorateItem(stack, 0, 0);
+        modelView.popPose();
+        RenderSystem.applyModelViewMatrix();
+        return 14;
+      }
+      fill(pose, x + 2, y + 2, x + 10, y + 10, MISSING_ITEM);
+      font.draw(pose, "?", x + 4, y + 2, PANEL_BACKGROUND);
+      return 14;
+    }
+    var color = resource.kind() == ResourceRef.Kind.FLUID ? FLUID_MARKER : SECONDARY_TEXT;
+    fill(pose, x + 3, y + 3, x + 9, y + 9, color);
+    return 14;
+  }
+
+  private static ItemStack resolveStack(String id) {
+    var location = ResourceLocation.tryParse(id);
+    if (location == null) {
+      return ItemStack.EMPTY;
+    }
+    var item = Registry.ITEM.get(location);
+    return item == Items.AIR && !"air".equals(location.getPath())
+        ? ItemStack.EMPTY
+        : new ItemStack(item);
+  }
+
+  private static int stateColor(RouteTreeModel.ResourceState state) {
+    return switch (state) {
+      case INVENTORY -> ACCENT;
+      case UNRESOLVED -> WARNING_TEXT;
+      case LEAF -> SECONDARY_TEXT;
+      default -> PRIMARY_TEXT;
+    };
+  }
+
+  private static String stateSuffix(RouteTreeModel.ResourceState state) {
+    return switch (state) {
+      case INVENTORY -> " (inventory)";
+      case UNRESOLVED -> " (unresolved)";
+      default -> "";
+    };
+  }
+
+  private static String decimal(BigDecimal value) {
+    return value.stripTrailingZeros().toPlainString();
+  }
+
+  private sealed interface PlanLine {
+    record TextLine(String text, boolean header) implements PlanLine {}
+
+    record TreeLine(RouteTreeModel.Row row) implements PlanLine {}
   }
 
   @Override
