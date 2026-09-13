@@ -28,8 +28,11 @@ import java.util.function.LongSupplier;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.world.level.material.MapColor;
 
 /** Stable-size HUD renderer with explicit mouse entry points for the client initializer. */
 public final class OverlayRenderer {
@@ -47,12 +50,17 @@ public final class OverlayRenderer {
   private static final int SECONDARY_TEXT = 0xffb9c0c7;
   private static final int SLOT_BACKGROUND = 0xff30343a;
   private static final int MISSING = 0xffff5c6c;
+  private static final int MAP_UNKNOWN_BLOCK = 0xff6b6f75;
+  private static final int MAP_NO_MAPCOLOR = 0xff3a3f45;
+  private static final int MAP_BACKGROUND = 0xff101315;
 
   private final Minecraft minecraft;
   private final OverlayController controller;
   private final MinecraftItemStackResolver itemResolver;
   private final LongSupplier clock;
   private final Map<ItemStackView, ResolvedItemStack> itemCache = new HashMap<>();
+  private final Map<String, BuildPreviewProjection.Projection> previewCache = new HashMap<>();
+  private final Map<String, Integer> blockColorCache = new HashMap<>();
   private final RecipePresentationState recipeState = new RecipePresentationState();
 
   private volatile OverlayBounds lastBounds;
@@ -300,11 +308,7 @@ public final class OverlayRenderer {
       case ItemStackView ignored -> 52;
       case ItemListView list -> list.items().size() * 22;
       case RecipeView ignored -> 132;
-      case BuildPreviewView ignored ->
-          Math.max(
-              minecraft.font.lineHeight,
-              textLines(new TextView(view.fallbackText()), width).size()
-                  * (minecraft.font.lineHeight + 2));
+      case BuildPreviewView preview -> measureBuildPreview(projection(view, preview));
     };
   }
 
@@ -322,8 +326,8 @@ public final class OverlayRenderer {
           renderItemStackView(graphics, item, x, y, width, clipTop, clipBottom);
       case ItemListView list -> renderItemList(graphics, list, x, y, width, clipTop, clipBottom);
       case RecipeView recipe -> renderRecipe(graphics, recipe, x, y, width, clipTop, clipBottom);
-      case BuildPreviewView ignored ->
-          renderText(graphics, new TextView(view.fallbackText()), x, y, width, clipTop, clipBottom);
+      case BuildPreviewView preview ->
+          renderBuildPreview(graphics, view, preview, x, y, clipTop, clipBottom);
     }
   }
 
@@ -343,6 +347,181 @@ public final class OverlayRenderer {
         graphics.drawString(minecraft.font, lines.get(index), x, lineY, PRIMARY_TEXT, false);
       }
     }
+  }
+
+  private int measureBuildPreview(BuildPreviewProjection.Projection projection) {
+    int lineHeight = minecraft.font.lineHeight + 2;
+    int height = lineHeight * 3;
+    height += projection.mapHeight() + 8;
+    if (!projection.legend().isEmpty()) {
+      height += lineHeight + projection.legend().size() * 18;
+    }
+    return height;
+  }
+
+  private void renderBuildPreview(
+      GuiGraphics graphics,
+      StructuredView view,
+      BuildPreviewView preview,
+      int x,
+      int y,
+      int clipTop,
+      int clipBottom) {
+    BuildPreviewProjection.Projection projection = projection(view, preview);
+    int lineHeight = minecraft.font.lineHeight + 2;
+    int cursorY = y;
+
+    if (cursorY + lineHeight >= clipTop && cursorY < clipBottom) {
+      BuildPreviewView.Bounds bounds = preview.bounds();
+      String summary =
+          preview.operation().name()
+              + "  "
+              + bounds.sizeX()
+              + " × "
+              + bounds.sizeY()
+              + " × "
+              + bounds.sizeZ()
+              + "  ·  "
+              + preview.dimension()
+              + "  ·  rev "
+              + preview.revision();
+      graphics.drawString(minecraft.font, summary, x, cursorY, PRIMARY_TEXT, false);
+    }
+    cursorY += lineHeight;
+
+    if (cursorY + lineHeight >= clipTop && cursorY < clipBottom) {
+      BuildPreviewView.Position origin = preview.origin();
+      String originLine =
+          "origin "
+              + origin.x()
+              + " "
+              + origin.y()
+              + " "
+              + origin.z()
+              + "  ·  "
+              + preview.transform().rotation()
+              + "°"
+              + (preview.transform().mirror() == BuildPreviewView.Mirror.NONE
+                  ? ""
+                  : "  ·  mirrored");
+      graphics.drawString(minecraft.font, originLine, x, cursorY, SECONDARY_TEXT, false);
+    }
+    cursorY += lineHeight;
+
+    if (cursorY + lineHeight >= clipTop && cursorY < clipBottom) {
+      int textX = x;
+      graphics.drawString(
+          minecraft.font, "+" + preview.difference().added(), textX, cursorY, ACCENT, false);
+      textX += minecraft.font.width("+" + preview.difference().added() + "  added   ");
+      graphics.drawString(
+          minecraft.font, "~" + preview.difference().replaced(), textX, cursorY, PINNED, false);
+      textX += minecraft.font.width("~" + preview.difference().replaced() + "  replaced   ");
+      graphics.drawString(
+          minecraft.font, "-" + preview.difference().removed(), textX, cursorY, MISSING, false);
+    }
+    cursorY += lineHeight;
+
+    renderPreviewMap(graphics, projection, x, cursorY + 1, clipTop, clipBottom);
+    cursorY += projection.mapHeight() + 8;
+
+    if (projection.legend().isEmpty()) {
+      return;
+    }
+    if (cursorY + lineHeight >= clipTop && cursorY < clipBottom) {
+      graphics.drawString(minecraft.font, "Top blocks", x, cursorY, SECONDARY_TEXT, false);
+    }
+    cursorY += lineHeight;
+    for (BuildPreviewProjection.LegendRow row : projection.legend()) {
+      int rowY = cursorY;
+      cursorY += 18;
+      if (rowY + 16 < clipTop || rowY >= clipBottom) {
+        continue;
+      }
+      ResolvedItemStack resolved = resolve(legendIcon(row));
+      renderItem(graphics, resolved, x, rowY, clipTop, clipBottom);
+      graphics.drawString(
+          minecraft.font,
+          minecraft.font.plainSubstrByWidth(displayName(resolved), 160),
+          x + 24,
+          rowY,
+          resolved.available() ? PRIMARY_TEXT : MISSING,
+          false);
+      graphics.drawString(
+          minecraft.font,
+          "x" + compactCount(row.count()) + "  " + legendIcon(row).itemId(),
+          x + 24,
+          rowY + minecraft.font.lineHeight + 2,
+          SECONDARY_TEXT,
+          false);
+    }
+  }
+
+  private void renderPreviewMap(
+      GuiGraphics graphics,
+      BuildPreviewProjection.Projection projection,
+      int x,
+      int y,
+      int clipTop,
+      int clipBottom) {
+    if (y + projection.mapHeight() + 2 < clipTop || y >= clipBottom) {
+      return;
+    }
+    graphics.fill(
+        x - 1, y - 1, x + projection.mapWidth() + 1, y + projection.mapHeight() + 1, BORDER);
+    graphics.fill(x, y, x + projection.mapWidth(), y + projection.mapHeight(), MAP_BACKGROUND);
+    int cell = projection.cell();
+    for (int index = 0; index < projection.topColors().length; index++) {
+      int color = projection.topColors()[index];
+      if (color == 0) {
+        continue;
+      }
+      int cellX = (index % projection.sizeX()) * cell;
+      int cellZ = (index / projection.sizeX()) * cell;
+      if (y + cellZ + cell < clipTop || y + cellZ >= clipBottom) {
+        continue;
+      }
+      graphics.fill(x + cellX, y + cellZ, x + cellX + cell, y + cellZ + cell, color);
+    }
+  }
+
+  private BuildPreviewProjection.Projection projection(
+      StructuredView view, BuildPreviewView preview) {
+    return previewCache.computeIfAbsent(
+        view.viewId() + ":" + view.revision(),
+        ignored -> BuildPreviewProjection.compute(preview, this::blockColor));
+  }
+
+  private int blockColor(String blockId) {
+    return blockColorCache.computeIfAbsent(
+        blockId,
+        id -> {
+          Identifier identifier = Identifier.tryParse(id);
+          var block =
+              identifier == null
+                  ? null
+                  : BuiltInRegistries.BLOCK.getOptional(identifier).orElse(null);
+          if (block == null) {
+            return MAP_UNKNOWN_BLOCK;
+          }
+          MapColor mapColor = block.defaultMapColor();
+          if (mapColor == null || mapColor == MapColor.NONE) {
+            return MAP_NO_MAPCOLOR;
+          }
+          return 0xff000000 | mapColor.col;
+        });
+  }
+
+  private static ItemStackView legendIcon(BuildPreviewProjection.LegendRow row) {
+    return new ItemStackView(
+        row.blockId(),
+        row.count(),
+        new ItemStackView.SafeComponents(
+            Optional.empty(),
+            List.of(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty()));
   }
 
   private void renderItemStackView(

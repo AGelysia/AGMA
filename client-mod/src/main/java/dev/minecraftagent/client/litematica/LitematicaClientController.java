@@ -17,6 +17,8 @@ import java.util.UUID;
  * IDs and never accepts a server-provided path or returns an authorization signal.
  */
 public final class LitematicaClientController implements AutoCloseable {
+  private static final org.slf4j.Logger LOGGER =
+      org.slf4j.LoggerFactory.getLogger("minecraftagent.litematica");
   public static final long MAX_SCHEMATIC_BYTES = 16L * 1024L * 1024L;
 
   private final Optional<LitematicaAdapter> adapter;
@@ -163,6 +165,7 @@ public final class LitematicaClientController implements AutoCloseable {
             prepared.request.contentSha256(),
             LitematicaDisplayReport.Failure.MANAGED_FILE_UNAVAILABLE);
       }
+      LOGGER.warn("Litematica load preparation failed", exception);
       return adapterFailure(prepared.viewId, prepared.request.contentSha256());
     }
   }

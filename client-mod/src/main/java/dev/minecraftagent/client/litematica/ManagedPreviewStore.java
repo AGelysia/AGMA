@@ -81,7 +81,7 @@ final class ManagedPreviewStore {
                 + preview.revision()
                 + "."
                 + UUID.randomUUID()
-                + ".litematica");
+                + ".litematic");
     byte[] encoded = writer.write(preview);
     if (encoded.length < 1 || encoded.length > maxBytes) {
       throw new IOException("generated schematic exceeds its byte limit");

@@ -17,9 +17,12 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
 import java.util.regex.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Reflection boundary locked to one verified Litematica/MaLiLib public signature set. */
 final class ReflectiveLitematicaAdapter implements LitematicaAdapter {
+  private static final Logger LOGGER = LoggerFactory.getLogger("minecraftagent.litematica");
   private static final int MAX_PREVIEWS = 8;
   private static final long MAX_SCHEMATIC_BYTES = 16L * 1024L * 1024L;
   private static final Pattern SHA_256 = Pattern.compile("[0-9a-f]{64}");
@@ -115,6 +118,7 @@ final class ReflectiveLitematicaAdapter implements LitematicaAdapter {
       var before = new ArrayList<>(asCollection(bindings.schematicHolderGetAll.invoke(holder)));
       schematic = bindings.schematicHolderGetOrLoad.invoke(holder, schematicFile);
       if (schematic == null) {
+        LOGGER.warn("Litematica SchematicHolder.getOrLoad returned null for {}", schematicFile);
         return failed(request, LitematicaDisplayReport.Failure.ADAPTER_CALL_FAILED);
       }
       ownedSchematic = !containsIdentity(before, schematic);
@@ -126,6 +130,7 @@ final class ReflectiveLitematicaAdapter implements LitematicaAdapter {
           bindings.placementCreateFor.invoke(
               null, schematic, origin, request.displayName(), true, true);
       if (placement == null) {
+        LOGGER.warn("Litematica SchematicPlacement.createFor returned null");
         rollback(holder, manager, schematic, null, ownedSchematic);
         return failed(request, LitematicaDisplayReport.Failure.ADAPTER_CALL_FAILED);
       }
@@ -133,6 +138,7 @@ final class ReflectiveLitematicaAdapter implements LitematicaAdapter {
       if (!containsIdentity(
           asCollection(bindings.placementManagerGetForSchematic.invoke(manager, schematic)),
           placement)) {
+        LOGGER.warn("Litematica placement manager did not retain the new placement");
         rollback(holder, manager, schematic, placement, ownedSchematic);
         return failed(request, LitematicaDisplayReport.Failure.ADAPTER_CALL_FAILED);
       }
@@ -144,6 +150,7 @@ final class ReflectiveLitematicaAdapter implements LitematicaAdapter {
       return LitematicaDisplayReport.success(
           request.previewId(), request.contentSha256(), LitematicaDisplayReport.State.LOADED);
     } catch (ReflectiveOperationException | LinkageError | RuntimeException exception) {
+      LOGGER.warn("Litematica loadPreview call failed", exception);
       rollback(holder, manager, schematic, placement, ownedSchematic);
       return failed(request, LitematicaDisplayReport.Failure.ADAPTER_CALL_FAILED);
     }
@@ -309,7 +316,7 @@ final class ReflectiveLitematicaAdapter implements LitematicaAdapter {
     if (components.length != 4
         || !components[0].equals(request.previewId().toString())
         || !components[1].equals(Integer.toString(request.revision()))
-        || !components[3].equals("litematica")) {
+        || !components[3].equals("litematic")) {
       return false;
     }
     try {

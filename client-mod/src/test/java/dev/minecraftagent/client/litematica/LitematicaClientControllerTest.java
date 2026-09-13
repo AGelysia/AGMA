@@ -169,7 +169,7 @@ class LitematicaClientControllerTest {
     try (var files = Files.list(root)) {
       return files
           .filter(path -> !path.equals(excluded))
-          .filter(path -> path.getFileName().toString().endsWith(".litematica"))
+          .filter(path -> path.getFileName().toString().endsWith(".litematic"))
           .findFirst()
           .orElseThrow();
     }

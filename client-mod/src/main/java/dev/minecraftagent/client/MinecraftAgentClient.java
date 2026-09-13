@@ -45,6 +45,19 @@ import org.slf4j.LoggerFactory;
 public final class MinecraftAgentClient implements ClientModInitializer {
   public static final String MOD_ID = "minecraftagent";
   private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+  private static OverlayController overlayController;
+  private static LitematicaClientController litematicaController;
+
+  /** Test and diagnostics access to the live overlay controller; null before client init. */
+  static OverlayController overlayController() {
+    return overlayController;
+  }
+
+  /** Test and diagnostics access to the live Litematica controller; null before client init. */
+  static LitematicaClientController litematicaController() {
+    return litematicaController;
+  }
+
   private static final String KEY_EDIT = "key.minecraftagent.edit_overlay";
   private static final String KEY_PIN = "key.minecraftagent.toggle_pin";
   private static final String KEY_CLEAR = "key.minecraftagent.clear_views";
@@ -57,10 +70,12 @@ public final class MinecraftAgentClient implements ClientModInitializer {
     var loader = FabricLoader.getInstance();
     var inventory = new FabricModInventory();
     var overlay = new OverlayController(new OverlayPreferenceStore(loader.getGameDir()));
+    overlayController = overlay;
     var renderer = new OverlayRenderer(minecraft, overlay);
     var tasks = ClientTaskQueue.create();
     var mainTasks = ClientMainThreadQueue.create(action -> executeOnClient(minecraft, action));
     var litematica = createLitematicaController(loader, inventory, minecraft);
+    litematicaController = litematica.controller();
     var advertisement = advertisement(loader, litematica);
 
     PayloadTypeRegistry.playC2S().register(AgentClientPayload.TYPE, AgentClientPayload.CODEC);

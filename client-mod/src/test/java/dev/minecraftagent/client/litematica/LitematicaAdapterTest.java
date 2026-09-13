@@ -337,7 +337,7 @@ class LitematicaAdapterTest {
   }
 
   private static Path managedFile(Path root) {
-    return root.resolve(PREVIEW_ID + ".1." + ARTIFACT_ID + ".litematica");
+    return root.resolve(PREVIEW_ID + ".1." + ARTIFACT_ID + ".litematic");
   }
 
   private static ModInventory versions(Map<String, String> versions) {

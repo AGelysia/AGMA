@@ -48,6 +48,26 @@ java {
     withSourcesJar()
 }
 
+sourceSets {
+    create("gametest") {
+        compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
+        runtimeClasspath += sourceSets.main.get().output + sourceSets.main.get().runtimeClasspath
+    }
+}
+
+loom {
+    runs {
+        create("clientGametest") {
+            client()
+            name("Client Gametest")
+            property("fabric.client.gametest", "")
+            property("fabric.client.gametest.disableNetworkSynchronizer", "")
+            runDir("run-gametest")
+            source(sourceSets["gametest"])
+        }
+    }
+}
+
 sourceSets.test {
     java.srcDir(rootProject.file("protocol/jvm-test/src/test/java"))
 }

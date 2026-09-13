@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "agma_client_gametest",
+  "version": "1.0.0",
+  "name": "AGMA Client GameTest",
+  "description": "Client game tests for the AGMA server-companion presentation layer.",
+  "environment": "client",
+  "license": "Apache-2.0",
+  "entrypoints": {
+    "fabric-client-gametest": [
+      "dev.minecraftagent.client.AgmaPreviewGameTest",
+      "dev.minecraftagent.client.AgmaServerE2eGameTest"
+    ]
+  },
+  "depends": {
+    "fabric-client-gametest-api-v1": "*",
+    "minecraftagent": "*",
+    "minecraft": "~1.21.11"
+  }
+}
