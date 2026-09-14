@@ -44,6 +44,10 @@ describe("standalone Runtime build graph", () => {
     expect(inputs).toContain("src/config/standalone-client-config.ts");
     expect(inputs).toContain("src/requests/client-agent-request-service.ts");
     expect(inputs).toContain("src/tools/client-tool-registry.ts");
+    // The client-local knowledge search uses the standalone-local module; the server-line
+    // knowledge module (and its Markdown parser dependency) stays outside the bundle.
+    expect(inputs).toContain("src/standalone/knowledge/knowledge-index.ts");
+    expect(inputs).toContain("src/standalone/knowledge/knowledge-loader.ts");
     expect(inputs).not.toContain("src/bootstrap/index.ts");
     expect(inputs).not.toContain("src/config/runtime-config.ts");
     expect(inputs).not.toContain("src/transport/paper-handshake.ts");
@@ -71,6 +75,9 @@ describe("standalone Runtime build graph", () => {
     expect(bundle).not.toContain("agent-request.schema.json");
     expect(bundle).toContain("connector-request.schema.json");
     expect(bundle).toContain("evidence-claim.schema.json");
+    expect(bundle).toContain("game.block.inspect");
+    expect(bundle).toContain("local.knowledge.search");
+    expect(bundle).toContain("local-knowledge-search-result.schema.json");
   });
 
   it("publishes a complete sorted external root-package list from the esbuild graph", async () => {

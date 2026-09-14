@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { RuntimeStartupError } from "../bootstrap/startup-error.js";
 import { modelProviderIds, type ModelProviderId } from "../providers/model-provider.js";
+import type { StandaloneKnowledgeRootPath } from "../standalone/knowledge/knowledge-loader.js";
 import type { ClientToolId } from "../tools/tool-types.js";
 
 const MAXIMUM_CONFIG_BYTES = 64 * 1024;
@@ -103,6 +104,34 @@ const schema = z
         }
       }),
     storage: z.object({ sqlitePath: relativePath }).strict(),
+    knowledge: z
+      .object({
+        roots: z
+          .array(
+            z
+              .object({
+                directory: relativePath,
+                kind: z.enum(["server_rules", "local_docs"]),
+              })
+              .strict(),
+          )
+          .max(8),
+      })
+      .strict()
+      .superRefine((knowledge, context) => {
+        const directories = new Set<string>();
+        knowledge.roots.forEach((root, index) => {
+          if (directories.has(root.directory)) {
+            context.addIssue({
+              code: "custom",
+              path: ["roots", index, "directory"],
+              message: "must not duplicate another knowledge root",
+            });
+          }
+          directories.add(root.directory);
+        });
+      })
+      .optional(),
     logging: z
       .object({ directory: relativePath, level: z.enum(["debug", "info", "warn", "error"]) })
       .strict(),
@@ -138,6 +167,8 @@ const schema = z
               "game.process.plan",
               "game.inventory.snapshot",
               "game.player.context.read",
+              "game.block.inspect",
+              "local.knowledge.search",
               "project.list",
               "project.read",
               "project.create",
@@ -145,7 +176,7 @@ const schema = z
               "build.preview.create",
             ]),
           )
-          .max(11),
+          .max(13),
         denied: z
           .array(
             z
@@ -308,6 +339,7 @@ export interface LoadedStandaloneConfig {
     readonly rootDirectory: string;
     readonly sqlite: string;
     readonly logDirectory: string;
+    readonly knowledgeRoots: readonly StandaloneKnowledgeRootPath[];
   };
   readonly warnings: readonly StandaloneConfigWarning[];
 }
@@ -552,6 +584,14 @@ export async function loadStandaloneClientConfig(
       rootDirectory: root,
       sqlite: contained(root, config.storage.sqlitePath, "/storage/sqlitePath"),
       logDirectory: contained(root, config.logging.directory, "/logging/directory"),
+      knowledgeRoots: (config.knowledge?.roots ?? []).map((knowledgeRoot, index) => ({
+        directory: contained(
+          root,
+          knowledgeRoot.directory,
+          `/knowledge/roots/${String(index)}/directory`,
+        ),
+        kind: knowledgeRoot.kind,
+      })),
     },
     warnings: [
       ...(configFile.wide ? [{ code: "CONFIG_FILE_PERMISSIONS_WIDE" as const }] : []),

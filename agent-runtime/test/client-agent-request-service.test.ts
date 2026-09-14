@@ -19,6 +19,7 @@ import { migrateRuntimeStorage } from "../src/storage/migrations.js";
 import { SqliteProjectRepository } from "../src/storage/project-repository.js";
 import { ClientToolRegistry } from "../src/tools/client-tool-registry.js";
 import { ProjectToolExecutor } from "../src/tools/project-tool-executor.js";
+import type { LocalToolExecution } from "../src/tools/local-tool-executor.js";
 import type { UsageAccounting } from "../src/usage/usage-accounting.js";
 
 const REQUEST_ID = "11111111-1111-4111-8111-111111111111";
@@ -523,6 +524,111 @@ describe("client-only Agent request service", () => {
     expect(completion.payload.fallbackText).toContain("Local catalog result:");
     expect(completion.payload.fallbackText).toContain(evidence.statement);
     expect(completion.payload.sources).toHaveLength(1);
+  });
+
+  it("renders knowledge and block inspect results into the offline answer", async () => {
+    const generated: ModelGenerationRequest[] = [];
+    const adapter: ModelProvider = {
+      check: vi.fn().mockResolvedValue({ ok: true }),
+      generate: vi.fn(async (request: ModelGenerationRequest) => {
+        generated.push(request);
+        if (generated.length === 1) {
+          return {
+            type: "tool_call" as const,
+            providerCallId: "knowledge-1",
+            providerName: "local_knowledge_search",
+            arguments: { query: "星辉熔炉" },
+            continuation: { provider: "openai" as const, items: [] },
+          };
+        }
+        if (generated.length === 2) {
+          return {
+            type: "tool_call" as const,
+            providerCallId: "inspect-1",
+            providerName: "game_block_inspect",
+            arguments: { position: { x: 1, y: 2, z: 3 } },
+            continuation: { provider: "openai" as const, items: [] },
+          };
+        }
+        return { type: "final" as const, fallbackText: "model prose is not the offline answer" };
+      }),
+    };
+    const localTools: LocalToolExecution = {
+      execute: vi.fn(async () => ({
+        status: "succeeded" as const,
+        source: "local_docs" as const,
+        trust: "untrusted" as const,
+        result: {
+          query: "星辉熔炉",
+          matches: [
+            {
+              documentId: "a".repeat(64),
+              citation: "local_docs/aaaaaaaaaaa/custom-starlight-guide.md#chunk-1",
+              kind: "local_docs",
+              title: "星辉工厂手册（测试文档）",
+              heading: "星辉熔炉怎么用",
+              excerpt: "把星尘矿石放入燃料槽，再用星尘粉点燃炉心，获得星辉锭。",
+            },
+          ],
+          truncated: false,
+        },
+        error: null,
+      })),
+    };
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registryWith(["game.block.inspect", "local.knowledge.search"]),
+      localTools,
+    });
+    const responses: AgentRuntimeResponse[] = [];
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "星辉熔炉怎么用？那个方块实体里有什么？",
+      },
+      (response) => responses.push(response),
+    );
+    await vi.waitFor(() => expect(responses[0]?.type).toBe("tool.call"));
+    const call = responses[0];
+    if (call?.type !== "tool.call") throw new Error("missing connector Tool call");
+    expect(call.payload.tool).toBe("game.block.inspect");
+    expect(
+      service.acceptToolResult(REQUEST_ID, {
+        toolCallId: call.payload.toolCallId,
+        sessionId: call.payload.sessionId,
+        playerUuid: call.payload.playerUuid,
+        tool: call.payload.tool,
+        sequence: call.payload.sequence,
+        status: "succeeded",
+        source: "client_context",
+        trust: "client_visible",
+        result: {
+          found: true,
+          blockId: "minecraft:chest",
+          position: { x: 1, y: 2, z: 3 },
+          hasBlockEntity: true,
+          blockEntity: { data: { Items: [{ id: "minecraft:apple", count: 7 }] } },
+        },
+        error: null,
+      }),
+    ).toBe("accepted");
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    const completion = responses.at(-1);
+    if (completion?.type !== "agent.complete") throw new Error("missing controlled completion");
+    // The offline answer must quote the deterministic local tool results instead of the canned
+    // "select a catalog target" fallback.
+    expect(completion.payload.fallbackText).not.toContain(
+      "Select an exact local catalog target before requesting process facts.",
+    );
+    expect(completion.payload.fallbackText).toContain("星尘粉");
+    expect(completion.payload.fallbackText).toContain("minecraft:apple");
+    expect(completion.payload.fallbackText).toContain("trust=untrusted");
+    expect(localTools.execute).toHaveBeenCalledTimes(1);
   });
 
   it("rejects inconsistent local and web contexts before collecting web evidence", async () => {

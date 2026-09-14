@@ -10,7 +10,8 @@
     "fabric-client-gametest": [
       "dev.minecraftagent.standalone.fabric.gametest.AgmaCatalogGameTest",
       "dev.minecraftagent.standalone.fabric.gametest.AgmaAskE2eGameTest",
-      "dev.minecraftagent.standalone.fabric.gametest.AgmaBuildE2eGameTest"
+      "dev.minecraftagent.standalone.fabric.gametest.AgmaBuildE2eGameTest",
+      "dev.minecraftagent.standalone.fabric.gametest.AgmaKnowledgeE2eGameTest"
     ]
   },
   "depends": {

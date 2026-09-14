@@ -26,6 +26,8 @@ export const clientToolIds = [
   "project.create",
   "project.update",
   "build.preview.create",
+  "game.block.inspect",
+  "local.knowledge.search",
 ] as const;
 
 export type ClientToolId = (typeof clientToolIds)[number];
@@ -45,7 +47,8 @@ export type ToolResultSource =
   | "client_catalog"
   | "client_context"
   | "client_planner"
-  | "client_policy";
+  | "client_policy"
+  | "local_docs";
 export type ToolResultTrust =
   | "authoritative"
   | "verified"

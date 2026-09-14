@@ -1,4 +1,4 @@
-# AGMA Standalone Client 0.5.0
+# AGMA Standalone Client 0.6.0
 
 AGMA Standalone Client is a pure client mod for Fabric and Forge. It works in singleplayer and on
 ordinary multiplayer servers without an AGMA Paper plugin. The mod builds a bounded catalog from
@@ -10,18 +10,20 @@ source archives, integrated JARs, and release assets.
 
 ## Release Assets
 
-The `standalone-v0.5.0` release contains six runnable JARs. Choose the JAR matching Minecraft, mod
-loader, and the operating system running the game:
+The `standalone-v0.6.0` release contains eight runnable JARs. Choose the JAR matching Minecraft,
+mod loader, and the operating system running the game:
 
 | Minecraft | Loader | Java | Linux x86_64 | Windows x86_64 |
 | --- | --- | --- | --- | --- |
-| 1.21.11 | Fabric | 21+ | `AGMA-Client-Standalone-0.5.0-mc1.21.11-fabric-linux-x86_64.jar` | `AGMA-Client-Standalone-0.5.0-mc1.21.11-fabric-windows-x86_64.jar` |
-| 1.18.2 | Fabric | 17+ | `AGMA-Client-Standalone-0.5.0-mc1.18.2-fabric-linux-x86_64.jar` | `AGMA-Client-Standalone-0.5.0-mc1.18.2-fabric-windows-x86_64.jar` |
-| 1.18.2 | Forge | 17+ | `AGMA-Client-Standalone-0.5.0-mc1.18.2-forge-linux-x86_64.jar` | `AGMA-Client-Standalone-0.5.0-mc1.18.2-forge-windows-x86_64.jar` |
+| 1.21.11 | Fabric | 21+ | `AGMA-Client-Standalone-0.6.0-mc1.21.11-fabric-linux-x86_64.jar` | `AGMA-Client-Standalone-0.6.0-mc1.21.11-fabric-windows-x86_64.jar` |
+| 1.20.1 | Fabric | 17+ | `AGMA-Client-Standalone-0.6.0-mc1.20.1-fabric-linux-x86_64.jar` | `AGMA-Client-Standalone-0.6.0-mc1.20.1-fabric-windows-x86_64.jar` |
+| 1.18.2 | Fabric | 17+ | `AGMA-Client-Standalone-0.6.0-mc1.18.2-fabric-linux-x86_64.jar` | `AGMA-Client-Standalone-0.6.0-mc1.18.2-fabric-windows-x86_64.jar` |
+| 1.18.2 | Forge | 17+ | `AGMA-Client-Standalone-0.6.0-mc1.18.2-forge-linux-x86_64.jar` | `AGMA-Client-Standalone-0.6.0-mc1.18.2-forge-windows-x86_64.jar` |
 
 Every JAR contains the platform-specific Node.js 22.23.1 Runtime. A system Node installation is not
-required. The other two release assets are `AGMA-Client-Standalone-0.5.0-SBOM.cdx.json` and
-`AGMA-Client-Standalone-0.5.0-SHA256SUMS`; the checksum manifest covers all six JARs and the SBOM.
+required. The other two release assets are `AGMA-Client-Standalone-0.6.0-SBOM.cdx.json` and
+`AGMA-Client-Standalone-0.6.0-SHA256SUMS`; the checksum manifest covers all eight JARs and the
+SBOM.
 
 ## Install And Use
 
@@ -29,6 +31,7 @@ Install one supported loader tuple and the matching standalone JAR in the instan
 directory:
 
 - Minecraft 1.21.11 Fabric: Fabric Loader 0.19.3 and Fabric API 0.141.5+1.21.11.
+- Minecraft 1.20.1 Fabric: Fabric Loader 0.19.3 and Fabric API 0.92.6+1.20.1.
 - Minecraft 1.18.2 Fabric: Fabric Loader 0.19.3 and Fabric API 0.77.0+1.18.2.
 - Minecraft 1.18.2 Forge: Forge 40.2.21 or newer 40.x; do not install Fabric API for this target.
 
@@ -41,6 +44,17 @@ Runtime, and submit the question. Inventory access is off by default and is a si
 only the route's bounded dependency set. Web search is also off by default and must be enabled for
 each request from the assistant screen.
 
+The Ask tab can also read the mods' own documentation and the live world. The L2 static mod
+archive layer extracts each installed mod's Patchouli guide book and advancement tree into bounded
+local knowledge documents; the model searches them with `local.knowledge.search` and cites the
+exact installed version of the guide — not stale wiki pages. Instance pack scripts
+(`kubejs/server_scripts/**.js` and `scripts/**.zs`) are parsed best-effort as well: recipes added
+by the pack appear as plannable processes, and pack removals suppress the static archive data so
+the catalog matches the pack's customization. With `game.block.inspect` the model reads the block
+entity the player points at (or an explicit nearby position) and sees a bounded, redacted summary
+of its live NBT — machine inventories, progress values, and stored energy for any mod, without
+per-mod adapters.
+
 The Ask tab also builds. Ask the agent to design a building and preview it (for example
 "在我身旁建一座两层小楼并给我投影预览") and it reads the live player position, stores a bounded
 local project, and creates a client-local build preview from an ordered, multi-material shape list
@@ -48,8 +62,11 @@ local project, and creates a client-local build preview from an ordered, multi-m
 64³ / 16,384 cells per preview). Block ids are validated against the client registry, so modded
 blocks work exactly like vanilla ones. The preview renders immediately as a HUD top-view panel
 (`P` toggles); with Litematica installed, `O` additionally loads a full in-world hologram with a
-generated `.litematic` schematic. A preview never writes to the world — it is a visualization aid,
-not a world edit.
+generated `.litematic` schematic. Reviewed hologram combinations: Litematica 0.26.12 with MaLiLib
+0.27.16 on Minecraft 1.21.11 Fabric, Litematica 0.15.4 with MaLiLib 0.16.3 on Minecraft 1.20.1
+Fabric, and Litematica 0.11.7 with MaLiLib 0.12.1 on Minecraft 1.18.2 Fabric; the 1.18.2 Forge
+artifact has no reviewed hologram integration and keeps the HUD panel only. A preview never writes
+to the world — it is a visualization aid, not a world edit.
 
 Supported model providers are OpenAI, Anthropic, DeepSeek, Gemini, and reviewed
 OpenAI-compatible endpoints. Brave Search is the web search backend. Model and search calls can
@@ -65,11 +82,23 @@ data: servers may hide recipes, conditions, inventories, loot rules, or machine 
 and opaque entries remain marked partial or unresolved. The model does not recalculate material
 totals. Those totals come from the bounded local planner.
 
+Beneath the live sources the catalog also merges an L2 static mod archive layer: every catalog
+refresh scans the instance's `mods/` directory with pure file IO (no mod or game APIs) and reads
+the declarative data the mods ship — recipe JSONs, item/fluid tags, and language files. Recipes
+whose types the live game APIs cannot surface (custom machines, processing stations, conditional
+or network-hidden serializers) are added as gap-fill processes with their crafting station,
+duration, chance outputs, and conditions; tag ingredients resolve through the live registry tag
+view first and static JAR tags second. Entries that cannot be resolved fully (for example an
+ingredient tag that no installed mod provides) are kept display-only and marked unresolved instead
+of being guessed. Live registry, recipe, and viewer data always wins over the static layer, and a
+malformed archive can never fail the catalog.
+
 Reviewed optional viewer versions:
 
 | Minecraft | Loader | JEI | EMI |
 | --- | --- | --- | --- |
 | 1.21.11 | Fabric | 27.17.0.50; public API catalog adapter | No reviewed matching artifact; unavailable |
+| 1.20.1 | Fabric | 15.20.0.112; public API catalog adapter | No reviewed matching artifact; unavailable |
 | 1.18.2 | Fabric | 10.2.1.1010; complete item and fluid recipes plannable, unsupported custom ingredients display-only | 0.7.3+1.18.2 detected for hover context; recipe enumeration fails closed |
 | 1.18.2 | Forge | 10.2.1.1010; complete item and fluid recipes plannable, unsupported custom ingredients display-only | Unavailable; the Forge artifact does not integrate EMI |
 
@@ -92,18 +121,22 @@ Minecraft instance.
 
 ## Source Layout
 
-- `core`: platform-neutral resource catalog, process graph, planner, contracts, and fixtures.
+- `core`: platform-neutral resource catalog, process graph, planner, contracts, fixtures, and the
+  static mod archive unpacker (bounded JAR scanning for recipes, tags, and language data).
 - `runtime-supervisor-core`: verified private extraction, lifecycle, upgrade, and cleanup.
 - `fabric-common`: loader-neutral connector, configuration, tool bridge, shared presentation, and
   the game-free build preview engine (ordered shapes, transforms, diffing, hashes).
-- `fabric-mc12111` and `fabric-mc1182`: version-specific Fabric lifecycle, catalog adapters, and UI;
-  1.21.11 additionally carries the build preview executor, HUD projection overlay, and the
+- `fabric-mc12111`, `fabric-mc1201`, and `fabric-mc1182`: version-specific Fabric lifecycle,
+  catalog adapters, UI, the build preview executor, the HUD projection overlay, and the
   reflection-only Litematica hologram bridge.
-- `forge-mc1182`: Minecraft 1.18.2 Forge lifecycle, catalog adapter, JEI bridge, and UI.
+- `ui-common`: loader-agnostic Minecraft 1.18.2 catalog service, screens, build preview executor,
+  HUD projection overlay, and hologram bridge, compiled into both 1.18.2 JARs.
+- `forge-mc1182`: Minecraft 1.18.2 Forge lifecycle, catalog adapter, JEI bridge, UI, the build
+  preview executor, and the HUD projection overlay.
 - `contracts`: closed JSON Schemas shared with the local Runtime.
 - `managed-runtime`: pinned cross-platform Runtime manifests and offline packaging fixtures.
 
-Build and verify all six release JARs, the SBOM, and the checksum manifest twice with:
+Build and verify all eight release JARs, the SBOM, and the checksum manifest twice with:
 
 ```bash
 ./scripts/standalone-release-check.sh ./build/standalone-release

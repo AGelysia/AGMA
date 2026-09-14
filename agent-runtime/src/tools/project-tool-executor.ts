@@ -3,6 +3,7 @@ import type {
   ProjectRepository,
   StoredProject,
 } from "../storage/project-repository.js";
+import type { StandaloneKnowledgeIndex } from "../standalone/knowledge/knowledge-index.js";
 import type {
   LocalToolCall,
   LocalToolDescriptor,
@@ -80,7 +81,10 @@ function failure(descriptor: LocalToolDescriptor): ToolExecutionResult {
     trust: descriptor.trust,
     result: null,
     error: {
-      code: "PROJECT_STORAGE_FAILED",
+      code:
+        descriptor.id === "local.knowledge.search"
+          ? "KNOWLEDGE_SEARCH_FAILED"
+          : "PROJECT_STORAGE_FAILED",
       message: "The Runtime could not complete the bounded local tool operation.",
       retryable: false,
     },
@@ -88,15 +92,19 @@ function failure(descriptor: LocalToolDescriptor): ToolExecutionResult {
 }
 
 /**
- * Executes only the client-side project storage Tools in-Runtime. Unlike the Paper-line local
- * executor it has no server knowledge search, so the standalone bundle stays free of server
- * capabilities (the standalone build graph forbids them).
+ * Executes only the client-side project storage Tools in-Runtime, plus the client-local knowledge
+ * search when a knowledge index is configured. Unlike the Paper-line local executor it has no
+ * server documentation or Paper capabilities, so the standalone bundle stays free of server
+ * capabilities (the standalone build graph forbids them; the knowledge index here is the
+ * standalone-local one, not the server-line knowledge module).
  */
 export class ProjectToolExecutor implements LocalToolExecution {
   readonly #projects: ProjectRepository;
+  readonly #knowledge: StandaloneKnowledgeIndex | undefined;
 
-  public constructor(projects: ProjectRepository) {
+  public constructor(projects: ProjectRepository, knowledge?: StandaloneKnowledgeIndex) {
     this.#projects = projects;
+    this.#knowledge = knowledge;
   }
 
   public execute(call: LocalToolCall): Promise<ToolExecutionResult> {
@@ -125,6 +133,17 @@ export class ProjectToolExecutor implements LocalToolExecution {
   #executeBounded(call: LocalToolCall): ToolExecutionResult {
     const owner = { serverId: call.serverId, playerUuid: call.playerUuid };
     switch (call.descriptor.id) {
+      case "local.knowledge.search": {
+        if (this.#knowledge === undefined) {
+          throw new TypeError("The Runtime local Tool is not registered.");
+        }
+        const result = this.#knowledge.search(stringArgument(call.arguments, "query"));
+        return success(call.descriptor, {
+          query: result.query,
+          matches: result.matches.map((match) => ({ ...match })),
+          truncated: result.truncated,
+        });
+      }
       case "project.list": {
         const result = this.#projects.listOwned(owner);
         return success(call.descriptor, {
