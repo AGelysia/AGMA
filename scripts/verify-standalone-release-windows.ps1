@@ -91,7 +91,7 @@ $JarComponents = @(
 )
 if (
     $ReleaseCountProperty.Count -ne 1 -or
-    [string]$ReleaseCountProperty[0].value -ne "6" -or
+    [string]$ReleaseCountProperty[0].value -ne "8" -or
     $JarComponents.Count -ne 8
 ) {
     throw "Standalone CycloneDX SBOM does not describe exactly eight release JAR components."
