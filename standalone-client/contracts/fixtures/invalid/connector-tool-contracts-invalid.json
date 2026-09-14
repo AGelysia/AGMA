@@ -148,6 +148,46 @@
     "previewStatus": "server_validated",
     "worldWriteEnabled": false
   },
+  "previewResultAnalysisExtraField": {
+    "previewId": "ffffffff-ffff-4fff-8fff-ffffffffffff",
+    "projectId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    "revision": 2,
+    "dimension": "minecraft:overworld",
+    "bounds": {
+      "min": {
+        "x": 8,
+        "y": -60,
+        "z": 8
+      },
+      "max": {
+        "x": 12,
+        "y": -55,
+        "z": 12
+      }
+    },
+    "baseRegionHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "changeSetHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "targetBlockCount": 105,
+    "changeCount": 105,
+    "difference": {
+      "added": 105,
+      "replaced": 0,
+      "removed": 4
+    },
+    "previewStatus": "client_validated",
+    "worldWriteEnabled": false,
+    "analysis": {
+      "floatingCells": 0,
+      "interiorAirCells": 6,
+      "topView": [
+        "#####"
+      ],
+      "topViewLegend": {
+        "#": "minecraft:stone_bricks"
+      },
+      "note": "looks load-bearing"
+    }
+  },
   "playerContextMissingPosition": {
     "dimension": "minecraft:overworld",
     "yaw": 0.0,

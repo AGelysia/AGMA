@@ -33,8 +33,16 @@ import {
 } from "./provider-http.js";
 
 const DEEPSEEK_API_ROOT = "https://api.deepseek.com";
+const KIMI_API_ROOT = "https://api.moonshot.cn";
+const GLM_API_ROOT = "https://open.bigmodel.cn/api/paas/v4";
 const MAXIMUM_CONTINUATION_ITEMS = 64;
-type ChatProviderId = Extract<ModelProviderId, "deepseek" | "openai-compatible">;
+type ChatProviderId = Extract<ModelProviderId, "deepseek" | "kimi" | "glm" | "openai-compatible">;
+
+const PROVIDER_API_ROOTS: Readonly<Record<Exclude<ChatProviderId, "openai-compatible">, string>> = {
+  deepseek: DEEPSEEK_API_ROOT,
+  kimi: KIMI_API_ROOT,
+  glm: GLM_API_ROOT,
+};
 
 export interface OpenAiChatCompletionsProviderOptions extends ProviderHttpResilienceOptions {
   readonly provider: ChatProviderId;
@@ -197,11 +205,11 @@ export class OpenAiChatCompletionsProvider implements ModelProvider {
     this.#provider = options.provider;
     this.#baseUrl =
       options.baseUrl ??
-      (options.provider === "deepseek"
-        ? DEEPSEEK_API_ROOT
-        : (() => {
+      (options.provider === "openai-compatible"
+        ? (() => {
             throw new TypeError("The openai-compatible provider requires a base URL.");
-          })());
+          })()
+        : PROVIDER_API_ROOTS[options.provider]);
     this.#fetch = options.fetch ?? globalThis.fetch;
     this.#resilience = providerHttpResilience(options);
   }

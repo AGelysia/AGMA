@@ -3,7 +3,7 @@
 AGMA client support is deliberately narrow. The server always provides a private text fallback, so
 the 0.1.0 Fabric companion and projection mods are optional.
 
-## Standalone Client 0.6.1
+## Standalone Client 0.6.2
 
 The standalone product is independent of the 0.1.0 Paper/server companion. Install exactly one JAR
 matching the Minecraft, loader, and operating-system column:

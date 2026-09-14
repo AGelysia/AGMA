@@ -3,6 +3,7 @@ package dev.minecraftagent.standalone.common;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -196,20 +197,24 @@ final class ClientToolPayloads {
         }
       }
       case "build.preview.create" -> {
-        exact(
-            result,
-            "previewId",
-            "projectId",
-            "revision",
-            "dimension",
-            "bounds",
-            "baseRegionHash",
-            "changeSetHash",
-            "targetBlockCount",
-            "changeCount",
-            "difference",
-            "previewStatus",
-            "worldWriteEnabled");
+        var fields = new HashSet<>(result.keySet());
+        var hasAnalysis = fields.remove("analysis");
+        if (!fields.equals(
+            Set.of(
+                "previewId",
+                "projectId",
+                "revision",
+                "dimension",
+                "bounds",
+                "baseRegionHash",
+                "changeSetHash",
+                "targetBlockCount",
+                "changeCount",
+                "difference",
+                "previewStatus",
+                "worldWriteEnabled"))) {
+          throw invalid();
+        }
         uuid(result.get("previewId"));
         uuid(result.get("projectId"));
         integer(result.get("revision"), 1, Integer.MAX_VALUE);
@@ -227,6 +232,9 @@ final class ClientToolPayloads {
         oneOf(result.get("previewStatus"), "client_validated");
         if (!Boolean.FALSE.equals(result.get("worldWriteEnabled"))) {
           throw invalid();
+        }
+        if (hasAnalysis) {
+          previewAnalysis(result.get("analysis"));
         }
       }
       default -> throw invalid();
@@ -444,6 +452,28 @@ final class ClientToolPayloads {
     var max = position(bounds.get("max"));
     if (min[0] > max[0] || min[1] > max[1] || min[2] > max[2]) {
       throw invalid();
+    }
+  }
+
+  private static void previewAnalysis(Object value) {
+    var analysis = object(value);
+    exact(analysis, "floatingCells", "interiorAirCells", "topView", "topViewLegend");
+    integer(analysis.get("floatingCells"), 0, 16_384);
+    integer(analysis.get("interiorAirCells"), 0, 16_384);
+    for (var row : array(analysis.get("topView"), 0, 48)) {
+      if (!string(row, 96).matches("[.#+%oA-Za-z0-9?]+")) {
+        throw invalid();
+      }
+    }
+    var legend = object(analysis.get("topViewLegend"));
+    if (legend.size() > 32) {
+      throw invalid();
+    }
+    for (var entry : legend.entrySet()) {
+      if (!entry.getKey().matches("[#+%oA-Za-z0-9]")) {
+        throw invalid();
+      }
+      namespacedId(entry.getValue());
     }
   }
 

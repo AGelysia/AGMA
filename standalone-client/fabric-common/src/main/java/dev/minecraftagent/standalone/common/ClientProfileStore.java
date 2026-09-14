@@ -125,10 +125,10 @@ public final class ClientProfileStore {
               current.model(),
               current.storage(),
               current.logging(),
-              current.knowledge(),
+              migrateKnowledge(current.knowledge()),
               current.limits(),
               current.privacy(),
-              current.toolPolicy(),
+              migrateToolPolicy(current.toolPolicy()),
               current.networkPolicy(),
               current.webEvidence(),
               current.storagePolicy());
@@ -159,6 +159,41 @@ public final class ClientProfileStore {
     } catch (IOException | RuntimeException failure) {
       throw failure("CONFIG_DELETE_FAILED", "Private client data could not be deleted", failure);
     }
+  }
+
+  /**
+   * Upgrades profiles written by older versions: tools introduced after the profile was created are
+   * unioned in (existing order first, then the new canonical entries), while the denied capability
+   * list is preserved exactly. Without this, upgrading silently leaves new features unusable
+   * because the model never sees their Tools.
+   */
+  private static RuntimeClientProfile.ToolPolicy migrateToolPolicy(
+      RuntimeClientProfile.ToolPolicy current) {
+    if (current.allowed().containsAll(ALLOWED_TOOLS)) {
+      return current;
+    }
+    var merged = new java.util.ArrayList<>(current.allowed());
+    for (var tool : ALLOWED_TOOLS) {
+      if (!merged.contains(tool)) {
+        merged.add(tool);
+      }
+    }
+    return new RuntimeClientProfile.ToolPolicy(
+        java.util.List.copyOf(merged), current.denied(), current.inventoryDefaultEnabled());
+  }
+
+  /**
+   * Profiles written before the knowledge feature existed have no roots; default them to the local
+   * mod-documentation root so local.knowledge.search works after the upgrade.
+   */
+  private static RuntimeClientProfile.Knowledge migrateKnowledge(
+      RuntimeClientProfile.Knowledge current) {
+    if (!current.roots().isEmpty()) {
+      return current;
+    }
+    return new RuntimeClientProfile.Knowledge(
+        java.util.List.of(
+            new RuntimeClientProfile.Knowledge.KnowledgeRoot(KNOWLEDGE_ROOT, "local_docs")));
   }
 
   private void prepareRoots() throws IOException {
@@ -287,7 +322,7 @@ public final class ClientProfileStore {
             setup.baseUrl(),
             new RuntimeClientProfile.SecretReference("private_file", MODEL_SECRET),
             setup.model(),
-            60,
+            120,
             setup.inputMicroUsdPerMillionTokens(),
             setup.outputMicroUsdPerMillionTokens()),
         new RuntimeClientProfile.Storage("data/client.sqlite"),

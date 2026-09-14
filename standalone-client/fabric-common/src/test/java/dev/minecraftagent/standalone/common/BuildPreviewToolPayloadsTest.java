@@ -118,6 +118,48 @@ class BuildPreviewToolPayloadsTest {
   }
 
   @Test
+  void acceptsAResultWithAnalysis() {
+    var result = validResult();
+    result.put("analysis", validAnalysis());
+    assertDoesNotThrow(() -> ClientToolPayloads.validateResult("build.preview.create", result));
+    assertDoesNotThrow(() -> new ClientToolResult(result));
+  }
+
+  @Test
+  void rejectsMalformedAnalysis() {
+    assertResultRejects(withAnalysis(mutateAnalysis("floatingCells", -1)));
+    assertResultRejects(withAnalysis(mutateAnalysis("interiorAirCells", 16_385)));
+    assertResultRejects(withAnalysis(mutateAnalysis("topView", List.of("#".repeat(97)))));
+    assertResultRejects(withAnalysis(mutateAnalysis("topView", List.of(""))));
+    assertResultRejects(withAnalysis(mutateAnalysis("topView", List.of("bad char~"))));
+    var tooManyRows = new ArrayList<String>();
+    for (var index = 0; index < 49; index++) {
+      tooManyRows.add("#");
+    }
+    assertResultRejects(withAnalysis(mutateAnalysis("topView", tooManyRows)));
+    var oversizedLegend = new LinkedHashMap<String, Object>();
+    for (var index = 0; index < 33; index++) {
+      oversizedLegend.put(String.valueOf((char) ('a' + (index % 26))) + index, "minecraft:stone");
+    }
+    assertResultRejects(withAnalysis(mutateAnalysis("topViewLegend", oversizedLegend)));
+    assertResultRejects(
+        withAnalysis(mutateAnalysis("topViewLegend", Map.of("##", "minecraft:stone"))));
+    assertResultRejects(withAnalysis(mutateAnalysis("topViewLegend", Map.of("#", "stone"))));
+
+    var missing = validAnalysis();
+    missing.remove("topView");
+    assertResultRejects(withAnalysis(missing));
+
+    var extra = validAnalysis();
+    extra.put("note", "looks load-bearing");
+    assertResultRejects(withAnalysis(extra));
+
+    var notAnObject = validResult();
+    notAnObject.put("analysis", List.of());
+    assertResultRejects(notAnObject);
+  }
+
+  @Test
   void rejectsMalformedResults() {
     assertResultRejects(mutateResult("worldWriteEnabled", true));
     assertResultRejects(mutateResult("previewStatus", "server_validated"));
@@ -154,6 +196,36 @@ class BuildPreviewToolPayloadsTest {
     var result = preview.toResultMap();
     assertDoesNotThrow(() -> ClientToolPayloads.validateResult("build.preview.create", result));
     assertDoesNotThrow(() -> new ClientToolResult(result));
+    // The engine always attaches the structural analysis, and it must pass wire validation too.
+    // The single-layer build sits at the region bottom, so the supporting cell is unobserved.
+    @SuppressWarnings("unchecked")
+    var analysis = (Map<String, Object>) result.get("analysis");
+    assertEquals(0, analysis.get("floatingCells"));
+    assertEquals(0, analysis.get("interiorAirCells"));
+    assertEquals(List.of("##", "##"), analysis.get("topView"));
+    assertEquals(Map.of("#", STONE), analysis.get("topViewLegend"));
+  }
+
+  private static Map<String, Object> withAnalysis(Map<String, Object> analysis) {
+    var result = validResult();
+    result.put("analysis", analysis);
+    return result;
+  }
+
+  private static Map<String, Object> mutateAnalysis(String field, Object value) {
+    var analysis = validAnalysis();
+    analysis.put(field, value);
+    return analysis;
+  }
+
+  private static Map<String, Object> validAnalysis() {
+    var analysis = new LinkedHashMap<String, Object>();
+    analysis.put("floatingCells", 2);
+    analysis.put("interiorAirCells", 6);
+    analysis.put("topView", List.of("##+", "##+"));
+    analysis.put(
+        "topViewLegend", Map.of("#", "minecraft:stone_bricks", "+", "minecraft:oak_planks"));
+    return analysis;
   }
 
   private static void assertRejects(Map<String, Object> arguments) {

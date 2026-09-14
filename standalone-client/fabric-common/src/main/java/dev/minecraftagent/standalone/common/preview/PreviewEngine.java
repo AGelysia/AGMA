@@ -237,6 +237,7 @@ public final class PreviewEngine {
         UUID.nameUUIDFromBytes(
             (request.projectId() + ":" + request.revision() + ":" + changeSetHash)
                 .getBytes(StandardCharsets.UTF_8));
+    var analysis = PreviewAnalysis.compute(targets, regionCells);
     return new StandalonePreview(
         previewId,
         request.projectId(),
@@ -253,7 +254,8 @@ public final class PreviewEngine {
         changes.size(),
         new PreviewDifference(added, replaced, removed),
         nonAirTargets,
-        List.copyOf(palette));
+        List.copyOf(palette),
+        analysis);
   }
 
   private static String regionContent(

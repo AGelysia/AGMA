@@ -9,7 +9,8 @@ import java.util.UUID;
 
 /**
  * The immutable client build preview artifact: every wire result field plus the transformed non-air
- * target cells and their sorted distinct-state palette for in-world presentation.
+ * target cells, their sorted distinct-state palette for in-world presentation, and the structural
+ * analysis feedback computed from the final region state.
  */
 public record StandalonePreview(
     UUID previewId,
@@ -27,7 +28,8 @@ public record StandalonePreview(
     int changeCount,
     PreviewDifference difference,
     List<PreviewCell> cells,
-    List<String> palette) {
+    List<String> palette,
+    PreviewAnalysis analysis) {
   public StandalonePreview {
     Objects.requireNonNull(previewId, "previewId");
     Objects.requireNonNull(projectId, "projectId");
@@ -39,6 +41,7 @@ public record StandalonePreview(
     Objects.requireNonNull(baseRegionHash, "baseRegionHash");
     Objects.requireNonNull(changeSetHash, "changeSetHash");
     Objects.requireNonNull(difference, "difference");
+    Objects.requireNonNull(analysis, "analysis");
     if (revision < 1
         || targetBlockCount < 0
         || targetBlockCount > PreviewEngine.MAXIMUM_UNION_VOLUME
@@ -49,6 +52,47 @@ public record StandalonePreview(
     }
     cells = List.copyOf(cells);
     palette = List.copyOf(palette);
+  }
+
+  /**
+   * Compatibility constructor for fixtures that assemble a preview artifact without a region
+   * snapshot; the analysis degrades to the zeroed {@link PreviewAnalysis#empty()}.
+   */
+  public StandalonePreview(
+      UUID previewId,
+      UUID projectId,
+      int revision,
+      PreviewOperation operation,
+      String dimension,
+      PreviewBounds bounds,
+      PreviewPosition origin,
+      int rotation,
+      PreviewMirror mirror,
+      String baseRegionHash,
+      String changeSetHash,
+      int targetBlockCount,
+      int changeCount,
+      PreviewDifference difference,
+      List<PreviewCell> cells,
+      List<String> palette) {
+    this(
+        previewId,
+        projectId,
+        revision,
+        operation,
+        dimension,
+        bounds,
+        origin,
+        rotation,
+        mirror,
+        baseRegionHash,
+        changeSetHash,
+        targetBlockCount,
+        changeCount,
+        difference,
+        cells,
+        palette,
+        PreviewAnalysis.empty());
   }
 
   /** Produces exactly the build.preview.create result map defined by the tool contract. */
@@ -70,6 +114,12 @@ public record StandalonePreview(
     result.put("difference", Collections.unmodifiableMap(differenceMap));
     result.put("previewStatus", "client_validated");
     result.put("worldWriteEnabled", false);
+    var analysisMap = new LinkedHashMap<String, Object>();
+    analysisMap.put("floatingCells", analysis.floatingCells());
+    analysisMap.put("interiorAirCells", analysis.interiorAirCells());
+    analysisMap.put("topView", analysis.topView());
+    analysisMap.put("topViewLegend", analysis.topViewLegend());
+    result.put("analysis", Collections.unmodifiableMap(analysisMap));
     return Collections.unmodifiableMap(result);
   }
 

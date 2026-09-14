@@ -52,7 +52,37 @@
       }
     },
     "previewStatus": { "const": "client_validated" },
-    "worldWriteEnabled": { "const": false }
+    "worldWriteEnabled": { "const": false },
+    "analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["floatingCells", "interiorAirCells", "topView", "topViewLegend"],
+      "properties": {
+        "floatingCells": { "type": "integer", "minimum": 0, "maximum": 16384 },
+        "interiorAirCells": { "type": "integer", "minimum": 0, "maximum": 16384 },
+        "topView": {
+          "type": "array",
+          "maxItems": 48,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 96,
+            "pattern": "^[.#+%oA-Za-z0-9?]+$"
+          }
+        },
+        "topViewLegend": {
+          "type": "object",
+          "maxProperties": 32,
+          "propertyNames": { "pattern": "^[#+%oA-Za-z0-9]$" },
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 256,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          }
+        }
+      }
+    }
   },
   "$defs": {
     "sha256": {

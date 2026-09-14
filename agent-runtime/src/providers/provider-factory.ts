@@ -21,6 +21,18 @@ export function createProductionModelProvider(model: RuntimeConfig["model"]): Mo
       });
     case "gemini":
       return new GeminiGenerateContentProvider({ ...endpoint, ...resilience });
+    case "kimi":
+      return new OpenAiChatCompletionsProvider({
+        provider: "kimi",
+        ...endpoint,
+        ...resilience,
+      });
+    case "glm":
+      return new OpenAiChatCompletionsProvider({
+        provider: "glm",
+        ...endpoint,
+        ...resilience,
+      });
     case "openai-compatible":
       if (model.baseUrl === undefined) {
         throw new TypeError("The openai-compatible provider requires a base URL.");

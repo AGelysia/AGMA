@@ -317,7 +317,8 @@ class PreviewEngineTest {
             "changeCount",
             "difference",
             "previewStatus",
-            "worldWriteEnabled"),
+            "worldWriteEnabled",
+            "analysis"),
         result.keySet());
     assertEquals(preview.previewId().toString(), result.get("previewId"));
     assertEquals(PROJECT_ID.toString(), result.get("projectId"));
@@ -330,6 +331,19 @@ class PreviewEngineTest {
     assertEquals(Map.of("added", 4, "replaced", 0, "removed", 0), result.get("difference"));
     assertEquals("client_validated", result.get("previewStatus"));
     assertEquals(false, result.get("worldWriteEnabled"));
+    // The four cells rest on the unobserved cell below the bounds, so nothing floats and the
+    // filled bounds hold no air at all.
+    assertEquals(
+        Map.of(
+            "floatingCells",
+            0,
+            "interiorAirCells",
+            0,
+            "topView",
+            List.of("##", "##"),
+            "topViewLegend",
+            Map.of("#", STONE)),
+        result.get("analysis"));
 
     @SuppressWarnings("unchecked")
     var bounds = (Map<String, Object>) result.get("bounds");

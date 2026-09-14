@@ -28,6 +28,8 @@ describe("production model provider factory", () => {
     ["anthropic", AnthropicMessagesProvider],
     ["deepseek", OpenAiChatCompletionsProvider],
     ["gemini", GeminiGenerateContentProvider],
+    ["kimi", OpenAiChatCompletionsProvider],
+    ["glm", OpenAiChatCompletionsProvider],
     ["openai-compatible", OpenAiChatCompletionsProvider],
   ] as const)("selects the %s production adapter", (provider, expectedType) => {
     const configured = model(

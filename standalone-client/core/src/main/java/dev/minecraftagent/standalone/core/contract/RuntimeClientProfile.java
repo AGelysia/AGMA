@@ -130,7 +130,7 @@ public record RuntimeClientProfile(
       long inputMicroUsdPerMillionTokens,
       long outputMicroUsdPerMillionTokens) {
     private static final Set<String> PROVIDERS =
-        Set.of("openai", "anthropic", "deepseek", "gemini", "openai-compatible");
+        Set.of("openai", "anthropic", "deepseek", "gemini", "kimi", "glm", "openai-compatible");
 
     public Model {
       if (!PROVIDERS.contains(provider)) {

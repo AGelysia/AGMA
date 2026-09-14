@@ -5,6 +5,8 @@ export const modelProviderIds = [
   "anthropic",
   "deepseek",
   "gemini",
+  "kimi",
+  "glm",
   "openai-compatible",
 ] as const;
 

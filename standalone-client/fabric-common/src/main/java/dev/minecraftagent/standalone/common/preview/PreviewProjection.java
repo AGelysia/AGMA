@@ -37,9 +37,6 @@ public final class PreviewProjection {
     var bounds = preview.bounds();
     var sizeX = bounds.sizeX();
     var sizeZ = bounds.sizeZ();
-    var topY = new int[sizeX * sizeZ];
-    Arrays.fill(topY, Integer.MIN_VALUE);
-    var topBlock = new String[sizeX * sizeZ];
     Map<String, Integer> counts = new HashMap<>();
     for (var cell : preview.cells()) {
       var cellX = cell.x() - bounds.min().x();
@@ -52,12 +49,8 @@ public final class PreviewProjection {
         continue;
       }
       counts.merge(blockId, 1, Integer::sum);
-      var index = cellZ * sizeX + cellX;
-      if (cell.y() > topY[index]) {
-        topY[index] = cell.y();
-        topBlock[index] = blockId;
-      }
     }
+    var topBlock = topBlockIds(bounds, preview.cells());
     var topColors = new int[sizeX * sizeZ];
     for (var index = 0; index < topBlock.length; index++) {
       if (topBlock[index] != null) {
@@ -77,12 +70,41 @@ public final class PreviewProjection {
         cell, sizeX, sizeZ, sizeX * cell, sizeZ * cell, topColors, List.copyOf(legend));
   }
 
+  /**
+   * The topmost non-air target block id per X/Z column in row-major (z, then x) order, or null for
+   * a column with no non-air target. Shared by the color projection and the ASCII top view.
+   */
+  static String[] topBlockIds(PreviewBounds bounds, List<PreviewCell> cells) {
+    var sizeX = bounds.sizeX();
+    var sizeZ = bounds.sizeZ();
+    var topY = new int[sizeX * sizeZ];
+    Arrays.fill(topY, Integer.MIN_VALUE);
+    var topBlock = new String[sizeX * sizeZ];
+    for (var cell : cells) {
+      var cellX = cell.x() - bounds.min().x();
+      var cellZ = cell.z() - bounds.min().z();
+      if (cellX < 0 || cellX >= sizeX || cellZ < 0 || cellZ >= sizeZ) {
+        continue;
+      }
+      var blockId = blockId(cell.state());
+      if (isAir(blockId)) {
+        continue;
+      }
+      var index = cellZ * sizeX + cellX;
+      if (cell.y() > topY[index]) {
+        topY[index] = cell.y();
+        topBlock[index] = blockId;
+      }
+    }
+    return topBlock;
+  }
+
   static String blockId(String state) {
     var bracket = state.indexOf('[');
     return bracket < 0 ? state : state.substring(0, bracket);
   }
 
-  private static boolean isAir(String blockId) {
+  static boolean isAir(String blockId) {
     return "minecraft:air".equals(blockId)
         || "minecraft:cave_air".equals(blockId)
         || "minecraft:void_air".equals(blockId);

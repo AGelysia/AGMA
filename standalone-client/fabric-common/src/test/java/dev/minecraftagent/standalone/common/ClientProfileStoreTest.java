@@ -67,6 +67,61 @@ final class ClientProfileStoreTest {
   }
 
   @Test
+  void migratesLegacyToolListAndMissingKnowledgeRootsOnStart() throws Exception {
+    var root = temporary.resolve("state").toAbsolutePath().normalize();
+    var store = new ClientProfileStore(root);
+    var configured = store.configure(setup("provider-secret-value-123456789"));
+    var legacy =
+        new RuntimeClientProfile(
+            configured.configVersion(),
+            configured.profile(),
+            configured.identity(),
+            configured.transport(),
+            configured.model(),
+            configured.storage(),
+            configured.logging(),
+            new RuntimeClientProfile.Knowledge(java.util.List.of()),
+            configured.limits(),
+            configured.privacy(),
+            new RuntimeClientProfile.ToolPolicy(
+                java.util.List.of(
+                    "game.resource.search",
+                    "game.process.lookup",
+                    "game.process.uses",
+                    "game.process.plan",
+                    "game.inventory.snapshot"),
+                configured.toolPolicy().denied(),
+                configured.toolPolicy().inventoryDefaultEnabled()),
+            configured.networkPolicy(),
+            configured.webEvidence(),
+            configured.storagePolicy());
+    Files.writeString(
+        store.profilePath(),
+        new ClientProfileCodec().encode(legacy) + "\n",
+        StandardCharsets.UTF_8);
+
+    var prepared = store.prepareStart();
+    assertEquals(13, prepared.toolPolicy().allowed().size());
+    assertEquals(
+        java.util.List.of(
+            "game.resource.search",
+            "game.process.lookup",
+            "game.process.uses",
+            "game.process.plan",
+            "game.inventory.snapshot"),
+        prepared.toolPolicy().allowed().subList(0, 5));
+    assertTrue(prepared.toolPolicy().allowed().contains("build.preview.create"));
+    assertTrue(prepared.toolPolicy().allowed().contains("game.block.inspect"));
+    assertTrue(prepared.toolPolicy().allowed().contains("local.knowledge.search"));
+    assertEquals(configured.toolPolicy().denied(), prepared.toolPolicy().denied());
+    assertEquals(
+        List.of(
+            new RuntimeClientProfile.Knowledge.KnowledgeRoot("knowledge/local-docs", "local_docs")),
+        prepared.knowledge().roots());
+    assertEquals(configured.model().timeoutSeconds(), prepared.model().timeoutSeconds());
+  }
+
+  @Test
   void preservesInstallationIdentityAcrossConfigurationChanges() {
     var store = new ClientProfileStore(temporary.resolve("state").toAbsolutePath().normalize());
     var first = store.configure(setup("provider-secret-value-123456789"));

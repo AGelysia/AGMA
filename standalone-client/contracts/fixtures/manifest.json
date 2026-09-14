@@ -264,6 +264,11 @@
           "expectedValid": true
         },
         {
+          "schema": "tools/build-preview-create-result.schema.json",
+          "documentPointer": "/buildPreviewCreateResultWithAnalysis",
+          "expectedValid": true
+        },
+        {
           "schema": "connector-envelope.schema.json",
           "documentPointer": "/previewToolCall",
           "expectedValid": true
@@ -358,6 +363,11 @@
         {
           "schema": "tools/build-preview-create-result.schema.json",
           "documentPointer": "/serverValidatedStatus",
+          "expectedValid": false
+        },
+        {
+          "schema": "tools/build-preview-create-result.schema.json",
+          "documentPointer": "/previewResultAnalysisExtraField",
           "expectedValid": false
         },
         {

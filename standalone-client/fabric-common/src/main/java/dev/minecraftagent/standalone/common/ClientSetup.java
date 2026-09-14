@@ -19,7 +19,7 @@ public record ClientSetup(
     boolean storeConversations,
     int retentionDays) {
   private static final Set<String> PROVIDERS =
-      Set.of("openai", "anthropic", "deepseek", "gemini", "openai-compatible");
+      Set.of("openai", "anthropic", "deepseek", "gemini", "kimi", "glm", "openai-compatible");
   private static final Pattern PLACEHOLDER =
       Pattern.compile("^(?:change-?me|replace-with-|your[-_])", Pattern.CASE_INSENSITIVE);
 

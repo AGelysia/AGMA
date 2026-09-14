@@ -24,7 +24,7 @@ import net.minecraft.util.FormattedCharSequence;
 /** First-run and maintenance configuration with secret values always visually masked. */
 public final class StandaloneSettingsScreen extends Screen {
   private static final List<String> PROVIDERS =
-      List.of("openai", "anthropic", "deepseek", "gemini", "openai-compatible");
+      List.of("openai", "anthropic", "deepseek", "gemini", "kimi", "glm", "openai-compatible");
   private static final int PANEL_MAXIMUM_WIDTH = 620;
   private static final int PANEL_BACKGROUND = 0xEB15191D;
   private static final int PANEL_BORDER = 0xFF38434A;

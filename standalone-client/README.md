@@ -1,4 +1,4 @@
-# AGMA Standalone Client 0.6.1
+# AGMA Standalone Client 0.6.2
 
 AGMA Standalone Client is a pure client mod for Fabric and Forge. It works in singleplayer and on
 ordinary multiplayer servers without an AGMA Paper plugin. The mod builds a bounded catalog from
@@ -10,19 +10,19 @@ source archives, integrated JARs, and release assets.
 
 ## Release Assets
 
-The `standalone-v0.6.1` release contains eight runnable JARs. Choose the JAR matching Minecraft,
+The `standalone-v0.6.2` release contains eight runnable JARs. Choose the JAR matching Minecraft,
 mod loader, and the operating system running the game:
 
 | Minecraft | Loader | Java | Linux x86_64 | Windows x86_64 |
 | --- | --- | --- | --- | --- |
-| 1.21.11 | Fabric | 21+ | `AGMA-Client-Standalone-0.6.1-mc1.21.11-fabric-linux-x86_64.jar` | `AGMA-Client-Standalone-0.6.1-mc1.21.11-fabric-windows-x86_64.jar` |
-| 1.20.1 | Fabric | 17+ | `AGMA-Client-Standalone-0.6.1-mc1.20.1-fabric-linux-x86_64.jar` | `AGMA-Client-Standalone-0.6.1-mc1.20.1-fabric-windows-x86_64.jar` |
-| 1.18.2 | Fabric | 17+ | `AGMA-Client-Standalone-0.6.1-mc1.18.2-fabric-linux-x86_64.jar` | `AGMA-Client-Standalone-0.6.1-mc1.18.2-fabric-windows-x86_64.jar` |
-| 1.18.2 | Forge | 17+ | `AGMA-Client-Standalone-0.6.1-mc1.18.2-forge-linux-x86_64.jar` | `AGMA-Client-Standalone-0.6.1-mc1.18.2-forge-windows-x86_64.jar` |
+| 1.21.11 | Fabric | 21+ | `AGMA-Client-Standalone-0.6.2-mc1.21.11-fabric-linux-x86_64.jar` | `AGMA-Client-Standalone-0.6.2-mc1.21.11-fabric-windows-x86_64.jar` |
+| 1.20.1 | Fabric | 17+ | `AGMA-Client-Standalone-0.6.2-mc1.20.1-fabric-linux-x86_64.jar` | `AGMA-Client-Standalone-0.6.2-mc1.20.1-fabric-windows-x86_64.jar` |
+| 1.18.2 | Fabric | 17+ | `AGMA-Client-Standalone-0.6.2-mc1.18.2-fabric-linux-x86_64.jar` | `AGMA-Client-Standalone-0.6.2-mc1.18.2-fabric-windows-x86_64.jar` |
+| 1.18.2 | Forge | 17+ | `AGMA-Client-Standalone-0.6.2-mc1.18.2-forge-linux-x86_64.jar` | `AGMA-Client-Standalone-0.6.2-mc1.18.2-forge-windows-x86_64.jar` |
 
 Every JAR contains the platform-specific Node.js 22.23.1 Runtime. A system Node installation is not
-required. The other two release assets are `AGMA-Client-Standalone-0.6.1-SBOM.cdx.json` and
-`AGMA-Client-Standalone-0.6.1-SHA256SUMS`; the checksum manifest covers all eight JARs and the
+required. The other two release assets are `AGMA-Client-Standalone-0.6.2-SBOM.cdx.json` and
+`AGMA-Client-Standalone-0.6.2-SHA256SUMS`; the checksum manifest covers all eight JARs and the
 SBOM.
 
 ## Install And Use
@@ -42,7 +42,10 @@ deterministic routes. This local view works when the Runtime or model provider i
 The Ask tab uses an exact selected target. Configure a model provider in Settings, start the local
 Runtime, and submit the question. Inventory access is off by default and is a single-use grant for
 only the route's bounded dependency set. Web search is also off by default and must be enabled for
-each request from the assistant screen.
+each request from the assistant screen. With web search off, factual questions still fall back to
+verified local data or an explicit Unknown, while casual chat is answered by the model directly —
+always prefixed with an "Unverified model answer" marker so it can never masquerade as checked
+local data.
 
 The Ask tab can also read the mods' own documentation and the live world. The L2 static mod
 archive layer extracts each installed mod's Patchouli guide book and advancement tree into bounded
@@ -60,7 +63,12 @@ The Ask tab also builds. Ask the agent to design a building and preview it (for 
 local project, and creates a client-local build preview from an ordered, multi-material shape list
 (later shapes override earlier cells; clear shapes carve doors and windows; up to 24 shapes and
 64³ / 16,384 cells per preview). Block ids are validated against the client registry, so modded
-blocks work exactly like vanilla ones. The preview renders immediately as a HUD top-view panel
+blocks work exactly like vanilla ones. Every preview result carries a bounded structural analysis
+— how many changed blocks float over air, how many air cells are sealed inside, and an ASCII top
+view with a block legend — and the agent may read that feedback, revise the stored project, and
+re-preview within the same request before it answers (the request's tool round limit still
+applies). Stronger models, and a higher `maxToolRounds` in the runtime profile, help with complex
+buildings. The preview renders immediately as a HUD top-view panel
 (`P` toggles); with Litematica installed, `O` additionally loads a full in-world hologram with a
 generated `.litematic` schematic. Reviewed hologram combinations: Litematica 0.26.12 with MaLiLib
 0.27.16 on Minecraft 1.21.11 Fabric, Litematica 0.15.4 with MaLiLib 0.16.3 on Minecraft 1.20.1
@@ -70,10 +78,13 @@ selected per Minecraft version and enforced by link-time signature verification 
 drift), so other loader or mod builds of the same family also work when signatures match. A
 preview never writes to the world — it is a visualization aid, not a world edit.
 
-Supported model providers are OpenAI, Anthropic, DeepSeek, Gemini, and reviewed
-OpenAI-compatible endpoints. Brave Search is the web search backend. Model and search calls can
-incur third-party charges; the UI shows the reported or estimated request cost and enforces the
-configured local request and monthly search budgets.
+Supported model providers are OpenAI, Anthropic, DeepSeek, Gemini, Kimi (Moonshot), GLM (Zhipu),
+and reviewed OpenAI-compatible endpoints. Brave Search is the web search backend. Model and search
+calls can incur third-party charges; the UI shows the reported or estimated request cost and
+enforces the configured local request and monthly search budgets. Configuration written by older
+versions is migrated automatically on start: newly added Tools are merged into the profile's allow
+list and the knowledge root is filled in, while your provider, secrets, budgets, and denied
+capabilities stay untouched.
 
 ## Data And Compatibility
 

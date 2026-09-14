@@ -57,6 +57,34 @@ describe("OpenAI-compatible Chat Completions provider", () => {
     });
   });
 
+  it.each([
+    ["kimi", "https://api.moonshot.cn/models"],
+    ["glm", "https://open.bigmodel.cn/api/paas/v4/models"],
+  ] as const)("defaults the %s endpoint root", async (providerId, expectedUrl) => {
+    const fetchImplementation = vi.fn().mockResolvedValue(
+      jsonResponse({
+        object: "list",
+        data: [{ id: "test-model", object: "model", owned_by: providerId }],
+      }),
+    );
+    const provider = new OpenAiChatCompletionsProvider({
+      provider: providerId as "kimi" | "glm",
+      fetch: fetchImplementation,
+    });
+
+    await expect(
+      provider.check({
+        provider: providerId as "kimi" | "glm",
+        model: "test-model",
+        apiKey: API_KEY,
+        signal: new AbortController().signal,
+      }),
+    ).resolves.toEqual({ ok: true });
+
+    const [url] = fetchImplementation.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(expectedUrl);
+  });
+
   it("uses a configured compatible base URL and returns bounded text with usage", async () => {
     const fetchImplementation = vi.fn().mockResolvedValue(
       jsonResponse({

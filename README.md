@@ -23,9 +23,9 @@ The integrated JAR supports glibc Linux x86_64 only. The separated package suppo
 on which Java 21, Paper 1.21.11, and Node.js 22.16-22.x are available.
 
 The `AGMA-Client-0.1.0` JAR remains a server companion. It is distinct from the eight
-`AGMA-Client-Standalone-0.6.1` JARs: Minecraft 1.18.2 is released for Fabric and Forge, while
+`AGMA-Client-Standalone-0.6.2` JARs: Minecraft 1.18.2 is released for Fabric and Forge, while
 Minecraft 1.20.1 and 1.21.11 are released for Fabric. Each target has a Linux x86_64 and Windows
-x86_64 JAR with a pinned local Runtime. The `standalone-v0.6.1` release also contains one CycloneDX
+x86_64 JAR with a pinned local Runtime. The `standalone-v0.6.2` release also contains one CycloneDX
 SBOM and one SHA-256 checksum manifest, for ten assets total. See
 [standalone-client/README.md](standalone-client/README.md) for standalone installation, privacy,
 cost, viewer, and data-completeness details.
