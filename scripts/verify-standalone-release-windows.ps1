@@ -50,8 +50,8 @@ foreach ($Line in Get-Content -LiteralPath (Join-Path $Release $ChecksumName)) {
     }
     $Checksums[$Matches[2]] = $Matches[1]
 }
-if ($Checksums.Count -ne 7) {
-    throw "Standalone checksum manifest does not cover exactly six JARs and one SBOM."
+if ($Checksums.Count -ne 9) {
+    throw "Standalone checksum manifest does not cover exactly eight JARs and one SBOM."
 }
 
 $Sbom = Get-Content -LiteralPath (Join-Path $Release $SbomName) -Raw | ConvertFrom-Json
@@ -92,9 +92,9 @@ $JarComponents = @(
 if (
     $ReleaseCountProperty.Count -ne 1 -or
     [string]$ReleaseCountProperty[0].value -ne "6" -or
-    $JarComponents.Count -ne 6
+    $JarComponents.Count -ne 8
 ) {
-    throw "Standalone CycloneDX SBOM does not describe exactly six release JAR components."
+    throw "Standalone CycloneDX SBOM does not describe exactly eight release JAR components."
 }
 foreach ($Target in $Targets) {
     foreach ($Platform in $Platforms) {
@@ -450,5 +450,5 @@ side = "CLIENT"
 }
 
 # The final native invocation is an expected negative probe. Do not leak its exit code to the caller.
-Write-Output "verify-standalone-release-windows version=$Version targets=3 assets=8 embedded_node=v$NodeVersion result=passed"
+Write-Output "verify-standalone-release-windows version=$Version targets=4 assets=10 embedded_node=v$NodeVersion result=passed"
 exit 0

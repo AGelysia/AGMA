@@ -94,5 +94,5 @@ AGMA_STANDALONE_BUILD_NODE="$NODE_COMMAND" \
   AGMA_STANDALONE_EXECUTE_RUNTIME=1 \
   "$ROOT/scripts/verify-standalone-release.sh" \
   "$OUTPUT" "$CLIENT_VERSION" "$RUNTIME_VERSION" "$NODE_VERSION"
-printf 'package-standalone-release version=%s assets=8 result=%s\n' \
+printf 'package-standalone-release version=%s assets=10 result=%s\n' \
   "$CLIENT_VERSION" "$OUTPUT"

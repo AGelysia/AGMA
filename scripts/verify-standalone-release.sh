@@ -98,4 +98,4 @@ if cmp -s "$WORK/1.21.11-fabric-linux-x86_64.runtime.zip" \
   fail "Linux and Windows releases unexpectedly embed the same sidecar"
 fi
 
-printf 'verify-standalone-release version=%s assets=8 result=passed\n' "$CLIENT_VERSION"
+printf 'verify-standalone-release version=%s assets=10 result=passed\n' "$CLIENT_VERSION"
