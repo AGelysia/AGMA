@@ -195,14 +195,31 @@ class LitematicaAdapterTest {
         LitematicaAdapterDiagnostic.Status.MISSING_DEPENDENCY,
         LitematicaAdapterDiagnostic.from(dependencyMissing).status());
 
-    var unsupportedCombinations =
+    // A different Minecraft version still fails closed with UNSUPPORTED_VERSION.
+    var unsupported =
+        LitematicaAdapterResolver.resolve(
+            "1.21.10",
+            "0.19.3",
+            versions(Map.of("litematica", "0.26.12", "malilib", "0.27.16")),
+            trapLoader,
+            root,
+            () -> true);
+    assertEquals(LitematicaCompatibility.Status.UNSUPPORTED_VERSION, unsupported.status());
+    assertEquals(
+        LitematicaAdapterDiagnostic.Status.UNSUPPORTED_VERSION,
+        LitematicaAdapterDiagnostic.from(unsupported).status());
+    assertEquals(0, attemptedLoads.get());
+
+    // Loader, Litematica, and MaLiLib version drift is no longer gated: every combination of this
+    // Minecraft version's mod family reaches the link attempt, where the signature verification is
+    // the real gate (the trap loader deliberately fails it here).
+    var driftCombinations =
         List.of(
-            new VersionCombination("1.21.10", "0.19.3", "0.26.12", "0.27.16"),
             new VersionCombination("1.21.11", "0.19.2", "0.26.12", "0.27.16"),
             new VersionCombination("1.21.11", "0.19.3", "0.26.11", "0.27.16"),
             new VersionCombination("1.21.11", "0.19.3", "0.26.12", "0.27.15"));
-    for (var combination : unsupportedCombinations) {
-      var unsupported =
+    for (var combination : driftCombinations) {
+      var drift =
           LitematicaAdapterResolver.resolve(
               combination.minecraftVersion(),
               combination.fabricLoaderVersion(),
@@ -215,12 +232,13 @@ class LitematicaAdapterTest {
               trapLoader,
               root,
               () -> true);
-      assertEquals(LitematicaCompatibility.Status.UNSUPPORTED_VERSION, unsupported.status());
+      assertEquals(LitematicaCompatibility.Status.ADAPTER_LINKAGE_FAILED, drift.status());
       assertEquals(
-          LitematicaAdapterDiagnostic.Status.UNSUPPORTED_VERSION,
-          LitematicaAdapterDiagnostic.from(unsupported).status());
+          LitematicaAdapterDiagnostic.Status.ADAPTER_LINKAGE_FAILED,
+          LitematicaAdapterDiagnostic.from(drift).status());
     }
-    assertEquals(0, attemptedLoads.get());
+    assertTrue(attemptedLoads.get() >= 3);
+    attemptedLoads.set(0);
 
     var exactMods = versions(Map.of("litematica", "0.26.12", "malilib", "0.27.16"));
     var linkageFailure =

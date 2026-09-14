@@ -3,7 +3,7 @@
 AGMA client support is deliberately narrow. The server always provides a private text fallback, so
 the 0.1.0 Fabric companion and projection mods are optional.
 
-## Standalone Client 0.6.0
+## Standalone Client 0.6.1
 
 The standalone product is independent of the 0.1.0 Paper/server companion. Install exactly one JAR
 matching the Minecraft, loader, and operating-system column:
@@ -48,8 +48,10 @@ blocks of the player in loaded chunks. Previews and projects are local-only arti
 written to the world or sent to a server. Reviewed Litematica versions for the in-world hologram:
 Litematica 0.26.12 with MaLiLib 0.27.16 on Minecraft 1.21.11 Fabric, Litematica 0.15.4 with
 MaLiLib 0.16.3 on Minecraft 1.20.1 Fabric, and Litematica 0.11.7 with MaLiLib 0.12.1 on Minecraft
-1.18.2 Fabric; the 1.18.2 Forge artifact has no reviewed hologram integration. Without them the HUD
-projection panel still works.
+1.18.2 Fabric; the 1.18.2 Forge artifact has no reviewed hologram integration. Compatibility is
+selected per Minecraft version and enforced by link-time signature verification, so other loader
+or mod builds of the same mod family also work whenever the verified signatures match; without a
+matching adapter the HUD projection panel still works.
 
 ## Server Companion 0.1.0
 

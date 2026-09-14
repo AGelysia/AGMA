@@ -5,7 +5,10 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Exact combinations whose public class and method signatures were verified against released JARs.
+ * Reviewed combinations whose public class and method signatures were verified against released
+ * JARs. Selection is by Minecraft version alone: loader, Litematica, and MaLiLib versions are
+ * recorded for diagnostics, while compatibility itself is enforced by the reflective adapter's
+ * link-time signature verification, which fails closed.
  */
 public final class LitematicaSupportMatrix {
   public static final String LITEMATICA_SOURCE =
@@ -25,18 +28,15 @@ public final class LitematicaSupportMatrix {
     return SUPPORTED;
   }
 
-  public static Optional<Entry> findExact(
-      String minecraftVersion,
-      String fabricLoaderVersion,
-      String litematicaVersion,
-      String malilibVersion) {
+  /**
+   * Selects the adapter family for one Minecraft version. The entry documents the reviewed
+   * Litematica/MaLiLib/loader combination for support reference only; loader and mod versions are
+   * deliberately not matched here because the reflective link-time signature verification is the
+   * real compatibility gate, and it fails closed on any signature drift.
+   */
+  public static Optional<Entry> findForMinecraft(String minecraftVersion) {
     return SUPPORTED.stream()
-        .filter(
-            entry ->
-                entry.minecraftVersion().equals(minecraftVersion)
-                    && entry.fabricLoaderVersion().equals(fabricLoaderVersion)
-                    && entry.litematicaVersion().equals(litematicaVersion)
-                    && entry.malilibVersion().equals(malilibVersion))
+        .filter(entry -> entry.minecraftVersion().equals(minecraftVersion))
         .findFirst();
   }
 

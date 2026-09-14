@@ -156,6 +156,10 @@ public final class StandaloneLitematicaController implements PreviewHologramBrid
       store.stage(preview);
       return true;
     } catch (IOException | RuntimeException | LinkageError exception) {
+      LOGGER.warn(
+          "AGMA standalone preview staging failed: {}: {}",
+          exception.getClass().getSimpleName(),
+          exception.getMessage());
       return false;
     }
   }

@@ -6,7 +6,11 @@ import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.regex.Pattern;
 
-/** Selects a single exact adapter before attempting to resolve any optional-mod class. */
+/**
+ * Selects the adapter family for the running Minecraft version and then lets the reflective
+ * link-time signature verification decide compatibility (fail closed). Loader and optional-mod
+ * versions are recorded for diagnostics, not gated.
+ */
 public final class LitematicaAdapterResolver {
   private static final Pattern DIAGNOSTIC_VERSION =
       Pattern.compile("[0-9A-Za-z][0-9A-Za-z._+-]{0,63}");
@@ -39,9 +43,10 @@ public final class LitematicaAdapterResolver {
       return unavailable(LitematicaCompatibility.Status.MISSING_DEPENDENCY, detected);
     }
 
-    var supported =
-        LitematicaSupportMatrix.findExact(
-            minecraftVersion, fabricLoaderVersion, litematica.orElseThrow(), malilib.orElseThrow());
+    // Loader, Litematica, and MaLiLib versions are not gated here: the link below verifies every
+    // bound signature and fails closed on any drift, so any build of this Minecraft version's mod
+    // family that still speaks the verified signatures works.
+    var supported = LitematicaSupportMatrix.findForMinecraft(minecraftVersion);
     if (supported.isEmpty()) {
       return unavailable(LitematicaCompatibility.Status.UNSUPPORTED_VERSION, detected);
     }

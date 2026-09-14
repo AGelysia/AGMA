@@ -364,10 +364,13 @@ final class ManagedPreviewStore {
   }
 
   private static void syncDirectory(Path directory) throws IOException {
+    // A durability nicety only: the publication verify steps after this call are the real
+    // integrity gate. Windows forbids opening a directory as a channel, and some filesystems
+    // cannot fsync one, so every failure here is tolerated instead of failing the stage.
     try (FileChannel channel = FileChannel.open(directory, StandardOpenOption.READ)) {
       channel.force(true);
-    } catch (UnsupportedOperationException exception) {
-      throw new IOException("managed root cannot be synchronized", exception);
+    } catch (IOException | UnsupportedOperationException | SecurityException exception) {
+      // Best effort by design (see above).
     }
   }
 

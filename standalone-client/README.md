@@ -1,4 +1,4 @@
-# AGMA Standalone Client 0.6.0
+# AGMA Standalone Client 0.6.1
 
 AGMA Standalone Client is a pure client mod for Fabric and Forge. It works in singleplayer and on
 ordinary multiplayer servers without an AGMA Paper plugin. The mod builds a bounded catalog from
@@ -10,19 +10,19 @@ source archives, integrated JARs, and release assets.
 
 ## Release Assets
 
-The `standalone-v0.6.0` release contains eight runnable JARs. Choose the JAR matching Minecraft,
+The `standalone-v0.6.1` release contains eight runnable JARs. Choose the JAR matching Minecraft,
 mod loader, and the operating system running the game:
 
 | Minecraft | Loader | Java | Linux x86_64 | Windows x86_64 |
 | --- | --- | --- | --- | --- |
-| 1.21.11 | Fabric | 21+ | `AGMA-Client-Standalone-0.6.0-mc1.21.11-fabric-linux-x86_64.jar` | `AGMA-Client-Standalone-0.6.0-mc1.21.11-fabric-windows-x86_64.jar` |
-| 1.20.1 | Fabric | 17+ | `AGMA-Client-Standalone-0.6.0-mc1.20.1-fabric-linux-x86_64.jar` | `AGMA-Client-Standalone-0.6.0-mc1.20.1-fabric-windows-x86_64.jar` |
-| 1.18.2 | Fabric | 17+ | `AGMA-Client-Standalone-0.6.0-mc1.18.2-fabric-linux-x86_64.jar` | `AGMA-Client-Standalone-0.6.0-mc1.18.2-fabric-windows-x86_64.jar` |
-| 1.18.2 | Forge | 17+ | `AGMA-Client-Standalone-0.6.0-mc1.18.2-forge-linux-x86_64.jar` | `AGMA-Client-Standalone-0.6.0-mc1.18.2-forge-windows-x86_64.jar` |
+| 1.21.11 | Fabric | 21+ | `AGMA-Client-Standalone-0.6.1-mc1.21.11-fabric-linux-x86_64.jar` | `AGMA-Client-Standalone-0.6.1-mc1.21.11-fabric-windows-x86_64.jar` |
+| 1.20.1 | Fabric | 17+ | `AGMA-Client-Standalone-0.6.1-mc1.20.1-fabric-linux-x86_64.jar` | `AGMA-Client-Standalone-0.6.1-mc1.20.1-fabric-windows-x86_64.jar` |
+| 1.18.2 | Fabric | 17+ | `AGMA-Client-Standalone-0.6.1-mc1.18.2-fabric-linux-x86_64.jar` | `AGMA-Client-Standalone-0.6.1-mc1.18.2-fabric-windows-x86_64.jar` |
+| 1.18.2 | Forge | 17+ | `AGMA-Client-Standalone-0.6.1-mc1.18.2-forge-linux-x86_64.jar` | `AGMA-Client-Standalone-0.6.1-mc1.18.2-forge-windows-x86_64.jar` |
 
 Every JAR contains the platform-specific Node.js 22.23.1 Runtime. A system Node installation is not
-required. The other two release assets are `AGMA-Client-Standalone-0.6.0-SBOM.cdx.json` and
-`AGMA-Client-Standalone-0.6.0-SHA256SUMS`; the checksum manifest covers all eight JARs and the
+required. The other two release assets are `AGMA-Client-Standalone-0.6.1-SBOM.cdx.json` and
+`AGMA-Client-Standalone-0.6.1-SHA256SUMS`; the checksum manifest covers all eight JARs and the
 SBOM.
 
 ## Install And Use
@@ -65,8 +65,10 @@ blocks work exactly like vanilla ones. The preview renders immediately as a HUD 
 generated `.litematic` schematic. Reviewed hologram combinations: Litematica 0.26.12 with MaLiLib
 0.27.16 on Minecraft 1.21.11 Fabric, Litematica 0.15.4 with MaLiLib 0.16.3 on Minecraft 1.20.1
 Fabric, and Litematica 0.11.7 with MaLiLib 0.12.1 on Minecraft 1.18.2 Fabric; the 1.18.2 Forge
-artifact has no reviewed hologram integration and keeps the HUD panel only. A preview never writes
-to the world — it is a visualization aid, not a world edit.
+artifact has no reviewed hologram integration and keeps the HUD panel only. Compatibility is
+selected per Minecraft version and enforced by link-time signature verification (fail closed on
+drift), so other loader or mod builds of the same family also work when signatures match. A
+preview never writes to the world — it is a visualization aid, not a world edit.
 
 Supported model providers are OpenAI, Anthropic, DeepSeek, Gemini, and reviewed
 OpenAI-compatible endpoints. Brave Search is the web search backend. Model and search calls can
