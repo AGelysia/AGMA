@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.minecraftagent.standalone.core.contract.RuntimeClientProfile;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class ClientProfileCodecTest {
@@ -54,5 +55,40 @@ class ClientProfileCodecTest {
     assertEquals(
         "SECRET_REFERENCE_UNSUPPORTED",
         assertThrows(ClientConfigurationException.class, () -> codec.encode(profile)).code());
+  }
+
+  @Test
+  void roundTripsKnowledgeRootsAndToleratesTheirAbsence() {
+    var base = TestProfiles.environment(38_127);
+    var profile =
+        new RuntimeClientProfile(
+            base.configVersion(),
+            base.profile(),
+            base.identity(),
+            base.transport(),
+            base.model(),
+            base.storage(),
+            base.logging(),
+            new RuntimeClientProfile.Knowledge(
+                List.of(
+                    new RuntimeClientProfile.Knowledge.KnowledgeRoot(
+                        "knowledge/local-docs", "local_docs"))),
+            base.limits(),
+            base.privacy(),
+            base.toolPolicy(),
+            base.networkPolicy(),
+            base.webEvidence(),
+            base.storagePolicy());
+    var encoded = codec.encode(profile);
+
+    assertEquals(profile, codec.decode(encoded));
+    assertTrue(encoded.contains("knowledge/local-docs"));
+
+    var legacy =
+        codec.decode(
+            encoded.replace(
+                "\"knowledge\":{\"roots\":[{\"directory\":\"knowledge/local-docs\",\"kind\":\"local_docs\"}]},",
+                ""));
+    assertEquals(List.of(), legacy.knowledge().roots());
   }
 }

@@ -11,6 +11,7 @@
         "game.process.plan",
         "game.inventory.snapshot",
         "game.player.context.read",
+        "game.block.inspect",
         "build.preview.create"
       ]
     },

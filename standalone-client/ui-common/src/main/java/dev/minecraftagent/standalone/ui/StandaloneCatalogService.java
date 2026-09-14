@@ -10,15 +10,27 @@ import dev.minecraftagent.standalone.core.catalog.ResourceKey;
 import dev.minecraftagent.standalone.core.catalog.ResourceSearchIndex;
 import dev.minecraftagent.standalone.core.contract.ProcessRecord;
 import dev.minecraftagent.standalone.core.contract.ResourceRef;
+import dev.minecraftagent.standalone.core.unpack.AdvancementTreeExtractor;
+import dev.minecraftagent.standalone.core.unpack.InstanceScriptExtractor;
+import dev.minecraftagent.standalone.core.unpack.KnowledgeDocWriter;
+import dev.minecraftagent.standalone.core.unpack.KnowledgeDocument;
+import dev.minecraftagent.standalone.core.unpack.ModArchiveScanner;
+import dev.minecraftagent.standalone.core.unpack.PatchouliBookExtractor;
+import dev.minecraftagent.standalone.core.unpack.UnpackCatalogMapper;
+import dev.minecraftagent.standalone.core.unpack.UnpackedModpack;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -43,7 +55,11 @@ import net.minecraft.world.phys.EntityHitResult;
 /** Owns the immutable client-visible catalog for one 1.18.2 connection generation. */
 public final class StandaloneCatalogService implements AutoCloseable, CatalogToolSource {
   private static final int MAXIMUM_ALTERNATIVES = 64;
+  private static final int MAXIMUM_LIVE_TAGS = 8192;
+  private static final int MAXIMUM_LIVE_TAG_VALUES = 4096;
   private static final String PROVIDER_ID = "vanilla_client";
+  private static final org.slf4j.Logger LOGGER =
+      org.slf4j.LoggerFactory.getLogger("agma-standalone-catalog");
 
   private final ModMetadataSource metadataSource;
   private final AtomicLong generationSequence = new AtomicLong();
@@ -57,9 +73,19 @@ public final class StandaloneCatalogService implements AutoCloseable, CatalogToo
           });
 
   private volatile ResourceSearchIndex searchIndex;
+  private volatile Path knowledgeDirectory;
 
   public StandaloneCatalogService(ModMetadataSource metadataSource) {
     this.metadataSource = Objects.requireNonNull(metadataSource, "metadataSource");
+  }
+
+  /**
+   * Points the knowledge document writer at a client-owned directory; {@code null} disables
+   * document extraction entirely. Extracted guide book and advancement documents are written after
+   * each successful archive scan on the catalog executor thread.
+   */
+  public void knowledgeDirectory(Path knowledgeDirectory) {
+    this.knowledgeDirectory = knowledgeDirectory;
   }
 
   public void refresh(Minecraft minecraft) {
@@ -68,10 +94,40 @@ public final class StandaloneCatalogService implements AutoCloseable, CatalogToo
         minecraft.getConnection() == null
             ? List.<Recipe<?>>of()
             : List.copyOf(minecraft.getConnection().getRecipeManager().getRecipes());
+    // Captured on the client thread; the archive scan itself runs on the catalog executor.
+    var gameDirectory = minecraft.gameDirectory == null ? null : minecraft.gameDirectory.toPath();
+    // The first refresh runs during the Minecraft constructor, before the language manager exists.
+    var languageManager = minecraft.getLanguageManager();
+    var selectedLanguage = languageManager == null ? null : languageManager.getSelected();
+    var gameLocale = selectedLanguage == null ? "en_us" : selectedLanguage.getCode();
+    // Snapshot the registry-bound live tags on the client thread so the catalog executor never
+    // touches the tag manager; menu-time refreshes stay static-only.
+    Map<String, List<String>> liveItemTags = Map.of();
+    Map<String, List<String>> liveFluidTags = Map.of();
+    if (minecraft.level != null) {
+      try {
+        var registryAccess = minecraft.level.registryAccess();
+        liveItemTags = snapshotLiveTags(registryAccess.registryOrThrow(Registry.ITEM_REGISTRY));
+        liveFluidTags = snapshotLiveTags(registryAccess.registryOrThrow(Registry.FLUID_REGISTRY));
+      } catch (RuntimeException failure) {
+        LOGGER.warn("AGMA standalone live tag snapshot failed; using static tags only", failure);
+      }
+    }
+    var itemTags = liveItemTags;
+    var fluidTags = liveFluidTags;
     var handle =
         publisher.rebuild(
             executor,
-            (cancellation, progress) -> build(generationId, recipes, cancellation, progress));
+            (cancellation, progress) ->
+                build(
+                    generationId,
+                    recipes,
+                    gameDirectory,
+                    gameLocale,
+                    itemTags,
+                    fluidTags,
+                    cancellation,
+                    progress));
     handle
         .future()
         .whenComplete(
@@ -233,6 +289,10 @@ public final class StandaloneCatalogService implements AutoCloseable, CatalogToo
   private CatalogSnapshot build(
       String generationId,
       List<Recipe<?>> recipes,
+      Path gameDirectory,
+      String gameLocale,
+      Map<String, List<String>> liveItemTags,
+      Map<String, List<String>> liveFluidTags,
       CatalogPublisher.Cancellation cancellation,
       CatalogPublisher.ProgressListener progress)
       throws InterruptedException {
@@ -295,14 +355,169 @@ public final class StandaloneCatalogService implements AutoCloseable, CatalogToo
                 PROVIDER_ID, generationId, List.of(), processes, List.of("VIEWER_CAPTURE_FAILED"));
       }
     }
+    var registryContribution =
+        new CatalogAdapter.Contribution(
+            "minecraft_registry", generationId, resources, List.of(), List.of());
+    var gapFill =
+        modArchiveGapFill(
+            generationId,
+            gameDirectory,
+            gameLocale,
+            liveItemTags,
+            liveFluidTags,
+            resources,
+            selected,
+            knownIds);
     return new CatalogAssembler()
         .assemble(
             generationId,
             packFingerprint(),
             Instant.now(),
-            new CatalogAdapter.Contribution(
-                "minecraft_registry", generationId, resources, List.of(), List.of()),
-            selected);
+            registryContribution,
+            selected,
+            gapFill);
+  }
+
+  /**
+   * Copies the registry-bound live tags into an immutable id-to-members snapshot, bounded to
+   * {@value #MAXIMUM_LIVE_TAGS} tags and {@value #MAXIMUM_LIVE_TAG_VALUES} member ids per tag, so
+   * the catalog executor never touches game state off-thread.
+   */
+  private static <T> Map<String, List<String>> snapshotLiveTags(Registry<T> registry) {
+    var tags = new LinkedHashMap<String, List<String>>();
+    registry
+        .getTags()
+        .forEach(
+            pair -> {
+              if (tags.size() >= MAXIMUM_LIVE_TAGS) {
+                return;
+              }
+              var values = new ArrayList<String>();
+              pair.getSecond().stream()
+                  .limit(MAXIMUM_LIVE_TAG_VALUES)
+                  .forEach(
+                      holder ->
+                          holder
+                              .unwrapKey()
+                              .ifPresent(key -> values.add(key.location().toString())));
+              tags.put(pair.getFirst().location().toString(), List.copyOf(values));
+            });
+    return java.util.Collections.unmodifiableMap(tags);
+  }
+
+  /**
+   * Scans the mods directory for static mod archive data (the L2 unpacker) plus the instance script
+   * directories, and maps them into a gap-fill contribution. Script recipes join with the {@code
+   * pack_scripts} provider and script removals suppress archive-derived candidates, never the live
+   * base processes. Live tags win over static JAR tags during tag expansion; the static tags remain
+   * the fallback when a live tag is absent. The base catalog must never fail because of a malformed
+   * mod archive or script, so every failure degrades to an empty contribution.
+   */
+  private CatalogAdapter.Contribution modArchiveGapFill(
+      String generationId,
+      Path gameDirectory,
+      String gameLocale,
+      Map<String, List<String>> liveItemTags,
+      Map<String, List<String>> liveFluidTags,
+      List<ResourceRef> registryResources,
+      CatalogAdapter.Contribution selected,
+      Set<String> knownItemIds) {
+    var empty =
+        new CatalogAdapter.Contribution(
+            UnpackCatalogMapper.ADAPTER_ID, generationId, List.of(), List.of(), List.of());
+    if (gameDirectory == null) {
+      return empty;
+    }
+    try {
+      var modpack = new ModArchiveScanner().scan(gameDirectory.resolve("mods"));
+      var scripts = new InstanceScriptExtractor().extract(gameDirectory);
+      var baseResources = new java.util.LinkedHashMap<String, ResourceRef>();
+      registryResources.forEach(
+          resource -> baseResources.putIfAbsent(resource.kind() + ":" + resource.id(), resource));
+      selected
+          .resources()
+          .forEach(
+              resource ->
+                  baseResources.putIfAbsent(resource.kind() + ":" + resource.id(), resource));
+      UnpackCatalogMapper.BaseResourceLookup lookup =
+          (kind, id) -> Optional.ofNullable(baseResources.get(kind + ":" + id));
+      var baseProcessIds =
+          selected.processes().stream()
+              .map(ProcessRecord::processId)
+              .collect(java.util.stream.Collectors.toSet());
+      var processBudget =
+          Math.max(0, CatalogSnapshot.MAXIMUM_PROCESSES - selected.processes().size());
+      var resourceBudget =
+          Math.max(
+              0,
+              CatalogSnapshot.MAXIMUM_RESOURCES
+                  - registryResources.size()
+                  - selected.resources().size());
+      var result =
+          new UnpackCatalogMapper()
+              .map(
+                  modpack,
+                  lookup,
+                  knownItemIds::contains,
+                  baseProcessIds,
+                  gameLocale,
+                  generationId,
+                  processBudget,
+                  resourceBudget,
+                  liveItemTags::get,
+                  liveFluidTags::get,
+                  scripts);
+      LOGGER.info(
+          "AGMA standalone mod archive scan: mods={} recipes={} added={} skipped={} scripts={} scriptSkipped={} suppressed={}",
+          modpack.mods().size(),
+          modpack.report().totalRecipes(),
+          result.report().processesAdded(),
+          result.report().skippedTotal(),
+          result.report().scriptRecipesSeen(),
+          scripts.stats().skippedUnparsed(),
+          result.report().suppressedByRemovals());
+      if (result.report().removeAllRemovals() > 0) {
+        LOGGER.warn(
+            "AGMA standalone pack scripts removeAll suppressed {} archive recipes",
+            result.report().suppressedByRemovals());
+      }
+      writeKnowledgeDocuments(modpack, gameLocale);
+      return result.contribution();
+    } catch (RuntimeException | Error failure) {
+      LOGGER.warn("AGMA standalone mod archive scan failed; continuing without it", failure);
+      return empty;
+    }
+  }
+
+  /**
+   * Extracts the scanned guide books and advancements into bounded markdown knowledge documents and
+   * publishes them into the configured knowledge directory. Writer failures only log; the catalog
+   * build must never fail because a document could not be written.
+   */
+  private void writeKnowledgeDocuments(UnpackedModpack modpack, String gameLocale) {
+    var directory = knowledgeDirectory;
+    if (directory == null) {
+      return;
+    }
+    try {
+      var books = new PatchouliBookExtractor().extract(modpack, gameLocale);
+      var advancements = new AdvancementTreeExtractor().extract(modpack);
+      var documents =
+          new ArrayList<KnowledgeDocument>(
+              books.documents().size() + advancements.documents().size());
+      documents.addAll(books.documents());
+      documents.addAll(advancements.documents());
+      var report = new KnowledgeDocWriter().write(directory, documents);
+      if (report.changed()) {
+        LOGGER.info(
+            "AGMA standalone knowledge documents: wrote={} deletedStale={}",
+            report.written(),
+            report.deletedStale());
+      }
+    } catch (IOException | RuntimeException failure) {
+      LOGGER.warn(
+          "AGMA standalone knowledge document write failed; continuing without it", failure);
+    }
   }
 
   private Optional<ProcessRecord> toProcess(

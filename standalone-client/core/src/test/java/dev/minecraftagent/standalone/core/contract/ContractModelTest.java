@@ -207,6 +207,28 @@ final class ContractModelTest {
   }
 
   @Test
+  void clientProfileKnowledgeRootsAreContainedUniqueAndTyped() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new RuntimeClientProfile.Knowledge.KnowledgeRoot("/etc/docs", "local_docs"));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new RuntimeClientProfile.Knowledge.KnowledgeRoot("knowledge/../docs", "local_docs"));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new RuntimeClientProfile.Knowledge.KnowledgeRoot("knowledge/local-docs", "mod_docs"));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            new RuntimeClientProfile.Knowledge(
+                List.of(
+                    new RuntimeClientProfile.Knowledge.KnowledgeRoot(
+                        "knowledge/local-docs", "local_docs"),
+                    new RuntimeClientProfile.Knowledge.KnowledgeRoot(
+                        "knowledge/local-docs", "server_rules"))));
+  }
+
+  @Test
   void c1JavaDocumentsMatchTheirJsonSchemas() throws IOException {
     var connector =
         new ConnectorHello(
@@ -228,6 +250,27 @@ final class ContractModelTest {
 
     assertSchema("connector-hello.schema.json", connector);
     assertSchema("runtime-client-profile.schema.json", profile("127.0.0.1", false));
+    var base = profile("127.0.0.1", false);
+    assertSchema(
+        "runtime-client-profile.schema.json",
+        new RuntimeClientProfile(
+            base.configVersion(),
+            base.profile(),
+            base.identity(),
+            base.transport(),
+            base.model(),
+            base.storage(),
+            base.logging(),
+            new RuntimeClientProfile.Knowledge(
+                List.of(
+                    new RuntimeClientProfile.Knowledge.KnowledgeRoot(
+                        "knowledge/local-docs", "local_docs"))),
+            base.limits(),
+            base.privacy(),
+            base.toolPolicy(),
+            base.networkPolicy(),
+            base.webEvidence(),
+            base.storagePolicy()));
   }
 
   private static RuntimeClientProfile profile(String host, boolean webSearchEnabled) {

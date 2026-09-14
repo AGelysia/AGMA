@@ -105,6 +105,26 @@
         "sqlitePath": { "$ref": "#/$defs/privateRelativePath" }
       }
     },
+    "knowledge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["roots"],
+      "properties": {
+        "roots": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["directory", "kind"],
+            "properties": {
+              "directory": { "$ref": "#/$defs/privateRelativePath" },
+              "kind": { "enum": ["server_rules", "local_docs"] }
+            }
+          }
+        }
+      }
+    },
     "logging": {
       "type": "object",
       "additionalProperties": false,
@@ -172,7 +192,7 @@
       "properties": {
         "allowed": {
           "type": "array",
-          "maxItems": 11,
+          "maxItems": 13,
           "uniqueItems": true,
           "items": {
             "enum": [
@@ -182,6 +202,8 @@
               "game.process.plan",
               "game.inventory.snapshot",
               "game.player.context.read",
+              "game.block.inspect",
+              "local.knowledge.search",
               "project.list",
               "project.read",
               "project.create",

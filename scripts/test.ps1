@@ -40,6 +40,7 @@ try {
         ":standalone-client:fabric-common:build",
         ":standalone-client:ui-common:build",
         ":standalone-client:fabric-mc12111:build",
+        ":standalone-client:fabric-mc1201:build",
         ":standalone-client:fabric-mc1182:build",
         ":standalone-client:forge-mc1182:build"
     )

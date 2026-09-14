@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import dev.minecraftagent.standalone.core.contract.RuntimeClientProfile;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -20,6 +21,7 @@ import java.nio.file.attribute.AclFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -37,14 +39,23 @@ final class ClientProfileStoreTest {
     assertFalse(source.contains("provider-secret-value"));
     assertTrue(source.contains("secrets/model-api-key"));
     assertTrue(source.contains("secrets/connector-token"));
-    assertEquals(11, configured.toolPolicy().allowed().size());
+    assertTrue(source.contains("knowledge/local-docs"));
+    assertEquals(13, configured.toolPolicy().allowed().size());
+    assertTrue(configured.toolPolicy().allowed().contains("game.block.inspect"));
+    assertTrue(configured.toolPolicy().allowed().contains("local.knowledge.search"));
     assertFalse(configured.toolPolicy().inventoryDefaultEnabled());
+    assertEquals(
+        List.of(
+            new RuntimeClientProfile.Knowledge.KnowledgeRoot("knowledge/local-docs", "local_docs")),
+        configured.knowledge().roots());
+    assertOwnerOnly(root.resolve("knowledge/local-docs"), "rwx------");
 
     String first;
     try (var secrets = new ClientSecretResolver().resolve(configured, root, Map.of())) {
       first = new String(secrets.connectorToken().copyBytes(), StandardCharsets.UTF_8);
     }
     var prepared = store.prepareStart();
+    assertEquals(configured.knowledge(), prepared.knowledge());
     String second;
     try (var secrets = new ClientSecretResolver().resolve(prepared, root, Map.of())) {
       second = new String(secrets.connectorToken().copyBytes(), StandardCharsets.UTF_8);
@@ -319,6 +330,7 @@ final class ClientProfileStoreTest {
     assertFalse(Files.exists(root.resolve("secrets")));
     assertFalse(Files.exists(root.resolve("data")));
     assertFalse(Files.exists(root.resolve("logs")));
+    assertFalse(Files.exists(root.resolve("knowledge")));
     assertTrue(Files.isRegularFile(managed.resolve("keep")));
   }
 

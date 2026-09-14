@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/local-knowledge-search-arguments.schema.json",
+  "title": "AGMA Local Knowledge Search Arguments",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["query"],
+  "maxProperties": 1,
+  "properties": {
+    "query": { "type": "string", "minLength": 1, "maxLength": 256 }
+  }
+}

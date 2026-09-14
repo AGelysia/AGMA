@@ -1,5 +1,7 @@
 {
   "key.agma_standalone.open": "打开 AGMA 纯客户端",
+  "key.agma_standalone.preview_toggle": "切换建筑预览浮层",
+  "key.agma_standalone.hologram_toggle": "切换建筑预览全息投影",
   "key.categories.agma_standalone": "AGMA 纯客户端",
   "screen.agma_standalone.catalog": "AGMA 本地目录",
   "screen.agma_standalone.search": "搜索",
@@ -126,5 +128,15 @@
   "screen.agma_standalone.plan_workstations": "工作站",
   "screen.agma_standalone.plan_steps": "步骤与前置条件",
   "screen.agma_standalone.plan_unresolved": "未解析项",
-  "screen.agma_standalone.plan_issues": "路线问题"
+  "screen.agma_standalone.plan_issues": "路线问题",
+  "screen.agma_standalone.preview_hint": "按 %s 隐藏预览浮层",
+  "preview.agma_standalone.operation.create": "创建",
+  "preview.agma_standalone.operation.modify": "修改",
+  "preview.agma_standalone.summary": "%s %s×%s×%s · %s · 版本 %s",
+  "preview.agma_standalone.origin": "原点 %s %s %s · %s°",
+  "preview.agma_standalone.mirrored": " · 镜像",
+  "preview.agma_standalone.diff.added": "新增",
+  "preview.agma_standalone.diff.replaced": "替换",
+  "preview.agma_standalone.diff.removed": "移除",
+  "preview.agma_standalone.top_blocks": "主要材料"
 }

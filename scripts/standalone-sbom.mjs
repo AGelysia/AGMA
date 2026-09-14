@@ -16,6 +16,7 @@ import { basename, dirname, join, resolve } from "node:path";
 const TARGETS = [
   { minecraft: "1.18.2", loader: "fabric" },
   { minecraft: "1.18.2", loader: "forge" },
+  { minecraft: "1.20.1", loader: "fabric" },
   { minecraft: "1.21.11", loader: "fabric" },
 ];
 const PLATFORMS = ["linux-x86_64", "windows-x86_64"];

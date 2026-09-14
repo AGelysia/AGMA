@@ -13,7 +13,7 @@ const PRODUCT = "agma-standalone-runtime";
 const ENTRYPOINT = "app/dist/standalone/bootstrap/index.js";
 const MANIFEST = "sidecar-manifest.json";
 const SCHEMA_ALLOWLIST = "standalone-client/contracts/runtime-schema-allowlist.json";
-const SCHEMA_ALLOWLIST_SHA256 = "81d5c6616bd43750c5ccde7245da88622a2fb8b0511ece5818344a2e1b9895cc";
+const SCHEMA_ALLOWLIST_SHA256 = "6b0adeaa1800002f43c3acae0f530b994612c023e9d27367b23c2fbc6282b39a";
 const PLATFORMS = new Map([
   ["linux-x86_64", "bin/node"],
   ["windows-x86_64", "bin/node.exe"],
@@ -152,7 +152,7 @@ function readSchemaAllowlist(path) {
     !exactKeys(manifest, ["schemaVersion", "schemas"]) ||
     manifest.schemaVersion !== 1 ||
     !Array.isArray(manifest.schemas) ||
-    manifest.schemas.length !== 41
+    manifest.schemas.length !== 45
   ) {
     fail("standalone Runtime schema allowlist is invalid");
   }

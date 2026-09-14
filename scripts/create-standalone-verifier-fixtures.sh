@@ -73,10 +73,12 @@ make_fabric_base() {
   local root="$WORK/base-${minecraft}-fabric"
   local java_version='>=21'
   local extra_entrypoint=''
-  [[ "$minecraft" == 1.21.11 ]] || {
+  if [[ "$minecraft" != 1.21.11 ]]; then
     java_version='>=17'
+  fi
+  if [[ "$minecraft" == 1.18.2 ]]; then
     extra_entrypoint=',"emi":["dev.minecraftagent.standalone.fabric.viewer.emi.EmiCatalogPlugin"]'
-  }
+  fi
   add_nested_jars "$root"
   mkdir -p "$root/dev/minecraftagent/standalone/fabric"
   printf 'offline Fabric entrypoint fixture\n' \
@@ -182,8 +184,9 @@ make_nested_jar supervisor \
   dev/minecraftagent/standalone/supervisor/install/ManagedRuntimeInstaller.class
 make_fabric_base 1.18.2
 make_forge_base
+make_fabric_base 1.20.1
 make_fabric_base 1.21.11
 make_runtime linux-x86_64
 make_runtime windows-x86_64
 
-printf 'create-standalone-verifier-fixtures targets=3 platforms=2 result=%s\n' "$OUTPUT"
+printf 'create-standalone-verifier-fixtures targets=4 platforms=2 result=%s\n' "$OUTPUT"

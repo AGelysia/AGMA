@@ -18,7 +18,7 @@ targets=(
 for module in paper-plugin client-mod; do
   targets+=("$ROOT/$module/build")
 done
-for module in core runtime-supervisor-core fabric-common fabric-mc12111 fabric-mc1182 forge-mc1182; do
+for module in core runtime-supervisor-core fabric-common fabric-mc12111 fabric-mc1201 fabric-mc1182 forge-mc1182; do
   targets+=("$ROOT/standalone-client/$module/build")
 done
 

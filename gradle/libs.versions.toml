@@ -1,6 +1,7 @@
 [versions]
 fabric-api = "0.141.4+1.21.11"
 fabric-api12111 = "0.141.5+1.21.11"
+fabric-api1201 = "0.92.6+1.20.1"
 fabric-api1182 = "0.77.0+1.18.2"
 fabric-loader = "0.19.3"
 forge1182 = "1.18.2-40.2.21"
@@ -8,6 +9,7 @@ google-java-format = "1.35.0"
 gson = "2.11.0"
 emi1182 = "0.7.3+1.18.2"
 jei12111 = "27.17.0.50"
+jei1201 = "15.20.0.112"
 jei1182 = "10.2.1.1010"
 java-websocket = "1.6.0"
 json-canonicalization = "1.1"
@@ -17,6 +19,7 @@ loom = "1.17.13"
 architectury-loom = "1.17.487"
 minecraft = "1.21.11"
 minecraft12111 = "1.21.11"
+minecraft1201 = "1.20.1"
 minecraft1182 = "1.18.2"
 mockito = "5.18.0"
 mockbukkit = "4.110.0"
@@ -28,6 +31,7 @@ spotless = "8.8.0"
 [libraries]
 fabric-api = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api" }
 fabric-api12111 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api12111" }
+fabric-api1201 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api1201" }
 fabric-api1182 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api1182" }
 fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader" }
 forge1182 = { module = "net.minecraftforge:forge", version.ref = "forge1182" }
@@ -39,6 +43,7 @@ junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
 minecraft12111 = { module = "com.mojang:minecraft", version.ref = "minecraft12111" }
+minecraft1201 = { module = "com.mojang:minecraft", version.ref = "minecraft1201" }
 minecraft1182 = { module = "com.mojang:minecraft", version.ref = "minecraft1182" }
 mockito = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockbukkit = { module = "org.mockbukkit.mockbukkit:mockbukkit-v1.21", version.ref = "mockbukkit" }
@@ -46,6 +51,7 @@ paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 emi1182 = { module = "maven.modrinth:emi", version.ref = "emi1182" }
 jei-api12111 = { module = "mezz.jei:jei-1.21.11-fabric-api", version.ref = "jei12111" }
+jei-api1201 = { module = "mezz.jei:jei-1.20.1-fabric-api", version.ref = "jei1201" }
 jei-api1182 = { module = "mezz.jei:jei-1.18.2-fabric-api", version.ref = "jei1182" }
 jei-api1182-forge = { module = "mezz.jei:jei-1.18.2-forge-api", version.ref = "jei1182" }
 jei1182-forge = { module = "mezz.jei:jei-1.18.2-forge", version.ref = "jei1182" }

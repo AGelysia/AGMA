@@ -52,6 +52,7 @@ public final class StandaloneClientEntrypoint implements ClientModInitializer {
   private static CatalogToolExecutor tools;
   private static BuildPreviewToolExecutor previewTools;
   private static PlayerContextToolExecutor playerContextTools;
+  private static BlockInspectToolExecutor blockInspectTools;
   private static StandaloneToolRouter toolRouter;
   private static StandalonePreviewOverlay previewOverlay;
   private static volatile PreviewHologramBridge hologramBridge =
@@ -77,11 +78,14 @@ public final class StandaloneClientEntrypoint implements ClientModInitializer {
     runtime =
         new ClientRuntimeController(
             root, version, StandaloneClientEntrypoint.class.getClassLoader());
+    CATALOG.knowledgeDirectory(root.resolve("knowledge").resolve("local-docs"));
     tools = new CatalogToolExecutor(CATALOG);
     previewOverlay = new StandalonePreviewOverlay(PREVIEWS);
     previewTools = new BuildPreviewToolExecutor(PREVIEWS, previewOverlay::onPreviewCreated);
     playerContextTools = new PlayerContextToolExecutor();
-    toolRouter = new StandaloneToolRouter(previewTools, playerContextTools, tools);
+    blockInspectTools = new BlockInspectToolExecutor();
+    toolRouter =
+        new StandaloneToolRouter(previewTools, playerContextTools, blockInspectTools, tools);
     installHologramBridge();
     registerCatalogLifecycle();
     registerKey();
@@ -98,6 +102,7 @@ public final class StandaloneClientEntrypoint implements ClientModInitializer {
           tools.close();
           previewTools.close();
           playerContextTools.close();
+          blockInspectTools.close();
           hologramBridge.close();
           runtime.close();
           CATALOG.close();

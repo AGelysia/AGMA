@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import dev.minecraftagent.standalone.common.CatalogToolExecutor;
 import dev.minecraftagent.standalone.common.ClientLifecycleState;
 import dev.minecraftagent.standalone.common.ClientRuntimeController;
+import dev.minecraftagent.standalone.common.ClientToolHandler;
 import dev.minecraftagent.standalone.common.RuntimeStatus;
 import dev.minecraftagent.standalone.common.StandaloneUiState;
 import dev.minecraftagent.standalone.common.TextCompletion;
@@ -39,6 +40,7 @@ public final class StandaloneAssistantScreen extends Screen {
   private final StandaloneCatalogService catalog;
   private final ClientRuntimeController runtime;
   private final CatalogToolExecutor tools;
+  private final ClientToolHandler toolRouter;
   private final StandaloneUiState state;
   private EditBox questionBox;
   private RuntimeStatus liveRuntimeStatus;
@@ -50,11 +52,13 @@ public final class StandaloneAssistantScreen extends Screen {
       StandaloneCatalogService catalog,
       ClientRuntimeController runtime,
       CatalogToolExecutor tools,
+      ClientToolHandler toolRouter,
       StandaloneUiState state) {
     super(new TranslatableComponent("screen.agma_standalone.ask"));
     this.catalog = Objects.requireNonNull(catalog, "catalog");
     this.runtime = Objects.requireNonNull(runtime, "runtime");
     this.tools = Objects.requireNonNull(tools, "tools");
+    this.toolRouter = Objects.requireNonNull(toolRouter, "toolRouter");
     this.state = Objects.requireNonNull(state, "state");
   }
 
@@ -154,7 +158,8 @@ public final class StandaloneAssistantScreen extends Screen {
   private void handleRuntimeAction(RuntimePanelStatus.Action action) {
     switch (action) {
       case CONFIGURE ->
-          minecraft.setScreen(new StandaloneSettingsScreen(catalog, runtime, tools, state));
+          minecraft.setScreen(
+              new StandaloneSettingsScreen(catalog, runtime, tools, toolRouter, state));
       case START, RETRY -> startRuntime();
       case CANCEL_START, STOP -> stopRuntime();
       case RESTART -> restartRuntime();
@@ -173,7 +178,8 @@ public final class StandaloneAssistantScreen extends Screen {
             tabWidth,
             tr("screen.agma_standalone.tab_catalog"),
             ignored ->
-                minecraft.setScreen(new StandaloneCatalogScreen(catalog, runtime, tools, state))));
+                minecraft.setScreen(
+                    new StandaloneCatalogScreen(catalog, runtime, tools, toolRouter, state))));
     var ask =
         button(
             left + 16 + tabWidth,
@@ -190,13 +196,14 @@ public final class StandaloneAssistantScreen extends Screen {
             panelWidth - 32 - tabWidth * 2,
             tr("screen.agma_standalone.tab_settings"),
             ignored ->
-                minecraft.setScreen(new StandaloneSettingsScreen(catalog, runtime, tools, state))));
+                minecraft.setScreen(
+                    new StandaloneSettingsScreen(catalog, runtime, tools, toolRouter, state))));
   }
 
   private void startRuntime() {
     liveRuntimeStatus = null;
     runtimeStatusUnavailable = false;
-    var startup = runtime.start(tools);
+    var startup = runtime.start(toolRouter);
     rebuild();
     startup.whenComplete(
         (snapshot, failure) ->

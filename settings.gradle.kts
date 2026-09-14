@@ -28,6 +28,7 @@ include("standalone-client:fabric-common")
 include("standalone-client:ui-common")
 include("standalone-client:fabric-mc12111")
 include("standalone-client:fabric-mc1182")
+include("standalone-client:fabric-mc1201")
 include("standalone-client:forge-mc1182")
 
 gradle.beforeProject {

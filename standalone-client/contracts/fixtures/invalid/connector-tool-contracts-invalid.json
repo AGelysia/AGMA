@@ -162,5 +162,149 @@
     },
     "yaw": 0.0,
     "pitch": 0.0
+  },
+  "blockInspectEntityWithoutFlag": {
+    "found": true,
+    "blockId": "minecraft:chest",
+    "position": {
+      "x": -120,
+      "y": 64,
+      "z": 245
+    },
+    "hasBlockEntity": false,
+    "blockEntity": {
+      "data": {
+        "Items": []
+      }
+    }
+  },
+  "blockInspectMissingEntity": {
+    "found": true,
+    "blockId": "minecraft:chest",
+    "position": {
+      "x": -120,
+      "y": 64,
+      "z": 245
+    },
+    "hasBlockEntity": true
+  },
+  "blockInspectDeepEntity": {
+    "found": true,
+    "blockId": "minecraft:chest",
+    "position": {
+      "x": -120,
+      "y": 64,
+      "z": 245
+    },
+    "hasBlockEntity": true,
+    "blockEntity": {
+      "data": {
+        "l1": {
+          "l2": {
+            "l3": {
+              "l4": {
+                "l5": "too deep"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "blockInspectLongStringEntity": {
+    "found": true,
+    "blockId": "minecraft:chest",
+    "position": {
+      "x": -120,
+      "y": 64,
+      "z": 245
+    },
+    "hasBlockEntity": true,
+    "blockEntity": {
+      "data": {
+        "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      }
+    }
+  },
+  "localKnowledgeSearchEmptyQuery": {
+    "query": ""
+  },
+  "localKnowledgeSearchOversizedMatches": {
+    "query": "kiln",
+    "matches": [
+      {
+        "documentId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "citation": "local_docs/aaaaaaaaaaaa/agma-modbook-kilns.md#chunk-1",
+        "kind": "local_docs",
+        "title": "Kilns",
+        "heading": "Firing",
+        "excerpt": "A kiln fires clay into bricks."
+      },
+      {
+        "documentId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "citation": "local_docs/aaaaaaaaaaaa/agma-modbook-kilns.md#chunk-1",
+        "kind": "local_docs",
+        "title": "Kilns",
+        "heading": "Firing",
+        "excerpt": "A kiln fires clay into bricks."
+      },
+      {
+        "documentId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "citation": "local_docs/aaaaaaaaaaaa/agma-modbook-kilns.md#chunk-1",
+        "kind": "local_docs",
+        "title": "Kilns",
+        "heading": "Firing",
+        "excerpt": "A kiln fires clay into bricks."
+      },
+      {
+        "documentId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "citation": "local_docs/aaaaaaaaaaaa/agma-modbook-kilns.md#chunk-1",
+        "kind": "local_docs",
+        "title": "Kilns",
+        "heading": "Firing",
+        "excerpt": "A kiln fires clay into bricks."
+      },
+      {
+        "documentId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "citation": "local_docs/aaaaaaaaaaaa/agma-modbook-kilns.md#chunk-1",
+        "kind": "local_docs",
+        "title": "Kilns",
+        "heading": "Firing",
+        "excerpt": "A kiln fires clay into bricks."
+      },
+      {
+        "documentId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "citation": "local_docs/aaaaaaaaaaaa/agma-modbook-kilns.md#chunk-1",
+        "kind": "local_docs",
+        "title": "Kilns",
+        "heading": "Firing",
+        "excerpt": "A kiln fires clay into bricks."
+      },
+      {
+        "documentId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "citation": "local_docs/aaaaaaaaaaaa/agma-modbook-kilns.md#chunk-1",
+        "kind": "local_docs",
+        "title": "Kilns",
+        "heading": "Firing",
+        "excerpt": "A kiln fires clay into bricks."
+      },
+      {
+        "documentId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "citation": "local_docs/aaaaaaaaaaaa/agma-modbook-kilns.md#chunk-1",
+        "kind": "local_docs",
+        "title": "Kilns",
+        "heading": "Firing",
+        "excerpt": "A kiln fires clay into bricks."
+      },
+      {
+        "documentId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "citation": "local_docs/aaaaaaaaaaaa/agma-modbook-kilns.md#chunk-1",
+        "kind": "local_docs",
+        "title": "Kilns",
+        "heading": "Firing",
+        "excerpt": "A kiln fires clay into bricks."
+      }
+    ],
+    "truncated": true
   }
 }

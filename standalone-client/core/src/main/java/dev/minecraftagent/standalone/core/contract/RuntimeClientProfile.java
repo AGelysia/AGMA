@@ -16,6 +16,7 @@ public record RuntimeClientProfile(
     Model model,
     Storage storage,
     Logging logging,
+    Knowledge knowledge,
     Limits limits,
     Privacy privacy,
     ToolPolicy toolPolicy,
@@ -36,6 +37,7 @@ public record RuntimeClientProfile(
     Objects.requireNonNull(model, "model");
     Objects.requireNonNull(storage, "storage");
     Objects.requireNonNull(logging, "logging");
+    Objects.requireNonNull(knowledge, "knowledge");
     Objects.requireNonNull(limits, "limits");
     Objects.requireNonNull(privacy, "privacy");
     Objects.requireNonNull(toolPolicy, "toolPolicy");
@@ -73,6 +75,7 @@ public record RuntimeClientProfile(
         model,
         storage,
         logging,
+        new Knowledge(List.of()),
         limits,
         privacy,
         toolPolicy,
@@ -167,6 +170,29 @@ public record RuntimeClientProfile(
     }
   }
 
+  public record Knowledge(List<KnowledgeRoot> roots) {
+    public static final int MAXIMUM_ROOTS = 8;
+
+    public Knowledge {
+      roots = ContractChecks.list(roots, "knowledge roots", MAXIMUM_ROOTS);
+      var directories = new HashSet<String>();
+      for (var root : roots) {
+        if (!directories.add(root.directory())) {
+          throw new IllegalArgumentException("knowledge roots must not duplicate a directory");
+        }
+      }
+    }
+
+    public record KnowledgeRoot(String directory, String kind) {
+      public KnowledgeRoot {
+        directory = privateRelativePath(directory, "knowledge root directory");
+        if (!Set.of("server_rules", "local_docs").contains(kind)) {
+          throw new IllegalArgumentException("knowledge root kind is unsupported");
+        }
+      }
+    }
+  }
+
   public record Limits(
       int maxConcurrentRequests,
       int maxQueuedRequests,
@@ -216,6 +242,8 @@ public record RuntimeClientProfile(
             "game.process.plan",
             "game.inventory.snapshot",
             "game.player.context.read",
+            "game.block.inspect",
+            "local.knowledge.search",
             "project.list",
             "project.read",
             "project.create",
@@ -232,7 +260,7 @@ public record RuntimeClientProfile(
             "arbitrary.web.fetch");
 
     public ToolPolicy {
-      allowed = uniqueIdentifiers(allowed, "allowed tools", 11);
+      allowed = uniqueIdentifiers(allowed, "allowed tools", 13);
       denied = uniqueIdentifiers(denied, "denied capabilities", 16);
       if (!KNOWN_TOOLS.containsAll(allowed)) {
         throw new IllegalArgumentException("allowed contains an unreviewed client tool");

@@ -5,10 +5,10 @@ export LC_ALL=C
 export TZ=UTC
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CLIENT_VERSION=0.5.0
-RUNTIME_VERSION=0.5.0
+CLIENT_VERSION=0.6.0
+RUNTIME_VERSION=0.6.0
 NODE_VERSION=22.23.1
-TARGETS=(1.18.2:fabric 1.18.2:forge 1.21.11:fabric)
+TARGETS=(1.18.2:fabric 1.18.2:forge 1.20.1:fabric 1.21.11:fabric)
 PLATFORMS=(linux-x86_64 windows-x86_64)
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/agma-standalone-client-release-test.XXXXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
@@ -245,4 +245,4 @@ expect_client_rejection \
 
 expect_client_rejection 'Forge JAR verified as Fabric' "$FORGE_JAR" 1.18.2 fabric
 
-printf 'test-standalone-client-release assets=8 jars=6 reproducible=yes result=passed\n'
+printf 'test-standalone-client-release assets=10 jars=8 reproducible=yes result=passed\n'

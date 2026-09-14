@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -96,6 +97,9 @@ public final class ClientProfileCodec {
     if (root.containsKey("webEvidence")) {
       expected.add("webEvidence");
     }
+    if (root.containsKey("knowledge")) {
+      expected.add("knowledge");
+    }
     if (!root.keySet().equals(expected)) {
       throw JsonFields.invalid("/");
     }
@@ -122,6 +126,10 @@ public final class ClientProfileCodec {
             "outputMicroUsdPerMillionTokens");
     var storage = JsonFields.exactObject(root.get("storage"), "/storage", "sqlitePath");
     var logging = JsonFields.exactObject(root.get("logging"), "/logging", "directory", "level");
+    Map<String, Object> knowledge = null;
+    if (root.containsKey("knowledge")) {
+      knowledge = JsonFields.exactObject(root.get("knowledge"), "/knowledge", "roots");
+    }
     var limits =
         JsonFields.exactObject(
             root.get("limits"),
@@ -170,7 +178,7 @@ public final class ClientProfileCodec {
               "country",
               "searchLanguage");
     }
-    var allowed = JsonFields.stringArray(tools.get("allowed"), "/toolPolicy/allowed", 11);
+    var allowed = JsonFields.stringArray(tools.get("allowed"), "/toolPolicy/allowed", 13);
 
     final URI baseUrl;
     var baseUrlValue = JsonFields.nullableString(model.get("baseUrl"), "/model/baseUrl", 2048);
@@ -181,6 +189,17 @@ public final class ClientProfileCodec {
     }
 
     try {
+      var knowledgeRoots = new java.util.ArrayList<RuntimeClientProfile.Knowledge.KnowledgeRoot>();
+      if (knowledge != null) {
+        for (var entry : JsonFields.array(knowledge.get("roots"), "/knowledge/roots", 8)) {
+          var rootDocument = JsonFields.exactObject(entry, "/knowledge/roots", "directory", "kind");
+          knowledgeRoots.add(
+              new RuntimeClientProfile.Knowledge.KnowledgeRoot(
+                  JsonFields.string(
+                      rootDocument.get("directory"), "/knowledge/roots/directory", 256),
+                  JsonFields.string(rootDocument.get("kind"), "/knowledge/roots/kind", 32)));
+        }
+      }
       var result =
           new RuntimeClientProfile(
               JsonFields.integer(root.get("configVersion"), "/configVersion"),
@@ -213,6 +232,7 @@ public final class ClientProfileCodec {
               new RuntimeClientProfile.Logging(
                   JsonFields.string(logging.get("directory"), "/logging/directory", 256),
                   JsonFields.string(logging.get("level"), "/logging/level", 16)),
+              new RuntimeClientProfile.Knowledge(java.util.List.copyOf(knowledgeRoots)),
               new RuntimeClientProfile.Limits(
                   JsonFields.integer(
                       limits.get("maxConcurrentRequests"), "/limits/maxConcurrentRequests"),
@@ -369,6 +389,8 @@ public final class ClientProfileCodec {
             map("sqlitePath", profile.storage().sqlitePath()),
             "logging",
             map("directory", profile.logging().directory(), "level", profile.logging().level()),
+            "knowledge",
+            map("roots", knowledgeDocument(profile.knowledge())),
             "limits",
             map(
                 "maxConcurrentRequests",
@@ -446,6 +468,13 @@ public final class ClientProfileCodec {
   private static Map<String, Object> secretDocument(
       RuntimeClientProfile.SecretReference reference) {
     return map("source", reference.source(), "reference", reference.reference());
+  }
+
+  private static List<Map<String, Object>> knowledgeDocument(
+      RuntimeClientProfile.Knowledge knowledge) {
+    return knowledge.roots().stream()
+        .map(root -> map("directory", root.directory(), "kind", root.kind()))
+        .toList();
   }
 
   private static Map<String, Object> map(Object... entries) {

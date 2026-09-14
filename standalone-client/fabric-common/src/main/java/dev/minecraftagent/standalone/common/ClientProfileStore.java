@@ -28,11 +28,14 @@ public final class ClientProfileStore {
           "game.process.plan",
           "game.inventory.snapshot",
           "game.player.context.read",
+          "game.block.inspect",
           "project.list",
           "project.read",
           "project.create",
           "project.update",
-          "build.preview.create");
+          "build.preview.create",
+          "local.knowledge.search");
+  private static final String KNOWLEDGE_ROOT = "knowledge/local-docs";
   private static final List<String> DENIED_CAPABILITIES =
       List.of(
           "paper.command",
@@ -122,6 +125,7 @@ public final class ClientProfileStore {
               current.model(),
               current.storage(),
               current.logging(),
+              current.knowledge(),
               current.limits(),
               current.privacy(),
               current.toolPolicy(),
@@ -150,6 +154,7 @@ public final class ClientProfileStore {
       PrivateFilePermissions.deleteTreeIfPresent(root, "secrets");
       PrivateFilePermissions.deleteTreeIfPresent(root, "data");
       PrivateFilePermissions.deleteTreeIfPresent(root, "logs");
+      PrivateFilePermissions.deleteTreeIfPresent(root, "knowledge");
       PrivateFilePermissions.deleteTreeIfPresent(root, "diagnostics");
     } catch (IOException | RuntimeException failure) {
       throw failure("CONFIG_DELETE_FAILED", "Private client data could not be deleted", failure);
@@ -161,6 +166,8 @@ public final class ClientProfileStore {
     PrivateFilePermissions.prepareChildDirectory(root, "secrets");
     PrivateFilePermissions.prepareChildDirectory(root, "data");
     PrivateFilePermissions.prepareChildDirectory(root, "logs");
+    PrivateFilePermissions.prepareChildDirectory(
+        PrivateFilePermissions.prepareChildDirectory(root, "knowledge"), "local-docs");
   }
 
   private UUID existingInstallationId() {
@@ -285,6 +292,9 @@ public final class ClientProfileStore {
             setup.outputMicroUsdPerMillionTokens()),
         new RuntimeClientProfile.Storage("data/client.sqlite"),
         new RuntimeClientProfile.Logging("logs", "info"),
+        new RuntimeClientProfile.Knowledge(
+            List.of(
+                new RuntimeClientProfile.Knowledge.KnowledgeRoot(KNOWLEDGE_ROOT, "local_docs"))),
         new RuntimeClientProfile.Limits(
             1,
             8,

@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import dev.minecraftagent.standalone.common.CancelReason;
 import dev.minecraftagent.standalone.common.CatalogToolExecutor;
 import dev.minecraftagent.standalone.common.ClientRuntimeController;
+import dev.minecraftagent.standalone.common.ClientToolHandler;
 import dev.minecraftagent.standalone.common.LocalPlanPresentation;
 import dev.minecraftagent.standalone.common.OptionalViewerRegistry;
 import dev.minecraftagent.standalone.common.RouteTreeModel;
@@ -51,6 +52,7 @@ public final class StandaloneCatalogScreen extends Screen {
   private final StandaloneCatalogService catalog;
   private final ClientRuntimeController runtime;
   private final CatalogToolExecutor tools;
+  private final ClientToolHandler toolRouter;
   private final StandaloneUiState uiState;
   private EditBox queryBox;
   private String query = "";
@@ -65,11 +67,13 @@ public final class StandaloneCatalogScreen extends Screen {
       StandaloneCatalogService catalog,
       ClientRuntimeController runtime,
       CatalogToolExecutor tools,
+      ClientToolHandler toolRouter,
       StandaloneUiState uiState) {
     super(new TranslatableComponent("screen.agma_standalone.catalog"));
     this.catalog = Objects.requireNonNull(catalog, "catalog");
     this.runtime = Objects.requireNonNull(runtime, "runtime");
     this.tools = Objects.requireNonNull(tools, "tools");
+    this.toolRouter = Objects.requireNonNull(toolRouter, "toolRouter");
     this.uiState = Objects.requireNonNull(uiState, "uiState");
     selected = uiState.selected;
     if (selected != null) {
@@ -215,7 +219,8 @@ public final class StandaloneCatalogScreen extends Screen {
             new TranslatableComponent("screen.agma_standalone.tab_ask"),
             ignored ->
                 minecraft.setScreen(
-                    StandaloneScreenNavigation.assistantScreen(catalog, runtime, tools, uiState))));
+                    StandaloneScreenNavigation.assistantScreen(
+                        catalog, runtime, tools, toolRouter, uiState))));
     addRenderableWidget(
         new Button(
             left + 16 + tabWidth * 2,
@@ -225,7 +230,7 @@ public final class StandaloneCatalogScreen extends Screen {
             new TranslatableComponent("screen.agma_standalone.tab_settings"),
             ignored ->
                 minecraft.setScreen(
-                    new StandaloneSettingsScreen(catalog, runtime, tools, uiState))));
+                    new StandaloneSettingsScreen(catalog, runtime, tools, toolRouter, uiState))));
   }
 
   private Button contextButton(

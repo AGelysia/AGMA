@@ -1,0 +1,145 @@
+plugins {
+    java
+    alias(libs.plugins.fabric.loom)
+    alias(libs.plugins.spotless)
+}
+
+version =
+    providers
+        .gradleProperty("standaloneVersion")
+        .orElse(
+            // The standalone client version is owned by standalone-client/version.json
+            // so the standalone module builds cannot drift from the released client version.
+            (groovy.json.JsonSlurper().parse(file("../version.json")) as Map<*, *>)["version"].toString(),
+        ).get()
+
+base {
+    archivesName = "AGMA-Standalone-Client-mc1.20.1-fabric"
+}
+
+repositories {
+    maven("https://maven.blamejared.com") {
+        name = "BlameJared"
+        content {
+            includeGroup("mezz.jei")
+        }
+    }
+}
+
+val minecraftVersion = libs.versions.minecraft1201.get()
+val fabricApiVersion =
+    libs.versions.fabric.api1201
+        .get()
+val loaderVersion =
+    libs.versions.fabric.loader
+        .get()
+
+dependencies {
+    minecraft(libs.minecraft1201)
+    mappings(loom.officialMojangMappings())
+    modImplementation(libs.fabric.loader)
+    modImplementation(libs.fabric.api1201)
+    modCompileOnly(libs.jei.api1201)
+
+    implementation(project(":standalone-client:core"))
+    implementation(project(":standalone-client:runtime-supervisor-core"))
+    implementation(project(":standalone-client:fabric-common"))
+    include(project(":standalone-client:core"))
+    include(project(":standalone-client:runtime-supervisor-core"))
+    include(project(":standalone-client:fabric-common"))
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.gson)
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    withSourcesJar()
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.release = 17
+}
+
+tasks.processResources {
+    filteringCharset = "UTF-8"
+    inputs.property("version", version)
+    inputs.property("minecraftVersion", minecraftVersion)
+    inputs.property("fabricApiVersion", fabricApiVersion)
+    inputs.property("loaderVersion", loaderVersion)
+    filesMatching("fabric.mod.json") {
+        expand(
+            "version" to version,
+            "minecraftVersion" to minecraftVersion,
+            "fabricApiVersion" to fabricApiVersion,
+            "loaderVersion" to loaderVersion,
+        )
+    }
+}
+
+spotless {
+    java {
+        googleJavaFormat(
+            libs.versions.google.java.format
+                .get(),
+        )
+        target("src/**/*.java")
+    }
+    kotlinGradle {
+        ktlint()
+        target("*.gradle.kts")
+    }
+}
+
+val verifyStandaloneBoundary by tasks.registering {
+    group = "verification"
+    description = "Rejects Minecraft server-payload and viewer coupling in the standalone shell."
+    doLast {
+        val forbidden =
+            listOf(
+                "ClientPlayNetworking",
+                "ServerPlayNetworking",
+                "PayloadTypeRegistry",
+                "CustomPacketPayload",
+                "mezz.jei",
+                "dev.emi",
+            )
+        val violations =
+            fileTree("src/main/java") {
+                include("**/*.java")
+                exclude("**/viewer/**")
+            }.files.flatMap { source ->
+                val text = source.readText(Charsets.UTF_8)
+                forbidden.filter(text::contains).map { name ->
+                    "${source.relativeTo(projectDir)} references $name"
+                }
+            }
+        check(violations.isEmpty()) {
+            "standalone main path crossed its local-only/optional-viewer boundary:\n${violations.joinToString("\n")}"
+        }
+    }
+}
+
+tasks.test {
+    useJUnitPlatform()
+    maxParallelForks = 1
+    systemProperty("agma.expectedVersion", version.toString())
+}
+
+tasks.jar {
+    manifest {
+        attributes(
+            "Implementation-Title" to "AGMA Standalone Client",
+            "Implementation-Version" to version,
+        )
+    }
+    from(rootProject.file("LICENSE")) {
+        rename { "LICENSE_agma_standalone" }
+    }
+}
+
+tasks.check {
+    dependsOn(verifyStandaloneBoundary)
+}

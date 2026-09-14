@@ -18,6 +18,7 @@ final class ClientToolPayloads {
           "game.process.plan",
           "game.inventory.snapshot",
           "game.player.context.read",
+          "game.block.inspect",
           "build.preview.create");
 
   private ClientToolPayloads() {}
@@ -77,6 +78,14 @@ final class ClientToolPayloads {
         }
       }
       case "game.player.context.read" -> exact(arguments);
+      case "game.block.inspect" -> {
+        if (!Set.of("position").containsAll(arguments.keySet())) {
+          throw invalid();
+        }
+        if (arguments.containsKey("position")) {
+          position(arguments.get("position"));
+        }
+      }
       case "build.preview.create" -> {
         exact(
             arguments,
@@ -170,6 +179,21 @@ final class ClientToolPayloads {
         position(result.get("position"));
         decimalRange(result.get("yaw"), BigDecimal.valueOf(-180), BigDecimal.valueOf(180));
         decimalRange(result.get("pitch"), BigDecimal.valueOf(-90), BigDecimal.valueOf(90));
+      }
+      case "game.block.inspect" -> {
+        var hasBlockEntity = result.get("hasBlockEntity");
+        bool(result.get("found"));
+        namespacedId(result.get("blockId"));
+        position(result.get("position"));
+        bool(hasBlockEntity);
+        if (Boolean.TRUE.equals(hasBlockEntity)) {
+          exact(result, "found", "blockId", "position", "hasBlockEntity", "blockEntity");
+          var blockEntity = object(result.get("blockEntity"));
+          exact(blockEntity, "data");
+          sanitizedValue(blockEntity.get("data"), 0);
+        } else {
+          exact(result, "found", "blockId", "position", "hasBlockEntity");
+        }
       }
       case "build.preview.create" -> {
         exact(
@@ -343,6 +367,46 @@ final class ClientToolPayloads {
       integer(position.get("y"), -2_048, 2_048),
       integer(position.get("z"), -30_000_000, 30_000_000)
     };
+  }
+
+  private static void sanitizedValue(Object value, int depth) {
+    if (value == null || value instanceof Boolean) {
+      return;
+    }
+    if (value instanceof String text) {
+      if (text.codePointCount(0, text.length()) > 128) {
+        throw invalid();
+      }
+      return;
+    }
+    if (value instanceof Number) {
+      return;
+    }
+    if (depth >= 4) {
+      throw invalid();
+    }
+    if (value instanceof List<?> list) {
+      if (list.size() > 16) {
+        throw invalid();
+      }
+      for (var entry : list) {
+        sanitizedValue(entry, depth + 1);
+      }
+      return;
+    }
+    if (value instanceof Map<?, ?> mapValue) {
+      if (mapValue.size() > 64) {
+        throw invalid();
+      }
+      for (var entry : mapValue.entrySet()) {
+        if (!(entry.getKey() instanceof String)) {
+          throw invalid();
+        }
+        sanitizedValue(entry.getValue(), depth + 1);
+      }
+      return;
+    }
+    throw invalid();
   }
 
   private static void previewShape(Object value) {

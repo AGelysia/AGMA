@@ -271,7 +271,7 @@ function requireArray(value, field) {
 
 function verifyFabric(pathValue, clientVersion, minecraftVersion) {
   if (!VERSION.test(clientVersion)) fail("client version is invalid");
-  if (minecraftVersion !== "1.21.11" && minecraftVersion !== "1.18.2") {
+  if (!["1.21.11", "1.20.1", "1.18.2"].includes(minecraftVersion)) {
     fail("unsupported Minecraft version");
   }
   const root = JSON.parse(readFileSync(resolve(pathValue), "utf8"));
@@ -298,7 +298,7 @@ function verifyFabric(pathValue, clientVersion, minecraftVersion) {
       "java",
     ]) ||
     root.depends.minecraft !== minecraftVersion ||
-    root.depends.java !== (minecraftVersion === "1.18.2" ? ">=17" : ">=21")
+    root.depends.java !== (minecraftVersion === "1.21.11" ? ">=21" : ">=17")
   ) {
     fail(
       "Fabric descriptor identity, environment, or compatibility is invalid",

@@ -19,6 +19,7 @@ if (-not (Test-Path -LiteralPath $Release -PathType Container)) {
 $Targets = @(
     [PSCustomObject]@{ Minecraft = "1.18.2"; Loader = "fabric" },
     [PSCustomObject]@{ Minecraft = "1.18.2"; Loader = "forge" },
+    [PSCustomObject]@{ Minecraft = "1.20.1"; Loader = "fabric" },
     [PSCustomObject]@{ Minecraft = "1.21.11"; Loader = "fabric" }
 )
 $Platforms = @("linux-x86_64", "windows-x86_64")

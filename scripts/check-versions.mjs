@@ -58,6 +58,7 @@ for (const module of [
   "runtime-supervisor-core",
   "fabric-common",
   "fabric-mc12111",
+  "fabric-mc1201",
   "fabric-mc1182",
   "forge-mc1182",
   "ui-common",

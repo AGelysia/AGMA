@@ -49,17 +49,19 @@ printf '%s\n' \
   "AGMA-Client-Standalone-${VERSION}-mc1.18.2-fabric-windows-x86_64.jar" \
   "AGMA-Client-Standalone-${VERSION}-mc1.18.2-forge-linux-x86_64.jar" \
   "AGMA-Client-Standalone-${VERSION}-mc1.18.2-forge-windows-x86_64.jar" \
+  "AGMA-Client-Standalone-${VERSION}-mc1.20.1-fabric-linux-x86_64.jar" \
+  "AGMA-Client-Standalone-${VERSION}-mc1.20.1-fabric-windows-x86_64.jar" \
   "AGMA-Client-Standalone-${VERSION}-mc1.21.11-fabric-linux-x86_64.jar" \
   "AGMA-Client-Standalone-${VERSION}-mc1.21.11-fabric-windows-x86_64.jar" \
   "AGMA-Client-Standalone-${VERSION}-SBOM.cdx.json" \
   "AGMA-Client-Standalone-${VERSION}-SHA256SUMS" \
   | sort >"$WORK/expected.paths"
 cmp "$WORK/expected.paths" "$WORK/first.paths" \
-  || fail "standalone release produced an unexpected eight-asset inventory"
+  || fail "standalone release produced an unexpected ten-asset inventory"
 while IFS= read -r path; do
   cmp "$WORK/first/$path" "$WORK/second/$path" \
     || fail "standalone release asset is not reproducible: $path"
 done <"$WORK/first.paths"
 
 mv "$WORK/first" "$OUTPUT"
-printf 'standalone-release-check assets=8 jars=6 reproducible=yes result=%s\n' "$OUTPUT"
+printf 'standalone-release-check assets=10 jars=8 reproducible=yes result=%s\n' "$OUTPUT"

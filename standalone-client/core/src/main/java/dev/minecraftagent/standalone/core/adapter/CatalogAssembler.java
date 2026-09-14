@@ -18,21 +18,51 @@ public final class CatalogAssembler {
       Instant createdAt,
       CatalogAdapter.Contribution registry,
       CatalogAdapter.Contribution selectedProcesses) {
+    return assemble(
+        generationId,
+        packFingerprint,
+        createdAt,
+        registry,
+        selectedProcesses,
+        new CatalogAdapter.Contribution(
+            "mod_archive", generationId, List.of(), List.of(), List.of()));
+  }
+
+  /**
+   * Assembles the registry, the selected process source, and an optional gap-fill contribution.
+   * Gap-fill processes are added only when their process id is absent (live data always wins), and
+   * gap-fill resources are added only when their {@link ResourceKey} is absent; skipped gap
+   * resources never trigger the metadata agreement check because the base metadata wins by
+   * definition.
+   */
+  public CatalogSnapshot assemble(
+      String generationId,
+      String packFingerprint,
+      Instant createdAt,
+      CatalogAdapter.Contribution registry,
+      CatalogAdapter.Contribution selectedProcesses,
+      CatalogAdapter.Contribution gapFillProcesses) {
     Objects.requireNonNull(registry, "registry");
     Objects.requireNonNull(selectedProcesses, "selectedProcesses");
+    Objects.requireNonNull(gapFillProcesses, "gapFillProcesses");
     if (!generationId.equals(registry.generationId())
-        || !generationId.equals(selectedProcesses.generationId())) {
+        || !generationId.equals(selectedProcesses.generationId())
+        || !generationId.equals(gapFillProcesses.generationId())) {
       throw new IllegalArgumentException("catalog contributions use different generations");
     }
 
     var resources = new TreeMap<ResourceKey, ResourceRef>();
     addResources(resources, registry.resources());
     addResources(resources, selectedProcesses.resources());
+    addGapResources(resources, gapFillProcesses.resources());
     var processes = new TreeMap<String, ProcessRecord>();
     for (var process : selectedProcesses.processes()) {
       if (processes.putIfAbsent(process.processId(), process) != null) {
         throw new IllegalArgumentException("selected process source returned duplicate ids");
       }
+    }
+    for (var process : gapFillProcesses.processes()) {
+      processes.putIfAbsent(process.processId(), process);
     }
     return new CatalogSnapshot(
         generationId,
@@ -50,6 +80,13 @@ public final class CatalogAssembler {
       if (existing != null && !equivalentMetadata(existing, resource)) {
         throw new IllegalArgumentException("catalog sources disagree about resource metadata");
       }
+    }
+  }
+
+  private static void addGapResources(
+      TreeMap<ResourceKey, ResourceRef> destination, List<ResourceRef> source) {
+    for (var resource : source) {
+      destination.putIfAbsent(ResourceKey.from(resource), resource);
     }
   }
 

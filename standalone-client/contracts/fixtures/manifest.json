@@ -282,6 +282,36 @@
           "schema": "tools/game-player-context-read-result.schema.json",
           "documentPointer": "/playerContextReadResult",
           "expectedValid": true
+        },
+        {
+          "schema": "tools/game-block-inspect-arguments.schema.json",
+          "documentPointer": "/blockInspectArguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/game-block-inspect-arguments.schema.json",
+          "documentPointer": "/blockInspectPositionArguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/game-block-inspect-result.schema.json",
+          "documentPointer": "/blockInspectResult",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/game-block-inspect-result.schema.json",
+          "documentPointer": "/blockInspectAirResult",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/local-knowledge-search-arguments.schema.json",
+          "documentPointer": "/localKnowledgeSearchArguments",
+          "expectedValid": true
+        },
+        {
+          "schema": "tools/local-knowledge-search-result.schema.json",
+          "documentPointer": "/localKnowledgeSearchResult",
+          "expectedValid": true
         }
       ]
     },
@@ -338,6 +368,36 @@
         {
           "schema": "tools/game-player-context-read-result.schema.json",
           "documentPointer": "/playerContextBadDimension",
+          "expectedValid": false
+        },
+        {
+          "schema": "tools/game-block-inspect-result.schema.json",
+          "documentPointer": "/blockInspectEntityWithoutFlag",
+          "expectedValid": false
+        },
+        {
+          "schema": "tools/game-block-inspect-result.schema.json",
+          "documentPointer": "/blockInspectMissingEntity",
+          "expectedValid": false
+        },
+        {
+          "schema": "tools/game-block-inspect-result.schema.json",
+          "documentPointer": "/blockInspectDeepEntity",
+          "expectedValid": false
+        },
+        {
+          "schema": "tools/game-block-inspect-result.schema.json",
+          "documentPointer": "/blockInspectLongStringEntity",
+          "expectedValid": false
+        },
+        {
+          "schema": "tools/local-knowledge-search-arguments.schema.json",
+          "documentPointer": "/localKnowledgeSearchEmptyQuery",
+          "expectedValid": false
+        },
+        {
+          "schema": "tools/local-knowledge-search-result.schema.json",
+          "documentPointer": "/localKnowledgeSearchOversizedMatches",
           "expectedValid": false
         }
       ]

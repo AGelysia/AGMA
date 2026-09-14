@@ -46,6 +46,7 @@ jobs:
             standalone-client/runtime-supervisor-core/build/test-results/test/
             standalone-client/fabric-common/build/test-results/test/
             standalone-client/fabric-mc12111/build/test-results/test/
+            standalone-client/fabric-mc1201/build/test-results/test/
             standalone-client/fabric-mc1182/build/test-results/test/
             standalone-client/forge-mc1182/build/test-results/test/
           if-no-files-found: warn
@@ -117,6 +118,7 @@ jobs:
             standalone-client/runtime-supervisor-core/build/test-results/test/
             standalone-client/fabric-common/build/test-results/test/
             standalone-client/fabric-mc12111/build/test-results/test/
+            standalone-client/fabric-mc1201/build/test-results/test/
             standalone-client/fabric-mc1182/build/test-results/test/
             standalone-client/forge-mc1182/build/test-results/test/
           if-no-files-found: warn

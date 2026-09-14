@@ -2,6 +2,7 @@ package dev.minecraftagent.standalone.ui;
 
 import dev.minecraftagent.standalone.common.CatalogToolExecutor;
 import dev.minecraftagent.standalone.common.ClientRuntimeController;
+import dev.minecraftagent.standalone.common.ClientToolHandler;
 import dev.minecraftagent.standalone.common.StandaloneUiState;
 import java.util.Objects;
 import net.minecraft.client.gui.screens.Screen;
@@ -20,11 +21,12 @@ public final class StandaloneScreenNavigation {
       StandaloneCatalogService catalog,
       ClientRuntimeController runtime,
       CatalogToolExecutor tools,
+      ClientToolHandler toolRouter,
       StandaloneUiState state) {
     var source = assistantSource;
     if (source == null) {
       throw new IllegalStateException("Assistant screen source is not installed");
     }
-    return source.create(catalog, runtime, tools, state);
+    return source.create(catalog, runtime, tools, toolRouter, state);
   }
 }

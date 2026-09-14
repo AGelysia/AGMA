@@ -2,6 +2,7 @@ package dev.minecraftagent.standalone.ui;
 
 import dev.minecraftagent.standalone.common.CatalogToolExecutor;
 import dev.minecraftagent.standalone.common.ClientRuntimeController;
+import dev.minecraftagent.standalone.common.ClientToolHandler;
 import dev.minecraftagent.standalone.common.StandaloneUiState;
 import net.minecraft.client.gui.screens.Screen;
 
@@ -11,5 +12,6 @@ public interface StandaloneAssistantScreenSource {
       StandaloneCatalogService catalog,
       ClientRuntimeController runtime,
       CatalogToolExecutor tools,
+      ClientToolHandler toolRouter,
       StandaloneUiState state);
 }

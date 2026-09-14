@@ -1,0 +1,16 @@
+{
+  "item.botania.lexicon": "Lexica Botania",
+  "botania.category.basics": "Basics and Mechanics",
+  "botania.entry.lexicon": "Lexica Botania",
+  "botania.entry.welcome": "Welcome To Botania",
+  "botania.page.lexicon0": "The $(item)Lexica Botania$(0) is the repository of all knowledge for all botanical matters. (But you probably knew that already.)$(p)All well-known botanical knowledge is stored within these pages. For convenience, if a block happens to have an entry in here, it can be sneak-right clicked on with the $(item)Lexica Botania$(0) to open said entry.",
+  "botania.page.lexicon1": "Crafting the $(item)Lexica Botania$(0).",
+  "botania.page.lexicon2": "The $(item)Lexica Botania$(0)'s title can also be customized by placing it in an $(item)Anvil$(0) and renaming it. This changes both its cover and its title.$(p)The Edition of the Lexica shown equates to the version of the $(thing)Botania$(0) you're running (and no, I $(o)don't$() care about the fourth wall).",
+  "botania.page.lexicon3": "Any entries typed in $(o)Italics$() are $(thing)basic$(0) entries, which contain the core knowledge required to play $(thing)Botania$(0)-- you may want to read those first. Most sections contain one or more of these entries, so a good look through those would be a good idea.",
+  "botania.page.welcome0": "$(o)Welcome to Botania! I congratulate you on the fine decision to strap a sapling and a book together. Or just on finding this tome in a chest. Whichever applies.$(p)$(o)You can navigate this book with the arrows at the bottom of this page, or scroll through pages with your mouse wheel.",
+  "botania.page.welcome1": "$(o)Despite its appearance, Botania is in essence a \"tech mod\": it requires you to put to use ingenuity, thought, and redstone to create and progress. Keep that in mind.$(p)$(o)Of course, you'll also be rewarded with cool toys, blocks, and equipment along the way.",
+  "botania.page.welcome2": "$(o)Botania is a mod for anybody who likes to play Minecraft because they like building cool things. It is designed to be fully playable standalone, but can also be played with other mods.$(p)$(o)With a few exceptions, everything in this mod can be fully automated with only Minecraft and itself.",
+  "botania.page.welcome3": "$(o)If you happen to find yourself feeling lost, try checking out the mod's Advancements or Challenges, both of which can be found on the left-hand side of this book's main page.$(p)$(o)The book is laid out in a user-friendly way with a fair number of helpful features, so before you jump in and start playing, take a bit of time to familiarize yourself with those.",
+  "botania.page.welcome5": "$(o)The \"Entry Index\" category is helpful for searching for a particular entry, as it contains every entry in the book in one place.",
+  "botania.page.welcome6": "$(o)And that's it for this introduction! I hope you enjoy playing with Botania as much as I enjoyed making it!$(p)$(o)~Vazkii, the mod author$(p)$(p)$(o)Continue by pressing the \"Back\" button on the bottom. Right-clicking has the same effect."
+}

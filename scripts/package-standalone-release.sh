@@ -13,6 +13,7 @@ NODE_VERSION="$("$NODE_COMMAND" -p "require('$ROOT/standalone-client/managed-run
 TARGETS=(
   '1.18.2:fabric:fabric-mc1182'
   '1.18.2:forge:forge-mc1182'
+  '1.20.1:fabric:fabric-mc1201'
   '1.21.11:fabric:fabric-mc12111'
 )
 PLATFORMS=(linux-x86_64 windows-x86_64)
@@ -52,6 +53,7 @@ done
   -PstandaloneVersion="$CLIENT_VERSION" \
   :standalone-client:fabric-mc1182:remapJar \
   :standalone-client:forge-mc1182:remapJar \
+  :standalone-client:fabric-mc1201:remapJar \
   :standalone-client:fabric-mc12111:remapJar
 
 declare -A BASE_JARS

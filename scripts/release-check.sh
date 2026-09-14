@@ -106,6 +106,8 @@ cp -R "$ROOT/standalone-client/fabric-common/build/test-results/test" \
   "$TEST_RESULTS/standalone-fabric-common"
 cp -R "$ROOT/standalone-client/fabric-mc12111/build/test-results/test" \
   "$TEST_RESULTS/standalone-fabric-mc12111"
+cp -R "$ROOT/standalone-client/fabric-mc1201/build/test-results/test" \
+  "$TEST_RESULTS/standalone-fabric-mc1201"
 cp -R "$ROOT/standalone-client/fabric-mc1182/build/test-results/test" \
   "$TEST_RESULTS/standalone-fabric-mc1182"
 cp -R "$ROOT/standalone-client/forge-mc1182/build/test-results/test" \
@@ -119,6 +121,7 @@ java "$ROOT/scripts/VerifyTestResults.java" \
   "$TEST_RESULTS/standalone-supervisor" \
   "$TEST_RESULTS/standalone-fabric-common" \
   "$TEST_RESULTS/standalone-fabric-mc12111" \
+  "$TEST_RESULTS/standalone-fabric-mc1201" \
   "$TEST_RESULTS/standalone-fabric-mc1182" \
   "$TEST_RESULTS/standalone-forge-mc1182" \
   | tee "$TEST_RESULTS/inventory.txt"

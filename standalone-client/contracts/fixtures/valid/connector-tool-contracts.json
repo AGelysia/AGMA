@@ -423,5 +423,71 @@
     },
     "yaw": 90.0,
     "pitch": -5.5
+  },
+  "blockInspectArguments": {},
+  "blockInspectPositionArguments": {
+    "position": {
+      "x": -120,
+      "y": 64,
+      "z": 245
+    }
+  },
+  "blockInspectResult": {
+    "found": true,
+    "blockId": "minecraft:chest",
+    "position": {
+      "x": -120,
+      "y": 64,
+      "z": 245
+    },
+    "hasBlockEntity": true,
+    "blockEntity": {
+      "data": {
+        "Items": [
+          {
+            "id": "minecraft:stone",
+            "count": 3
+          }
+        ],
+        "SkullOwner": "[redacted]",
+        "CookTime": 12,
+        "levels": [
+          [
+            1,
+            2
+          ],
+          {
+            "__truncated": 40
+          }
+        ]
+      }
+    }
+  },
+  "blockInspectAirResult": {
+    "found": false,
+    "blockId": "minecraft:air",
+    "position": {
+      "x": 0,
+      "y": 80,
+      "z": 0
+    },
+    "hasBlockEntity": false
+  },
+  "localKnowledgeSearchArguments": {
+    "query": "kiln firing"
+  },
+  "localKnowledgeSearchResult": {
+    "query": "kiln firing",
+    "matches": [
+      {
+        "documentId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "citation": "local_docs/aaaaaaaaaaaa/agma-modbook-kilns.md#chunk-1",
+        "kind": "local_docs",
+        "title": "Kilns",
+        "heading": "Firing",
+        "excerpt": "A kiln fires clay into bricks."
+      }
+    ],
+    "truncated": false
   }
 }

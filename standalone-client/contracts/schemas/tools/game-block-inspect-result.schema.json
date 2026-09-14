@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minecraft-agent.dev/schemas/1.0/tools/game-block-inspect-result.schema.json",
+  "title": "AGMA Client Block Inspect Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["found", "blockId", "position", "hasBlockEntity"],
+  "properties": {
+    "found": { "type": "boolean" },
+    "blockId": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 256,
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+    },
+    "position": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "z"],
+      "properties": {
+        "x": { "type": "integer", "minimum": -30000000, "maximum": 30000000 },
+        "y": { "type": "integer", "minimum": -2048, "maximum": 2048 },
+        "z": { "type": "integer", "minimum": -30000000, "maximum": 30000000 }
+      }
+    },
+    "hasBlockEntity": { "type": "boolean" },
+    "blockEntity": { "$ref": "#/$defs/blockEntity" }
+  },
+  "anyOf": [
+    {
+      "properties": {
+        "hasBlockEntity": { "const": false },
+        "blockEntity": false
+      }
+    },
+    {
+      "required": ["blockEntity"],
+      "properties": {
+        "hasBlockEntity": { "const": true },
+        "blockEntity": { "$ref": "#/$defs/blockEntity" }
+      }
+    }
+  ],
+  "$defs": {
+    "blockEntity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data"],
+      "properties": {
+        "data": { "$ref": "#/$defs/sanitizedRoot" }
+      }
+    },
+    "sanitizedLeaf": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "boolean" },
+        { "type": "number" },
+        { "type": "string", "maxLength": 128 }
+      ]
+    },
+    "sanitizedNode4": {
+      "$ref": "#/$defs/sanitizedLeaf"
+    },
+    "sanitizedNode3": {
+      "oneOf": [
+        { "$ref": "#/$defs/sanitizedLeaf" },
+        {
+          "type": "array",
+          "maxItems": 16,
+          "items": { "$ref": "#/$defs/sanitizedNode4" }
+        },
+        {
+          "type": "object",
+          "maxProperties": 64,
+          "additionalProperties": { "$ref": "#/$defs/sanitizedNode4" }
+        }
+      ]
+    },
+    "sanitizedNode2": {
+      "oneOf": [
+        { "$ref": "#/$defs/sanitizedLeaf" },
+        {
+          "type": "array",
+          "maxItems": 16,
+          "items": { "$ref": "#/$defs/sanitizedNode3" }
+        },
+        {
+          "type": "object",
+          "maxProperties": 64,
+          "additionalProperties": { "$ref": "#/$defs/sanitizedNode3" }
+        }
+      ]
+    },
+    "sanitizedNode1": {
+      "oneOf": [
+        { "$ref": "#/$defs/sanitizedLeaf" },
+        {
+          "type": "array",
+          "maxItems": 16,
+          "items": { "$ref": "#/$defs/sanitizedNode2" }
+        },
+        {
+          "type": "object",
+          "maxProperties": 64,
+          "additionalProperties": { "$ref": "#/$defs/sanitizedNode2" }
+        }
+      ]
+    },
+    "sanitizedRoot": {
+      "oneOf": [
+        { "$ref": "#/$defs/sanitizedLeaf" },
+        {
+          "type": "array",
+          "maxItems": 16,
+          "items": { "$ref": "#/$defs/sanitizedNode1" }
+        },
+        {
+          "type": "object",
+          "maxProperties": 64,
+          "additionalProperties": { "$ref": "#/$defs/sanitizedNode1" }
+        }
+      ]
+    }
+  }
+}

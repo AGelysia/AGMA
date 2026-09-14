@@ -53,9 +53,9 @@ jobs:
         run: |
           version="$(node -p "require('./standalone-client/version.json').version")"
           release_directory="$GITHUB_WORKSPACE/build/standalone-release"
-          [[ "$(find "$release_directory" -mindepth 1 -maxdepth 1 -type f | wc -l)" -eq 8 ]]
-          [[ "$(find "$release_directory" -mindepth 1 -maxdepth 1 -type f -name '*.jar' | wc -l)" -eq 6 ]]
-          for target in mc1.18.2-fabric mc1.18.2-forge mc1.21.11-fabric; do
+          [[ "$(find "$release_directory" -mindepth 1 -maxdepth 1 -type f | wc -l)" -eq 10 ]]
+          [[ "$(find "$release_directory" -mindepth 1 -maxdepth 1 -type f -name '*.jar' | wc -l)" -eq 8 ]]
+          for target in mc1.18.2-fabric mc1.18.2-forge mc1.20.1-fabric mc1.21.11-fabric; do
             for platform in linux-x86_64 windows-x86_64; do
               test -f "$release_directory/AGMA-Client-Standalone-${version}-${target}-${platform}.jar"
             done
