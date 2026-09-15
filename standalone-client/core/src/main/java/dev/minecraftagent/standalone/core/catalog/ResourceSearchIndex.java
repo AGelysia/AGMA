@@ -105,7 +105,48 @@ public final class ResourceSearchIndex {
       score = 3_000 - Math.abs(document.normalizedName().length() - query.length()) * 100;
       reasons.add(MatchReason.FUZZY_NAME);
     }
-    return score == 0 ? null : new Candidate(document.resource(), score, reasons);
+    return score == 0
+        ? scoreTokens(document, query)
+        : new Candidate(document.resource(), score, reasons);
+  }
+
+  /**
+   * Multi-token fallback for queries like "mekanism steel ingot" whose whole normalized form
+   * matches nothing: every whitespace-separated token is scored on its own and the per-token
+   * strengths are averaged. Documents matching every token are boosted above the whole-string fuzzy
+   * tier while partial matches land below it, so full coverage always wins.
+   */
+  private static Candidate scoreTokens(Document document, String query) {
+    var tokens = query.split(" ");
+    if (tokens.length < 2) {
+      return null;
+    }
+    var reasons = new HashSet<MatchReason>();
+    var hits = 0;
+    var total = 0;
+    for (var token : tokens) {
+      if (document.nameTokens().contains(token)) {
+        total += 7_000;
+        reasons.add(MatchReason.NAME_TOKEN);
+      } else if (document.normalizedName().contains(token)) {
+        total += 6_000;
+        reasons.add(MatchReason.NAME_CONTAINS);
+      } else if (document.normalizedId().contains(token)) {
+        total += 5_500;
+        reasons.add(MatchReason.ID_CONTAINS);
+      } else if (document.modTokens().contains(token)) {
+        total += 4_000;
+        reasons.add(MatchReason.MOD_TOKEN);
+      } else {
+        continue;
+      }
+      hits++;
+    }
+    if (hits == 0) {
+      return null;
+    }
+    var score = total / tokens.length / 2 + (hits == tokens.length ? 5_000 : 0);
+    return new Candidate(document.resource(), score, reasons);
   }
 
   private static boolean near(String value, String query) {

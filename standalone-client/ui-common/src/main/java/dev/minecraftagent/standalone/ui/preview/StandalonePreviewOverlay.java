@@ -7,6 +7,9 @@ import dev.minecraftagent.standalone.common.preview.StandalonePreview;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -45,6 +48,8 @@ public final class StandalonePreviewOverlay {
   private final Map<String, ItemStack> iconCache = new HashMap<>();
 
   private volatile KeyMapping toggleKey;
+  private volatile KeyMapping hologramKey;
+  private final Set<UUID> hologramHintedPreviews = ConcurrentHashMap.newKeySet();
   private String cachedPreviewId;
   private PreviewProjection.Projection cachedProjection;
 
@@ -57,9 +62,15 @@ public final class StandalonePreviewOverlay {
     toggleKey = key;
   }
 
+  /** The hologram key shown in the hint line and the one-time chat hint. */
+  public void hologramKey(KeyMapping key) {
+    hologramKey = key;
+  }
+
   /** Auto-shows the panel when a new preview is created; called from tool worker threads. */
-  public void onPreviewCreated(StandalonePreview ignored) {
+  public void onPreviewCreated(StandalonePreview preview) {
     visible.set(true);
+    hintHologramOnce(preview);
   }
 
   public void toggle() {
@@ -77,8 +88,27 @@ public final class StandalonePreviewOverlay {
   /** Hides the panel and drops cached projections, for example on disconnect. */
   public void reset() {
     hide();
+    hologramHintedPreviews.clear();
     cachedPreviewId = null;
     cachedProjection = null;
+  }
+
+  /** Tells the player once per preview how to show the hologram; safe from tool worker threads. */
+  private void hintHologramOnce(StandalonePreview preview) {
+    var key = hologramKey;
+    if (key == null || !hologramHintedPreviews.add(preview.previewId())) {
+      return;
+    }
+    var minecraft = Minecraft.getInstance();
+    minecraft.execute(
+        () -> {
+          if (minecraft.player != null) {
+            minecraft.player.displayClientMessage(
+                new TranslatableComponent(
+                    "chat.agma_standalone.hologram_hint", key.getTranslatedKeyMessage()),
+                false);
+          }
+        });
   }
 
   public void render(PoseStack poseStack, float partialTick) {
@@ -210,9 +240,15 @@ public final class StandalonePreviewOverlay {
 
     var key = toggleKey;
     if (key != null) {
+      var hologram = hologramKey;
       var hint =
-          new TranslatableComponent(
-                  "screen.agma_standalone.preview_hint", key.getTranslatedKeyMessage())
+          (hologram == null
+                  ? new TranslatableComponent(
+                      "screen.agma_standalone.preview_hint", key.getTranslatedKeyMessage())
+                  : new TranslatableComponent(
+                      "screen.agma_standalone.preview_hint_hologram",
+                      key.getTranslatedKeyMessage(),
+                      hologram.getTranslatedKeyMessage()))
               .getString();
       font.draw(poseStack, font.plainSubstrByWidth(hint, textWidth), x, cursorY, SECONDARY_TEXT);
     }

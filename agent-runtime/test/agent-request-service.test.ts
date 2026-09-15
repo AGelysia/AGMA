@@ -1265,6 +1265,35 @@ describe("Agent request service", () => {
     database.close();
   });
 
+  it.each([
+    [
+      "MODEL_NOT_FOUND",
+      "MODEL_UNAVAILABLE",
+      "The configured model was not found. Ask an administrator to check the model name in the AI settings.",
+      false,
+    ],
+    [
+      "MODEL_OUTPUT_TRUNCATED",
+      "MODEL_RESPONSE_INVALID",
+      "The AI answer was cut off by the output length limit before any text was produced. Ask a simpler question or increase the model output token limit.",
+      false,
+    ],
+  ] as const)(
+    "maps provider %s to an actionable non-retryable terminal error",
+    async (failure, code, fallbackText, retryable) => {
+      const failing = provider(async () => {
+        throw new ModelGenerationError(failure);
+      });
+      const service = agentService({ provider: failing, config: config() });
+      const responses: AgentRuntimeResponse[] = [];
+      service.submit(request(PERSISTENT_REQUEST_THREE), (response) => responses.push(response));
+      await vi.waitFor(() => expect(service.activeCount).toBe(0));
+      expect(responses).toMatchObject([
+        { type: "agent.error", payload: { code, fallbackText, retryable } },
+      ]);
+    },
+  );
+
   it("accounts a billable provider response that arrives after cancellation", async () => {
     const database = new DatabaseSync(":memory:");
     migrateRuntimeStorage(database, "2026-07-14T00:00:00.000Z");

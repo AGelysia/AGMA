@@ -42,7 +42,7 @@ import { migrateRuntimeStorage } from "../../storage/migrations.js";
 import { SqliteProjectRepository } from "../../storage/project-repository.js";
 import { ClientToolRegistry } from "../../tools/client-tool-registry.js";
 import { ProjectToolExecutor } from "../../tools/project-tool-executor.js";
-import { loadStandaloneKnowledge } from "../knowledge/knowledge-loader.js";
+import { StandaloneKnowledgeHotIndex } from "../knowledge/knowledge-loader.js";
 import { registerConnectorHandshakeRoute } from "../../transport/connector-handshake.js";
 import { SqliteUsageAccounting, type UsageAccounting } from "../../usage/usage-accounting.js";
 import { runtimeIdentity, type RuntimeIdentity } from "../../version.js";
@@ -207,7 +207,7 @@ export async function bootstrapStandaloneClient(
       ...(options.now === undefined ? {} : { now: options.now }),
       ...(searchBudget === undefined ? {} : { budget: searchBudget }),
     });
-    const knowledge = await loadStandaloneKnowledge(loaded.paths.knowledgeRoots);
+    const knowledge = await StandaloneKnowledgeHotIndex.load(loaded.paths.knowledgeRoots);
     requireActive(options.signal);
     const requests = new ClientAgentRequestService({
       provider,

@@ -35,6 +35,7 @@ class CatalogToolExecutorTest {
   public static void main(String[] arguments) throws Exception {
     var test = new CatalogToolExecutorTest();
     test.serializesSearchLookupUsesAndPlanDeterministically();
+    test.lookupListsCoproductProducersAfterPrimaryOnesAndUsesIgnoresStationsAndEnergy();
     test.plansTheRequestedLocalAmountAndPresentsStepFlows();
     test.canonicalizesObservedTargetsAgainstTheCurrentGeneration();
     test.reportsUnavailableAndStaleCatalogStatesWithoutReadingData();
@@ -445,12 +446,265 @@ class CatalogToolExecutorTest {
     }
   }
 
+  @Test
+  void lookupListsCoproductProducersAfterPrimaryOnesAndUsesIgnoresStationsAndEnergy()
+      throws Exception {
+    var source = new FakeSource(coproductView());
+    var worker = Executors.newSingleThreadExecutor();
+    try (var executor = new CatalogToolExecutor(source, worker, CLOCK)) {
+      // iron_ingot is the primary output of smelting but a coproduct of recycling: the primary
+      // producer sorts first even though its process id sorts after the coproduct one.
+      var lookup =
+          result(
+              executor,
+              call(
+                  50,
+                  "game.process.lookup",
+                  Map.of(
+                      "resourceId",
+                      "minecraft:iron_ingot",
+                      "generationId",
+                      GENERATION,
+                      "limit",
+                      16)));
+      var producers = list(lookup.get("processes"));
+      assertEquals(
+          List.of("agma:smelt_iron", "agma:recycle_pickaxe"),
+          producers.stream().map(process -> object(process).get("processId")).toList());
+      // Primary matches keep the established wire shape; coproduct matches are marked instead.
+      assertFalse(object(producers.get(0)).containsKey("primary"));
+      assertEquals(false, object(producers.get(1)).get("primary"));
+
+      var coproduct =
+          result(
+              executor,
+              call(
+                  51,
+                  "game.process.lookup",
+                  Map.of(
+                      "resourceId",
+                      "minecraft:iron_nugget",
+                      "generationId",
+                      GENERATION,
+                      "limit",
+                      16)));
+      var coproductProducers = list(coproduct.get("processes"));
+      assertEquals(
+          List.of("agma:recycle_pickaxe", "agma:smelt_iron"),
+          coproductProducers.stream().map(process -> object(process).get("processId")).toList());
+      assertEquals(false, object(coproductProducers.get(1)).get("primary"));
+
+      // Workstations and energy are not consumed resources and must not match game.process.uses.
+      for (var index = 0; index < 2; index++) {
+        var uses =
+            result(
+                executor,
+                call(
+                    52 + index,
+                    "game.process.uses",
+                    Map.of(
+                        "resourceId",
+                        index == 0 ? "minecraft:furnace" : "test:flux",
+                        "generationId",
+                        GENERATION,
+                        "limit",
+                        16)));
+        assertEquals(List.of(), uses.get("processes"));
+      }
+
+      // The crafting table still matches through the recycling catalyst, and ore through inputs.
+      var catalyst =
+          result(
+              executor,
+              call(
+                  54,
+                  "game.process.uses",
+                  Map.of(
+                      "resourceId",
+                      "minecraft:crafting_table",
+                      "generationId",
+                      GENERATION,
+                      "limit",
+                      16)));
+      assertEquals(
+          List.of("agma:recycle_pickaxe"),
+          list(catalyst.get("processes")).stream()
+              .map(process -> object(process).get("processId"))
+              .toList());
+      var input =
+          result(
+              executor,
+              call(
+                  55,
+                  "game.process.uses",
+                  Map.of(
+                      "resourceId",
+                      "minecraft:iron_ore",
+                      "generationId",
+                      GENERATION,
+                      "limit",
+                      16)));
+      assertEquals(
+          List.of("agma:smelt_iron"),
+          list(input.get("processes")).stream()
+              .map(process -> object(process).get("processId"))
+              .toList());
+    } finally {
+      worker.shutdownNow();
+    }
+  }
+
   private static CatalogToolSource.CatalogView readyView() {
     return CatalogToolSource.CatalogView.ready(
         CatalogToolSource.Visibility.MULTIPLAYER,
         CatalogToolSource.Completeness.PARTIAL,
         catalog(),
         List.of("Client-visible recipes may omit server-only rules."));
+  }
+
+  private static CatalogToolSource.CatalogView coproductView() {
+    return CatalogToolSource.CatalogView.ready(
+        CatalogToolSource.Visibility.MULTIPLAYER,
+        CatalogToolSource.Completeness.COMPLETE,
+        coproductCatalog(),
+        List.of());
+  }
+
+  private static CatalogSnapshot coproductCatalog() {
+    var registry =
+        new ResourceRef.Source(
+            ResourceRef.Layer.CLIENT_REGISTRY,
+            "minecraft_registry",
+            ResourceRef.Trust.L0B,
+            ResourceRef.Completeness.COMPLETE,
+            GENERATION);
+    var recipe =
+        new ResourceRef.Source(
+            ResourceRef.Layer.CLIENT_RECIPE,
+            "vanilla_client",
+            ResourceRef.Trust.L1,
+            ResourceRef.Completeness.PARTIAL,
+            GENERATION);
+    var resources =
+        List.of(
+            resource("minecraft:crafting_table", "Crafting Table", BigDecimal.ONE, registry),
+            resource("minecraft:furnace", "Furnace", BigDecimal.ONE, registry),
+            resource("minecraft:iron_ingot", "Iron Ingot", BigDecimal.ONE, registry),
+            resource("minecraft:iron_nugget", "Iron Nugget", BigDecimal.ONE, registry),
+            resource("minecraft:iron_ore", "Iron Ore", BigDecimal.ONE, registry),
+            resource("minecraft:iron_pickaxe", "Iron Pickaxe", BigDecimal.ONE, registry),
+            resource("minecraft:stick", "Stick", BigDecimal.ONE, registry),
+            energy("test:flux", "Flux", new BigDecimal("8"), registry));
+    var craft =
+        new ProcessRecord(
+            "agma:craft_pickaxe",
+            "minecraft:crafting",
+            "Iron Pickaxe",
+            List.of(resource("minecraft:crafting_table", "Crafting Table", BigDecimal.ONE, recipe)),
+            List.of(
+                new ProcessRecord.InputGroup(
+                    "iron",
+                    List.of(
+                        resource(
+                            "minecraft:iron_ingot", "Iron Ingot", new BigDecimal("3"), recipe))),
+                new ProcessRecord.InputGroup(
+                    "stick",
+                    List.of(resource("minecraft:stick", "Stick", new BigDecimal("2"), recipe)))),
+            List.of(),
+            List.of(
+                new ProcessRecord.Output(
+                    resource("minecraft:iron_pickaxe", "Iron Pickaxe", BigDecimal.ONE, recipe),
+                    BigDecimal.ONE,
+                    true)),
+            null,
+            null,
+            List.of(),
+            List.of(),
+            recipe,
+            true,
+            List.of());
+    var smelt =
+        new ProcessRecord(
+            "agma:smelt_iron",
+            "minecraft:smelting",
+            "Iron Ingot",
+            List.of(resource("minecraft:furnace", "Furnace", BigDecimal.ONE, recipe)),
+            List.of(
+                new ProcessRecord.InputGroup(
+                    "ore",
+                    List.of(resource("minecraft:iron_ore", "Iron Ore", BigDecimal.ONE, recipe)))),
+            List.of(),
+            List.of(
+                new ProcessRecord.Output(
+                    resource("minecraft:iron_ingot", "Iron Ingot", BigDecimal.ONE, recipe),
+                    BigDecimal.ONE,
+                    true),
+                new ProcessRecord.Output(
+                    resource("minecraft:iron_nugget", "Iron Nugget", BigDecimal.ONE, recipe),
+                    new BigDecimal("0.5"),
+                    false)),
+            160L,
+            energy("test:flux", "Flux", new BigDecimal("8"), recipe),
+            List.of(),
+            List.of(),
+            recipe,
+            true,
+            List.of());
+    var recycle =
+        new ProcessRecord(
+            "agma:recycle_pickaxe",
+            "minecraft:crafting",
+            "Recycle Pickaxe",
+            List.of(),
+            List.of(
+                new ProcessRecord.InputGroup(
+                    "tool",
+                    List.of(
+                        resource(
+                            "minecraft:iron_pickaxe", "Iron Pickaxe", BigDecimal.ONE, recipe)))),
+            List.of(
+                new ProcessRecord.Catalyst(
+                    resource("minecraft:crafting_table", "Crafting Table", BigDecimal.ONE, recipe),
+                    false,
+                    null)),
+            List.of(
+                new ProcessRecord.Output(
+                    resource("minecraft:iron_nugget", "Iron Nugget", BigDecimal.ONE, recipe),
+                    BigDecimal.ONE,
+                    true),
+                new ProcessRecord.Output(
+                    resource("minecraft:iron_ingot", "Iron Ingot", BigDecimal.ONE, recipe),
+                    new BigDecimal("0.5"),
+                    false)),
+            null,
+            null,
+            List.of(),
+            List.of(),
+            recipe,
+            true,
+            List.of());
+    return new CatalogSnapshot(
+        GENERATION,
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        Instant.parse("2026-07-17T00:00:00Z"),
+        resources,
+        List.of(craft, smelt, recycle));
+  }
+
+  private static ResourceRef energy(
+      String id, String name, BigDecimal amount, ResourceRef.Source source) {
+    return new ResourceRef(
+        ResourceRef.Kind.ENERGY,
+        id,
+        null,
+        name,
+        "energy." + id.replace(':', '.'),
+        "test",
+        "Test",
+        "test",
+        amount,
+        "flux",
+        source);
   }
 
   private static CatalogSnapshot catalog() {

@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import dev.minecraftagent.standalone.common.CatalogToolExecutor;
 import dev.minecraftagent.standalone.common.ClientLifecycleState;
 import dev.minecraftagent.standalone.common.ClientRuntimeController;
+import dev.minecraftagent.standalone.common.ClientRuntimeStateText;
 import dev.minecraftagent.standalone.common.ClientToolHandler;
 import dev.minecraftagent.standalone.common.StandaloneUiState;
 import dev.minecraftagent.standalone.common.TextCompletion;
@@ -14,7 +15,6 @@ import dev.minecraftagent.standalone.ui.StandaloneSettingsScreen;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 import net.minecraft.Util;
@@ -330,7 +330,8 @@ public final class StandaloneAssistantScreen extends Screen {
       state.lastCostMicroUsd = 0;
       state.lastCostKind = null;
       state.sources = List.of();
-      state.status = completion.errorCode();
+      var message = completion.errorMessage();
+      state.status = message == null || message.isBlank() ? completion.errorCode() : message;
     }
     rebuild();
   }
@@ -377,7 +378,9 @@ public final class StandaloneAssistantScreen extends Screen {
 
   private String safeRuntimeFailure() {
     var code = runtime.view().startupFailureCode();
-    return code == null ? "RUNTIME_START_FAILED" : code;
+    return new TranslatableComponent(
+            ClientRuntimeStateText.startupFailureKey(code), code == null ? "" : code)
+        .getString();
   }
 
   private void scroll(int delta) {
@@ -411,7 +414,8 @@ public final class StandaloneAssistantScreen extends Screen {
         pose,
         new TranslatableComponent(
             "screen.agma_standalone.runtime_state",
-            runtime.view().profile().state().name().toLowerCase(Locale.ROOT)),
+            new TranslatableComponent(
+                ClientRuntimeStateText.stateKey(runtime.view().profile().state()))),
         left + 16,
         top + 42,
         SECONDARY_TEXT);

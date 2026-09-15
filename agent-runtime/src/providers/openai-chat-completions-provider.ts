@@ -36,6 +36,9 @@ const DEEPSEEK_API_ROOT = "https://api.deepseek.com";
 const KIMI_API_ROOT = "https://api.moonshot.cn";
 const GLM_API_ROOT = "https://open.bigmodel.cn/api/paas/v4";
 const MAXIMUM_CONTINUATION_ITEMS = 64;
+// Long answers are truncated to MAXIMUM_FALLBACK_TEXT_LENGTH downstream, so
+// the schema only rejects responses that are unreasonably large overall.
+const MAXIMUM_ASSISTANT_MESSAGE_CHARACTERS = 32768;
 type ChatProviderId = Extract<ModelProviderId, "deepseek" | "kimi" | "glm" | "openai-compatible">;
 
 const PROVIDER_API_ROOTS: Readonly<Record<Exclude<ChatProviderId, "openai-compatible">, string>> = {
@@ -80,7 +83,7 @@ const chatToolCallSchema = z
 const assistantContinuationSchema = z
   .object({
     role: z.literal("assistant"),
-    content: z.string().max(8192).nullable(),
+    content: z.string().max(MAXIMUM_ASSISTANT_MESSAGE_CHARACTERS).nullable(),
     tool_calls: z.array(chatToolCallSchema).length(1),
   })
   .strict();
@@ -107,7 +110,7 @@ const providerResponseSchema = z
             message: z
               .object({
                 role: z.literal("assistant"),
-                content: z.string().max(8192).nullish(),
+                content: z.string().max(MAXIMUM_ASSISTANT_MESSAGE_CHARACTERS).nullish(),
                 // Endpoints may fan out parallel calls even when asked not to;
                 // only the first call is processed and the rest are dropped.
                 tool_calls: z.array(chatToolCallSchema).max(8).optional(),
@@ -273,7 +276,11 @@ export class OpenAiChatCompletionsProvider implements ModelProvider {
       tools,
       tool_choice: tools.length === 0 ? "none" : "auto",
       parallel_tool_calls: false,
-      ...(this.#provider === "deepseek" ? { thinking: { type: "disabled" } } : {}),
+      // GLM-4.5/4.6 default to thinking mode, which burns max_tokens on
+      // reasoning and can return an empty content truncated by length.
+      ...(this.#provider === "deepseek" || this.#provider === "glm"
+        ? { thinking: { type: "disabled" } }
+        : {}),
     });
     let response: Response;
     try {
@@ -371,9 +378,15 @@ export class OpenAiChatCompletionsProvider implements ModelProvider {
     }
     // A plain-text answer truncated by max_tokens is still usable fallback text;
     // only tool calls are unsafe to accept when truncated (see above).
+    const content = choice.message.content ?? "";
+    if (content.trim().length === 0 && choice.finish_reason === "length") {
+      // All output tokens went to reasoning (or nowhere), so retrying the same
+      // request would truncate identically; surface an actionable error instead.
+      throw new ModelGenerationError("MODEL_OUTPUT_TRUNCATED");
+    }
     return {
       type: "final",
-      fallbackText: boundedFallbackText(choice.message.content ?? ""),
+      fallbackText: boundedFallbackText(content),
       ...generationUsage,
     };
   }

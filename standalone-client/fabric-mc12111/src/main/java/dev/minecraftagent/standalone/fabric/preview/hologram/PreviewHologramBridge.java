@@ -17,9 +17,26 @@ public interface PreviewHologramBridge extends AutoCloseable {
   @Override
   void close();
 
+  /** Whether this bridge can actually present a hologram; the default bridge cannot. */
+  default boolean available() {
+    return false;
+  }
+
+  /** Registers the hologram load outcome listener; the default bridge never reports outcomes. */
+  default void loadListener(LoadListener listener) {}
+
   /** The default bridge for installations without a hologram adapter; every call is a no-op. */
   static PreviewHologramBridge unsupported() {
     return UnsupportedBridge.INSTANCE;
+  }
+
+  /** Receives the outcome of an asynchronous hologram load on the client thread. */
+  interface LoadListener {
+    /**
+     * Reports one finished load attempt: {@code reason} is null on success and otherwise a
+     * machine-readable failure tag such as {@code STAGE_FAILED} or a display failure code name.
+     */
+    void onLoad(boolean loaded, String reason);
   }
 }
 

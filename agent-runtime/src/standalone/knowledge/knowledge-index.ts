@@ -1,7 +1,10 @@
 /**
  * Standalone-local knowledge index mirroring the Paper-line MarkdownKnowledgeIndex semantics
- * (query bounds, token scoring, match shape) without importing the server-line knowledge module,
- * which the standalone build graph forbids.
+ * (query bounds, match shape) without importing the server-line knowledge module, which the
+ * standalone build graph forbids. Query tokenization additionally segments CJK runs into bigrams
+ * and drops Chinese and English function words, because Chinese player questions carry no
+ * whitespace and models tend to send full sentences. Scoring prefers full token coverage but
+ * still ranks partial matches instead of discarding them.
  */
 export type StandaloneKnowledgeDocumentKind = "server_rules" | "local_docs";
 
@@ -27,6 +30,13 @@ export interface StandaloneKnowledgeSearchResult {
   readonly query: string;
   readonly matches: readonly StandaloneKnowledgeSearchMatch[];
   readonly truncated: boolean;
+}
+
+export interface StandaloneKnowledgeSearcher {
+  readonly size: number;
+  search(
+    rawQuery: string,
+  ): StandaloneKnowledgeSearchResult | Promise<StandaloneKnowledgeSearchResult>;
 }
 
 const MAXIMUM_QUERY_CHARACTERS = 256;
@@ -64,11 +74,170 @@ function normalized(value: string): string {
   return value.normalize("NFKC").toLowerCase();
 }
 
+const CJK_RUN = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]+/u;
+const QUERY_SEGMENTS =
+  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]+|[\p{L}\p{N}_-]+/gu;
+
+const ENGLISH_STOP_WORDS: ReadonlySet<string> = new Set([
+  "a",
+  "an",
+  "the",
+  "and",
+  "or",
+  "but",
+  "if",
+  "then",
+  "of",
+  "at",
+  "by",
+  "for",
+  "with",
+  "about",
+  "into",
+  "to",
+  "from",
+  "in",
+  "out",
+  "on",
+  "off",
+  "over",
+  "under",
+  "is",
+  "am",
+  "are",
+  "was",
+  "were",
+  "be",
+  "been",
+  "being",
+  "do",
+  "does",
+  "did",
+  "doing",
+  "have",
+  "has",
+  "had",
+  "having",
+  "i",
+  "me",
+  "my",
+  "we",
+  "our",
+  "you",
+  "your",
+  "he",
+  "him",
+  "his",
+  "she",
+  "her",
+  "it",
+  "its",
+  "they",
+  "them",
+  "their",
+  "this",
+  "that",
+  "these",
+  "those",
+  "what",
+  "which",
+  "who",
+  "whom",
+  "when",
+  "where",
+  "why",
+  "how",
+  "can",
+  "could",
+  "will",
+  "would",
+  "shall",
+  "should",
+  "may",
+  "might",
+  "must",
+  "not",
+  "no",
+  "so",
+  "as",
+  "up",
+  "down",
+  "here",
+  "there",
+  "all",
+  "any",
+  "some",
+  "make",
+  "made",
+  "get",
+  "got",
+  "use",
+  "using",
+  "used",
+]);
+
+const CHINESE_STOP_WORDS: readonly string[] = [
+  "怎么样",
+  "为什么",
+  "有没有",
+  "能不能",
+  "是不是",
+  "怎么",
+  "怎样",
+  "如何",
+  "什么",
+  "为啥",
+  "哪里",
+  "哪儿",
+  "哪个",
+  "哪些",
+  "多少",
+  "干嘛",
+  "请问",
+  "可以",
+];
+
+const CHINESE_STOP_CHARACTERS =
+  "的吗呢吧啊呀嘛了我你您他她它是在有没不要想能会和与及或也就都还很再最被把给从向对为着过之其这那些个么几谁";
+const CHINESE_STOP_CHARACTER = new RegExp(`[${CHINESE_STOP_CHARACTERS}]`, "u");
+
+function chineseSegments(run: string): readonly string[] {
+  let segments = [run];
+  for (const word of CHINESE_STOP_WORDS) {
+    segments = segments.flatMap((segment) => segment.split(word));
+  }
+  return segments
+    .flatMap((segment) => segment.split(CHINESE_STOP_CHARACTER))
+    .filter((segment) => segment.length > 0);
+}
+
+function bigrams(segment: string): readonly string[] {
+  const characters = [...segment];
+  if (characters.length <= 2) {
+    return characters.length === 0 ? [] : [characters.join("")];
+  }
+  const grams: string[] = [];
+  for (let index = 0; index + 1 < characters.length; index += 1) {
+    grams.push(characters.slice(index, index + 2).join(""));
+  }
+  return grams;
+}
+
 function queryTokens(query: string): readonly string[] {
-  const tokens = normalized(query).match(/[\p{L}\p{N}_-]+/gu) ?? [];
+  const value = normalized(query);
+  const tokens: string[] = [];
+  for (const segment of value.match(QUERY_SEGMENTS) ?? []) {
+    if (CJK_RUN.test(segment)) {
+      for (const part of chineseSegments(segment)) {
+        tokens.push(...bigrams(part));
+      }
+    } else if (!ENGLISH_STOP_WORDS.has(segment)) {
+      tokens.push(segment);
+    }
+  }
   const distinct = [...new Set(tokens)];
   if (distinct.length === 0) {
-    return [normalized(query)];
+    return [value];
   }
   if (distinct.length > MAXIMUM_QUERY_TOKENS) {
     throw new TypeError("Knowledge query contains too many terms.");
@@ -130,10 +299,11 @@ export class StandaloneKnowledgeIndex {
     const tokens = queryTokens(query);
     const matches = this.#chunks
       .map((entry) => {
-        if (!tokens.every((token) => entry.searchable.includes(token))) {
+        const matched = tokens.filter((token) => entry.searchable.includes(token));
+        if (matched.length === 0) {
           return undefined;
         }
-        const score = tokens.reduce(
+        const score = matched.reduce(
           (total, token) =>
             total +
             occurrences(entry.normalizedText, token) +
@@ -141,11 +311,16 @@ export class StandaloneKnowledgeIndex {
             occurrences(entry.normalizedTitle, token) * 8,
           0,
         );
-        return { chunk: entry.chunk, score };
+        return { chunk: entry.chunk, coverage: matched.length / tokens.length, score };
       })
       .filter(
-        (match): match is { readonly chunk: StandaloneKnowledgeChunk; readonly score: number } =>
-          Boolean(match),
+        (
+          match,
+        ): match is {
+          readonly chunk: StandaloneKnowledgeChunk;
+          readonly coverage: number;
+          readonly score: number;
+        } => Boolean(match),
       )
       .sort((left, right) => {
         const kind =
@@ -153,7 +328,11 @@ export class StandaloneKnowledgeIndex {
         if (kind !== 0) {
           return kind;
         }
-        return right.score - left.score || left.chunk.citation.localeCompare(right.chunk.citation);
+        return (
+          right.coverage - left.coverage ||
+          right.score - left.score ||
+          left.chunk.citation.localeCompare(right.chunk.citation)
+        );
       });
 
     return {

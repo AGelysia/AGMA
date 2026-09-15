@@ -140,7 +140,7 @@ describe("OpenAI Responses provider", () => {
   it.each([
     [401, "MODEL_AUTHENTICATION_FAILED"],
     [403, "MODEL_AUTHENTICATION_FAILED"],
-    [404, "MODEL_UNAVAILABLE"],
+    [404, "MODEL_NOT_FOUND"],
     [429, "MODEL_RATE_LIMITED"],
     [500, "PROVIDER_UNAVAILABLE"],
   ] as const)("maps HTTP %s without exposing the response body", async (status, code) => {

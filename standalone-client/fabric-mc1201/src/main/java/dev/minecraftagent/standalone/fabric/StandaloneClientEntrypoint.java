@@ -32,6 +32,7 @@ import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -112,6 +113,7 @@ public final class StandaloneClientEntrypoint implements ClientModInitializer {
   /** Installs the hologram presentation bridge used by the hologram keybind; default is a no-op. */
   public static void setHologramBridge(PreviewHologramBridge bridge) {
     hologramBridge = Objects.requireNonNull(bridge, "bridge");
+    bridge.loadListener(StandaloneClientEntrypoint::onHologramLoad);
   }
 
   /**
@@ -256,6 +258,7 @@ public final class StandaloneClientEntrypoint implements ClientModInitializer {
                 "key.agma_standalone.hologram_toggle",
                 GLFW.GLFW_KEY_O,
                 "key.categories.agma_standalone"));
+    previewOverlay.hologramKey(hologramToggle);
     ClientTickEvents.END_CLIENT_TICK.register(
         client -> {
           while (open.consumeClick()) {
@@ -279,11 +282,16 @@ public final class StandaloneClientEntrypoint implements ClientModInitializer {
             if (hologramLoaded) {
               hologramBridge.removeCurrent();
               hologramLoaded = false;
+            } else if (!hologramBridge.available()) {
+              clientMessage(
+                  client, Component.translatable("chat.agma_standalone.hologram_unavailable"));
             } else {
               var latest = PREVIEWS.latest();
               if (latest.isPresent()) {
                 hologramBridge.load(latest.get());
-                hologramLoaded = true;
+              } else {
+                clientMessage(
+                    client, Component.translatable("chat.agma_standalone.hologram_no_preview"));
               }
             }
           }
@@ -292,6 +300,34 @@ public final class StandaloneClientEntrypoint implements ClientModInitializer {
 
   static ClientRuntimeController runtimeController() {
     return runtime;
+  }
+
+  private static void onHologramLoad(boolean loaded, String reason) {
+    if (loaded) {
+      hologramLoaded = true;
+      return;
+    }
+    hologramLoaded = false;
+    var key =
+        reason == null
+            ? "chat.agma_standalone.hologram_load_failed"
+            : switch (reason) {
+              case "STAGE_FAILED" -> "chat.agma_standalone.hologram_stage_failed";
+              case "ADAPTER_UNAVAILABLE" -> "chat.agma_standalone.hologram_unavailable";
+              case "MANAGED_FILE_UNAVAILABLE", "MANAGED_FILE_HASH_MISMATCH" ->
+                  "chat.agma_standalone.hologram_file_unavailable";
+              default -> "chat.agma_standalone.hologram_load_failed";
+            };
+    clientMessage(Minecraft.getInstance(), Component.translatable(key));
+  }
+
+  private static void clientMessage(Minecraft client, Component message) {
+    client.execute(
+        () -> {
+          if (client.player != null) {
+            client.player.displayClientMessage(message, false);
+          }
+        });
   }
 
   private static void invalidateGuideContext(boolean clearSession) {

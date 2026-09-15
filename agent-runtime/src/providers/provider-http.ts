@@ -320,7 +320,7 @@ export function generationFailure(
     return new ModelGenerationError("MODEL_AUTHENTICATION_FAILED", disposition);
   }
   if (status === 404) {
-    return new ModelGenerationError("MODEL_UNAVAILABLE", disposition);
+    return new ModelGenerationError("MODEL_NOT_FOUND", disposition);
   }
   if (status === 429) {
     return new ModelGenerationError("MODEL_RATE_LIMITED", disposition);

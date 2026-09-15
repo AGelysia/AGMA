@@ -389,7 +389,7 @@ describe("standalone connector WebSocket", () => {
       type: "client.complete",
       payload: {
         sessionId: null,
-        text: "Unknown:\n- Select an exact local catalog target before requesting process facts.",
+        text: "Unverified model answer (not checked against local data):\nlocal standalone answer",
         costMicroUsd: 19,
         costKind: "reported",
         sources: [],
@@ -560,7 +560,7 @@ describe("standalone connector WebSocket", () => {
     expect(messages[1]).toMatchObject({
       type: "client.complete",
       payload: {
-        text: "Unknown:\n- Select an exact local catalog target before requesting process facts.",
+        text: "Unverified model answer (not checked against local data):\nThe local lookup timed out.",
         costMicroUsd: 100_000,
         costKind: "estimated",
       },

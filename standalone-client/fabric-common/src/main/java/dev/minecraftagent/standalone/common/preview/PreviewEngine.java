@@ -48,9 +48,10 @@ public final class PreviewEngine {
    * Applies shapes in array order (later shapes override earlier ones per cell) and transforms
    * every target cell around the origin, returning the per-cell targets and the union of the
    * transformed shape bounds. Shape bounds are relative to the origin (see class javadoc).
-   * Block-state properties are intentionally not rewritten by the transform: the server line
-   * carries rotation/mirror as artifact metadata without rotating facing-type property values, and
-   * this engine mirrors that choice.
+   * Orientation-carrying block-state properties (horizontal facing, numeric rotation, axis, door
+   * hinge, stair shape, and the north/east/south/west connection keys) are rewritten through {@link
+   * BlockStateTransform} so the transformed targets describe the rotated/mirrored build; vertical
+   * properties such as half/type pass through.
    */
   public static PreviewTargets prepare(PreviewRequest request) {
     Objects.requireNonNull(request, "request");
@@ -67,7 +68,11 @@ public final class PreviewEngine {
         throw new PreviewLimitException(
             "the transformed preview bounds exceed the union volume limit");
       }
-      var target = shape.pattern() == PreviewPattern.CLEAR ? AIR : shape.blockState();
+      var target =
+          shape.pattern() == PreviewPattern.CLEAR
+              ? AIR
+              : BlockStateTransform.transform(
+                  shape.blockState(), request.rotation(), request.mirror());
       for (var y = bounds.min().y(); y <= bounds.max().y(); y++) {
         for (var z = bounds.min().z(); z <= bounds.max().z(); z++) {
           for (var x = bounds.min().x(); x <= bounds.max().x(); x++) {

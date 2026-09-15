@@ -23,6 +23,9 @@ public final class PreviewArguments {
     var dimension = string(arguments.get("dimension"));
     var origin = position(arguments.get("origin"));
     var rotation = integer(arguments.get("rotation"));
+    if (rotation != 0 && rotation != 90 && rotation != 180 && rotation != 270) {
+      throw new IllegalArgumentException("preview rotation must be one of 0, 90, 180, 270");
+    }
     final PreviewMirror mirror;
     try {
       mirror = PreviewMirror.valueOf(string(arguments.get("mirror")));

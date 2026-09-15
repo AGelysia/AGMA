@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraftforge.client.ClientRegistry;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
@@ -113,6 +114,7 @@ final class StandaloneForgeClient {
       tools = new CatalogToolExecutor(CATALOG);
       previewOverlay = new StandalonePreviewOverlay(PREVIEWS);
       previewOverlay.toggleKey(PREVIEW_TOGGLE);
+      previewOverlay.hologramKey(HOLOGRAM_TOGGLE);
       previewTools = new BuildPreviewToolExecutor(PREVIEWS, previewOverlay::onPreviewCreated);
       playerContextTools = new PlayerContextToolExecutor();
       blockInspectTools = new BlockInspectToolExecutor();
@@ -165,6 +167,7 @@ final class StandaloneForgeClient {
     }
     if (controller != null) {
       hologramBridge = controller;
+      controller.loadListener(StandaloneForgeClient::onHologramLoad);
     }
     LOGGER.info("AGMA standalone Litematica hologram availability={}", diagnostic.status());
   }
@@ -278,11 +281,16 @@ final class StandaloneForgeClient {
       if (hologramLoaded) {
         hologramBridge.removeCurrent();
         hologramLoaded = false;
+      } else if (!hologramBridge.available()) {
+        clientMessage(
+            client, new TranslatableComponent("chat.agma_standalone.hologram_unavailable"));
       } else {
         var latest = PREVIEWS.latest();
         if (latest.isPresent()) {
           hologramBridge.load(latest.get());
-          hologramLoaded = true;
+        } else {
+          clientMessage(
+              client, new TranslatableComponent("chat.agma_standalone.hologram_no_preview"));
         }
       }
     }
@@ -290,6 +298,34 @@ final class StandaloneForgeClient {
 
   static ClientRuntimeController runtimeController() {
     return runtime;
+  }
+
+  private static void onHologramLoad(boolean loaded, String reason) {
+    if (loaded) {
+      hologramLoaded = true;
+      return;
+    }
+    hologramLoaded = false;
+    var key =
+        reason == null
+            ? "chat.agma_standalone.hologram_load_failed"
+            : switch (reason) {
+              case "STAGE_FAILED" -> "chat.agma_standalone.hologram_stage_failed";
+              case "ADAPTER_UNAVAILABLE" -> "chat.agma_standalone.hologram_unavailable";
+              case "MANAGED_FILE_UNAVAILABLE", "MANAGED_FILE_HASH_MISMATCH" ->
+                  "chat.agma_standalone.hologram_file_unavailable";
+              default -> "chat.agma_standalone.hologram_load_failed";
+            };
+    clientMessage(Minecraft.getInstance(), new TranslatableComponent(key));
+  }
+
+  private static void clientMessage(Minecraft client, TranslatableComponent message) {
+    client.execute(
+        () -> {
+          if (client.player != null) {
+            client.player.displayClientMessage(message, false);
+          }
+        });
   }
 
   private static void runOnClient(Runnable action) {

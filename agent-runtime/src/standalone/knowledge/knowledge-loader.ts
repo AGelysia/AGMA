@@ -7,6 +7,7 @@ import {
   StandaloneKnowledgeIndex,
   type StandaloneKnowledgeChunk,
   type StandaloneKnowledgeDocumentKind,
+  type StandaloneKnowledgeSearchResult,
 } from "./knowledge-index.js";
 
 /**
@@ -301,4 +302,103 @@ export async function loadStandaloneKnowledge(
     }
   }
   return new StandaloneKnowledgeIndex(chunks);
+}
+
+/**
+ * Cheap change detector for the knowledge roots: a hash over every candidate Markdown file's
+ * path, size, and mtime. The catalog writer rewrites the documents on every catalog refresh
+ * (world join, resource reload, language switch) while the Runtime process stays resident, so
+ * searches compare fingerprints and rebuild the in-memory index when this value moves.
+ */
+export async function standaloneKnowledgeFingerprint(
+  roots: readonly StandaloneKnowledgeRootPath[],
+): Promise<string> {
+  if (roots.length > MAXIMUM_ROOTS) {
+    throw new TypeError("Too many local knowledge roots were configured.");
+  }
+  const hash = createHash("sha256");
+  for (const root of roots) {
+    hash.update(`${root.kind}\0${root.directory}\0`, "utf8");
+    const resolvedRoot = await realpath(root.directory).catch(() => undefined);
+    if (resolvedRoot === undefined || resolvedRoot !== root.directory) {
+      hash.update("unavailable\0", "utf8");
+      continue;
+    }
+    const paths: string[] = [];
+    await collectMarkdownFiles(resolvedRoot, 0, paths);
+    for (const path of paths) {
+      const metadata = await lstat(path).catch(() => undefined);
+      hash.update(
+        metadata === undefined
+          ? `${path}\0missing\0`
+          : `${path}\0${String(metadata.size)}\0${String(metadata.mtimeMs)}\0`,
+        "utf8",
+      );
+    }
+  }
+  return hash.digest("hex");
+}
+
+/**
+ * Knowledge searcher that checks the root fingerprint before each search and rebuilds the index
+ * when the documents changed. Concurrent searches share one in-flight rebuild, and the index
+ * reference is swapped only after a rebuild completes, so a search always sees a consistent old
+ * or new index. Filesystem or loader failures keep the previous index instead of failing the
+ * search.
+ */
+export class StandaloneKnowledgeHotIndex {
+  readonly #roots: readonly StandaloneKnowledgeRootPath[];
+  #index: StandaloneKnowledgeIndex;
+  #fingerprint: string;
+  #refresh: Promise<boolean> | undefined;
+
+  private constructor(
+    roots: readonly StandaloneKnowledgeRootPath[],
+    index: StandaloneKnowledgeIndex,
+    fingerprint: string,
+  ) {
+    this.#roots = roots;
+    this.#index = index;
+    this.#fingerprint = fingerprint;
+  }
+
+  public static async load(
+    roots: readonly StandaloneKnowledgeRootPath[],
+  ): Promise<StandaloneKnowledgeHotIndex> {
+    const [index, fingerprint] = await Promise.all([
+      loadStandaloneKnowledge(roots),
+      standaloneKnowledgeFingerprint(roots),
+    ]);
+    return new StandaloneKnowledgeHotIndex(roots, index, fingerprint);
+  }
+
+  public get size(): number {
+    return this.#index.size;
+  }
+
+  public refresh(): Promise<boolean> {
+    this.#refresh ??= this.#refreshChanged().finally(() => {
+      this.#refresh = undefined;
+    });
+    return this.#refresh;
+  }
+
+  async #refreshChanged(): Promise<boolean> {
+    const fingerprint = await standaloneKnowledgeFingerprint(this.#roots).catch(() => undefined);
+    if (fingerprint === undefined || fingerprint === this.#fingerprint) {
+      return false;
+    }
+    const index = await loadStandaloneKnowledge(this.#roots).catch(() => undefined);
+    if (index === undefined) {
+      return false;
+    }
+    this.#index = index;
+    this.#fingerprint = fingerprint;
+    return true;
+  }
+
+  public async search(rawQuery: string): Promise<StandaloneKnowledgeSearchResult> {
+    await this.refresh();
+    return this.#index.search(rawQuery);
+  }
 }

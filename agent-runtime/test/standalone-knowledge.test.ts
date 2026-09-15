@@ -1,4 +1,4 @@
-import { chmod, mkdir, rm, symlink, writeFile } from "node:fs/promises";
+import { chmod, mkdir, rm, symlink, utimes, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "node:url";
@@ -8,8 +8,15 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ModelProvider } from "../src/providers/model-provider.js";
 import { loadStandaloneClientConfig } from "../src/config/standalone-client-config.js";
 import { SchemaRegistry } from "../src/protocol/schema-registry.js";
-import { loadStandaloneKnowledge } from "../src/standalone/knowledge/knowledge-loader.js";
-import { StandaloneKnowledgeIndex } from "../src/standalone/knowledge/knowledge-index.js";
+import {
+  loadStandaloneKnowledge,
+  StandaloneKnowledgeHotIndex,
+  standaloneKnowledgeFingerprint,
+} from "../src/standalone/knowledge/knowledge-loader.js";
+import {
+  StandaloneKnowledgeIndex,
+  type StandaloneKnowledgeSearcher,
+} from "../src/standalone/knowledge/knowledge-index.js";
 import {
   startStandaloneClient,
   type StartedStandaloneRuntime,
@@ -57,7 +64,7 @@ afterEach(async () => {
 });
 
 function executorCall(
-  knowledge: StandaloneKnowledgeIndex | undefined,
+  knowledge: StandaloneKnowledgeSearcher | undefined,
   argumentsValue: Readonly<Record<string, unknown>>,
 ): { readonly executor: ProjectToolExecutor; readonly call: LocalToolCall } {
   const database = new DatabaseSync(":memory:");
@@ -173,6 +180,174 @@ describe("standalone local knowledge", () => {
     expect(() => index.search("")).toThrowError(TypeError);
     expect(() => index.search("x".repeat(257))).toThrowError(TypeError);
     expect(() => index.search("one\ttwo")).toThrowError(TypeError);
+  });
+
+  it("answers Chinese questions through CJK bigram tokens", async () => {
+    const docs = await fixtureRoot("cjk-docs");
+    await writeFile(
+      join(docs, "agma-modbook-starlight.md"),
+      "# 星辉工艺\n## 星辉熔炉\n星辉熔炉需要八块星尘砖和一个烈焰核心才能合成。\n",
+      { mode: 0o600 },
+    );
+    const index = await loadStandaloneKnowledge([{ directory: docs, kind: "local_docs" }]);
+
+    const exact = index.search("星辉熔炉");
+    expect(exact.matches.length).toBeGreaterThan(0);
+    expect(exact.matches[0]?.excerpt).toContain("星辉熔炉");
+
+    const question = index.search("星辉熔炉怎么合成");
+    expect(question.matches.length).toBeGreaterThan(0);
+    expect(question.matches[0]?.excerpt).toContain("星辉熔炉");
+
+    expect(index.search("星辉熔炉的合成方法").matches.length).toBeGreaterThan(0);
+    expect(index.search("下界合金").matches).toHaveLength(0);
+  });
+
+  it("ignores English function words in natural-language questions", async () => {
+    const docs = await fixtureRoot("question-docs");
+    await writeFile(
+      join(docs, "agma-modbook-watering.md"),
+      "# Farming\n## Watering Can\nCraft the watering can from three copper ingots and a bucket.\n",
+      { mode: 0o600 },
+    );
+    const index = await loadStandaloneKnowledge([{ directory: docs, kind: "local_docs" }]);
+
+    const result = index.search("how do I craft the watering can");
+
+    expect(result.matches).toHaveLength(1);
+    expect(result.matches[0]?.heading).toBe("Watering Can");
+  });
+
+  it("falls back to the raw query when every token is a function word", async () => {
+    const docs = await fixtureRoot("stopword-docs");
+    await writeFile(join(docs, "agma-modbook-kilns.md"), "# Kilns\nA kiln fires clay.\n", {
+      mode: 0o600,
+    });
+    const index = await loadStandaloneKnowledge([{ directory: docs, kind: "local_docs" }]);
+
+    expect(index.search("the how")).toMatchObject({ query: "the how", matches: [] });
+    expect(index.search("怎么")).toMatchObject({ query: "怎么", matches: [] });
+  });
+
+  it("ranks full coverage first and keeps partial matches instead of dropping them", async () => {
+    const docs = await fixtureRoot("fallback-docs");
+    await writeFile(
+      join(docs, "agma-modbook-watering.md"),
+      "# Farming\n## Watering Can\nCraft the watering can from copper ingots.\n",
+      { mode: 0o600 },
+    );
+    await writeFile(
+      join(docs, "agma-modbook-crafting.md"),
+      "# Crafting Basics\n## Workbench\nCraft stations unlock new recipes.\n",
+      { mode: 0o600 },
+    );
+    await writeFile(
+      join(docs, "agma-modbook-kilns.md"),
+      "# Kilns\n## Firing\nA kiln fires clay into bricks.\n",
+      { mode: 0o600 },
+    );
+    const index = await loadStandaloneKnowledge([{ directory: docs, kind: "local_docs" }]);
+
+    const result = index.search("craft watering");
+
+    expect(result.truncated).toBe(false);
+    expect(result.matches.map((match) => match.title)).toEqual(["Farming", "Crafting Basics"]);
+  });
+
+  it("computes a stable root fingerprint that moves with file set, content, and mtime", async () => {
+    const docs = await fixtureRoot("fingerprint-docs");
+    const roots = [{ directory: docs, kind: "local_docs" as const }];
+
+    await expect(
+      standaloneKnowledgeFingerprint([
+        { directory: join(docs, "not-created"), kind: "local_docs" },
+      ]),
+    ).resolves.toMatch(/^[0-9a-f]{64}$/u);
+
+    const empty = await standaloneKnowledgeFingerprint(roots);
+    expect(await standaloneKnowledgeFingerprint(roots)).toBe(empty);
+
+    const file = join(docs, "agma-modbook-kilns.md");
+    await writeFile(file, "# Kilns\nA kiln fires clay.\n", { mode: 0o600 });
+    const withFile = await standaloneKnowledgeFingerprint(roots);
+    expect(withFile).not.toBe(empty);
+    expect(await standaloneKnowledgeFingerprint(roots)).toBe(withFile);
+
+    await writeFile(file, "# Kilns\nA kiln fires clay into bricks.\n", { mode: 0o600 });
+    const rewritten = await standaloneKnowledgeFingerprint(roots);
+    expect(rewritten).not.toBe(withFile);
+
+    await utimes(file, new Date("2020-01-01T00:00:00Z"), new Date("2020-01-01T00:00:00Z"));
+    expect(await standaloneKnowledgeFingerprint(roots)).not.toBe(rewritten);
+  });
+
+  it("rebuilds the hot index when the catalog rewrites the documents", async () => {
+    const docs = await fixtureRoot("hot-docs");
+    const roots = [{ directory: docs, kind: "local_docs" as const }];
+    const knowledge = await StandaloneKnowledgeHotIndex.load(roots);
+
+    expect(knowledge.size).toBe(0);
+    expect((await knowledge.search("bricks")).matches).toHaveLength(0);
+    expect(await knowledge.refresh()).toBe(false);
+
+    await writeFile(
+      join(docs, "agma-modbook-kilns.md"),
+      "# Kilns\n## Firing\nA kiln fires clay into bricks.\n",
+      { mode: 0o600 },
+    );
+
+    const added = await knowledge.search("bricks");
+    expect(added.matches).toHaveLength(1);
+    expect(knowledge.size).toBeGreaterThan(0);
+    expect(await knowledge.refresh()).toBe(false);
+
+    await writeFile(
+      join(docs, "agma-modbook-kilns.md"),
+      "# Kilns\n## Firing\nA kiln smelts every ore into metal ingots.\n",
+      { mode: 0o600 },
+    );
+
+    expect((await knowledge.search("bricks")).matches).toHaveLength(0);
+    expect((await knowledge.search("ingots")).matches).toHaveLength(1);
+  });
+
+  it("serves concurrent searches consistently while a rebuild is in flight", async () => {
+    const docs = await fixtureRoot("concurrent-docs");
+    const roots = [{ directory: docs, kind: "local_docs" as const }];
+    const knowledge = await StandaloneKnowledgeHotIndex.load(roots);
+    await writeFile(
+      join(docs, "agma-modbook-kilns.md"),
+      "# Kilns\nA kiln fires clay into bricks.\n",
+      { mode: 0o600 },
+    );
+
+    const results = await Promise.all(Array.from({ length: 8 }, () => knowledge.search("bricks")));
+
+    expect(results.every((result) => result.matches.length === 1)).toBe(true);
+  });
+
+  it("executes local.knowledge.search through the hot index used at bootstrap", async () => {
+    const docs = await fixtureRoot("hot-executor-docs");
+    const knowledge = await StandaloneKnowledgeHotIndex.load([
+      { directory: docs, kind: "local_docs" },
+    ]);
+    const { executor, call } = executorCall(knowledge, { query: "bricks" });
+
+    const empty = await executor.execute(call);
+    expect(empty.status).toBe("succeeded");
+    expect(empty.result).toMatchObject({ query: "bricks", matches: [], truncated: false });
+
+    await writeFile(
+      join(docs, "agma-modbook-kilns.md"),
+      "# Kilns\nA kiln fires clay into bricks.\n",
+      { mode: 0o600 },
+    );
+
+    const outcome = await executor.execute(call);
+    expect(outcome.status).toBe("succeeded");
+    const matches = outcome.result?.["matches"];
+    expect(Array.isArray(matches)).toBe(true);
+    expect(matches).toHaveLength(1);
   });
 
   it("executes local.knowledge.search through the project executor when configured", async () => {

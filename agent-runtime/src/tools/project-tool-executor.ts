@@ -3,7 +3,7 @@ import type {
   ProjectRepository,
   StoredProject,
 } from "../storage/project-repository.js";
-import type { StandaloneKnowledgeIndex } from "../standalone/knowledge/knowledge-index.js";
+import type { StandaloneKnowledgeSearcher } from "../standalone/knowledge/knowledge-index.js";
 import type {
   LocalToolCall,
   LocalToolDescriptor,
@@ -100,14 +100,14 @@ function failure(descriptor: LocalToolDescriptor): ToolExecutionResult {
  */
 export class ProjectToolExecutor implements LocalToolExecution {
   readonly #projects: ProjectRepository;
-  readonly #knowledge: StandaloneKnowledgeIndex | undefined;
+  readonly #knowledge: StandaloneKnowledgeSearcher | undefined;
 
-  public constructor(projects: ProjectRepository, knowledge?: StandaloneKnowledgeIndex) {
+  public constructor(projects: ProjectRepository, knowledge?: StandaloneKnowledgeSearcher) {
     this.#projects = projects;
     this.#knowledge = knowledge;
   }
 
-  public execute(call: LocalToolCall): Promise<ToolExecutionResult> {
+  public async execute(call: LocalToolCall): Promise<ToolExecutionResult> {
     if (call.descriptor.execution !== "runtime_local") {
       return Promise.reject(
         new TypeError("A client connector Tool cannot execute in the Runtime."),
@@ -117,27 +117,27 @@ export class ProjectToolExecutor implements LocalToolExecution {
       return Promise.reject(call.signal.reason);
     }
     try {
-      const result = this.#executeBounded(call);
+      const result = await this.#executeBounded(call);
       if (call.signal.aborted) {
         return Promise.reject(call.signal.reason);
       }
-      return Promise.resolve(result);
+      return result;
     } catch (error) {
       if (error instanceof TypeError) {
         return Promise.reject(error);
       }
-      return Promise.resolve(failure(call.descriptor));
+      return failure(call.descriptor);
     }
   }
 
-  #executeBounded(call: LocalToolCall): ToolExecutionResult {
+  async #executeBounded(call: LocalToolCall): Promise<ToolExecutionResult> {
     const owner = { serverId: call.serverId, playerUuid: call.playerUuid };
     switch (call.descriptor.id) {
       case "local.knowledge.search": {
         if (this.#knowledge === undefined) {
           throw new TypeError("The Runtime local Tool is not registered.");
         }
-        const result = this.#knowledge.search(stringArgument(call.arguments, "query"));
+        const result = await this.#knowledge.search(stringArgument(call.arguments, "query"));
         return success(call.descriptor, {
           query: result.query,
           matches: result.matches.map((match) => ({ ...match })),

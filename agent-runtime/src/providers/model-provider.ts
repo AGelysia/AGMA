@@ -14,6 +14,8 @@ export type ModelProviderId = (typeof modelProviderIds)[number];
 
 export const modelGenerationFailureCodes = [
   "MODEL_AUTHENTICATION_FAILED",
+  "MODEL_NOT_FOUND",
+  "MODEL_OUTPUT_TRUNCATED",
   "MODEL_UNAVAILABLE",
   "MODEL_RATE_LIMITED",
   "MODEL_RESPONSE_INVALID",

@@ -142,7 +142,7 @@ function planResult(inventoryApplied: boolean, target = "minecraft:iron_pickaxe"
 }
 
 describe("client-only Agent request service", () => {
-  it("does not publish unsupported provider facts while web access is off", async () => {
+  it("marks unsupported offline answers as unverified model prose", async () => {
     const adapter: ModelProvider = {
       check: vi.fn().mockResolvedValue({ ok: true }),
       generate: vi.fn().mockResolvedValue({
@@ -171,11 +171,140 @@ describe("client-only Agent request service", () => {
 
     const completion = responses.at(-1);
     if (completion?.type !== "agent.complete") throw new Error("missing offline completion");
-    expect(completion.payload.fallbackText).toContain("Unknown:");
-    expect(completion.payload.fallbackText).not.toContain("Y=99");
+    // A world-gen chat question is not a process-fact question, so the model prose is published
+    // but always behind the unverified marker — never as a runtime-verified fact.
+    expect(completion.payload.fallbackText).toBe(
+      "Unverified model answer (not checked against local data):\n" +
+        "Diamonds always generate at Y=99 in this version.",
+    );
     expect(completion.payload.sources).toEqual([]);
     expect(adapter.generate).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(adapter.generate).mock.calls[0]?.[0]?.instructions).toContain(
+      "stale_generation",
+    );
+    expect(vi.mocked(adapter.generate).mock.calls[0]?.[0]?.instructions).toContain("maxDepth 12");
   });
+
+  it("keeps English casual chat on the unverified-chat path", async () => {
+    const adapter: ModelProvider = {
+      check: vi.fn().mockResolvedValue({ ok: true }),
+      generate: vi.fn().mockResolvedValue({
+        type: "final",
+        fallbackText: "I am doing well, thanks for asking!",
+      }),
+    };
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registryWith([]),
+    });
+    const responses: AgentRuntimeResponse[] = [];
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "How are you?",
+        webAuthorization: "off",
+      },
+      (response) => responses.push(response),
+    );
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    const completion = responses.at(-1);
+    if (completion?.type !== "agent.complete") throw new Error("missing chat completion");
+    // "How are you?" must not be mistaken for a recipe question.
+    expect(completion.payload.fallbackText).toBe(
+      "Unverified model answer (not checked against local data):\n" +
+        "I am doing well, thanks for asking!",
+    );
+    expect(adapter.generate).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps Chinese small talk with 哪个 on the unverified-chat path", async () => {
+    const adapter: ModelProvider = {
+      check: vi.fn().mockResolvedValue({ ok: true }),
+      generate: vi.fn().mockResolvedValue({
+        type: "final",
+        fallbackText: "我在单机世界里陪你玩呀。",
+      }),
+    };
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registryWith([]),
+    });
+    const responses: AgentRuntimeResponse[] = [];
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "你在哪个服务器玩？",
+        webAuthorization: "off",
+      },
+      (response) => responses.push(response),
+    );
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    const completion = responses.at(-1);
+    if (completion?.type !== "agent.complete") throw new Error("missing chat completion");
+    expect(completion.payload.fallbackText).toBe(
+      "未经核实的模型回答（未对照本地数据检查）：\n我在单机世界里陪你玩呀。",
+    );
+    expect(completion.payload.fallbackText).not.toContain(
+      "Select an exact local catalog target before requesting process facts.",
+    );
+    expect(adapter.generate).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    [
+      "MODEL_NOT_FOUND",
+      "MODEL_UNAVAILABLE",
+      "The configured model was not found. Check the model name in the client AI settings.",
+      false,
+    ],
+    [
+      "MODEL_OUTPUT_TRUNCATED",
+      "MODEL_RESPONSE_INVALID",
+      "The AI answer was cut off by the output length limit before any text was produced. Ask a simpler question or increase the model output token limit in the client AI settings.",
+      false,
+    ],
+  ] as const)(
+    "maps provider %s to an actionable non-retryable terminal error",
+    async (failure, code, fallbackText, retryable) => {
+      const adapter: ModelProvider = {
+        check: vi.fn().mockResolvedValue({ ok: true }),
+        generate: vi.fn().mockRejectedValue(new ModelGenerationError(failure)),
+      };
+      const service = new ClientAgentRequestService({
+        provider: adapter,
+        config: config(),
+        tools: await registryWith([]),
+      });
+      const responses: AgentRuntimeResponse[] = [];
+      service.submit(
+        {
+          requestId: REQUEST_ID,
+          playerUuid: SUBJECT_ID,
+          sessionId: null,
+          module: "general",
+          message: "Where do diamonds generate?",
+          webAuthorization: "off",
+        },
+        (response) => responses.push(response),
+      );
+      await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+      expect(responses.at(-1)).toMatchObject({
+        type: "agent.error",
+        payload: { code, fallbackText, retryable },
+      });
+    },
+  );
 
   it("preflights inventory and a pinned target plan without asking the model to calculate", async () => {
     const adapter: ModelProvider = {
@@ -518,6 +647,11 @@ describe("client-only Agent request service", () => {
     // preview) can chain Tools; web synthesis still never receives Tool calls.
     expect(generated[2]).toMatchObject({ tools: [] });
     expect(generated[2]?.input.at(-1)?.content).toContain(evidence.claimId);
+    // The synthesis round uses the slim citation instructions, not the full build pipeline.
+    expect(generated[2]?.instructions).toContain("[claim.<id>]");
+    expect(generated[2]?.instructions).not.toContain("project_create");
+    expect(generated[2]?.instructions).not.toContain("build_preview_create");
+    expect(generated[0]?.instructions).toContain("project_create");
     expect(responses.filter((response) => response.type === "tool.call")).toHaveLength(1);
     const completion = responses.at(-1);
     if (completion?.type !== "agent.complete") throw new Error("missing controlled completion");
@@ -625,16 +759,78 @@ describe("client-only Agent request service", () => {
     expect(completion.payload.fallbackText).not.toContain(
       "Select an exact local catalog target before requesting process facts.",
     );
+    // Knowledge matches render as human-readable citation lines, not raw JSON.
+    expect(completion.payload.fallbackText).toContain("星辉工厂手册（测试文档）");
+    expect(completion.payload.fallbackText).toContain(
+      "local_docs/aaaaaaaaaaa/custom-starlight-guide.md#chunk-1",
+    );
     expect(completion.payload.fallbackText).toContain("星尘粉");
+    expect(completion.payload.fallbackText).not.toContain('"matches"');
     expect(completion.payload.fallbackText).toContain("minecraft:apple");
     expect(completion.payload.fallbackText).toContain("trust=untrusted");
     expect(localTools.execute).toHaveBeenCalledTimes(1);
   });
 
-  it("answers a build-intent message with a build-aware offline fallback", async () => {
+  it("guides the player when local knowledge has no match instead of dumping JSON", async () => {
+    let round = 0;
     const adapter: ModelProvider = {
       check: vi.fn().mockResolvedValue({ ok: true }),
-      generate: vi.fn().mockResolvedValue({ type: "final", fallbackText: "我可以帮你设计木屋。" }),
+      generate: vi.fn(async () => {
+        round += 1;
+        return round === 1
+          ? {
+              type: "tool_call" as const,
+              providerCallId: "knowledge-1",
+              providerName: "local_knowledge_search",
+              arguments: { query: "不存在的机器" },
+              continuation: { provider: "openai" as const, items: [] },
+            }
+          : { type: "final" as const, fallbackText: "模型散文不应出现。" };
+      }),
+    };
+    const localTools: LocalToolExecution = {
+      execute: vi.fn(async () => ({
+        status: "succeeded" as const,
+        source: "local_docs" as const,
+        trust: "untrusted" as const,
+        result: { query: "不存在的机器", matches: [], truncated: false },
+        error: null,
+      })),
+    };
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registryWith(["local.knowledge.search"]),
+      localTools,
+    });
+    const responses: AgentRuntimeResponse[] = [];
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "不存在的机器怎么用？",
+      },
+      (response) => responses.push(response),
+    );
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    const completion = responses.at(-1);
+    if (completion?.type !== "agent.complete") throw new Error("missing controlled completion");
+    expect(completion.payload.fallbackText).toContain("本地文档未查到");
+    expect(completion.payload.fallbackText).not.toContain('"matches"');
+    expect(completion.payload.fallbackText).not.toContain("模型散文不应出现");
+  });
+
+  it("corrects a build-intent prose reply once, then falls back with a build-aware message", async () => {
+    const generated: ModelGenerationRequest[] = [];
+    const adapter: ModelProvider = {
+      check: vi.fn().mockResolvedValue({ ok: true }),
+      generate: vi.fn(async (request: ModelGenerationRequest) => {
+        generated.push(request);
+        return { type: "final" as const, fallbackText: "我可以帮你设计木屋。" };
+      }),
     };
     const service = new ClientAgentRequestService({
       provider: adapter,
@@ -654,13 +850,19 @@ describe("client-only Agent request service", () => {
     );
     await vi.waitFor(() => expect(service.activeCount).toBe(0));
 
+    // The first prose-only final triggers one correction round demanding real Tool calls.
+    expect(adapter.generate).toHaveBeenCalledTimes(2);
+    expect(generated[1]?.instructions).toContain("Correction:");
+    expect(generated[1]?.instructions).toContain("build_preview_create");
+    expect(generated[1]?.tools.length).toBeGreaterThan(0);
     const completion = responses.at(-1);
     if (completion?.type !== "agent.complete") throw new Error("missing controlled completion");
-    // A build request that produced no preview must not be told to "select a catalog target".
+    // A build request that still produced no preview must not be told to "select a catalog
+    // target"; it gets the build-aware explanation in the message's language.
     expect(completion.payload.fallbackText).not.toContain(
       "Select an exact local catalog target before requesting process facts.",
     );
-    expect(completion.payload.fallbackText).toContain("build preview was not created");
+    expect(completion.payload.fallbackText).toContain("建造投影未能创建");
   });
 
   it("marks casual offline chat as an unverified model answer", async () => {
@@ -693,7 +895,7 @@ describe("client-only Agent request service", () => {
     const completion = responses.at(-1);
     if (completion?.type !== "agent.complete") throw new Error("missing chat completion");
     expect(completion.payload.fallbackText).toBe(
-      "Unverified model answer (not checked against local data):\n" +
+      "未经核实的模型回答（未对照本地数据检查）：\n" +
         "你好！很高兴陪你聊天，今天想在世界里做点什么？",
     );
     expect(adapter.generate).toHaveBeenCalledTimes(1);
@@ -728,11 +930,11 @@ describe("client-only Agent request service", () => {
     const completion = responses.at(-1);
     if (completion?.type !== "agent.complete") throw new Error("missing chat completion");
     expect(completion.payload.fallbackText).toBe(
-      "Unverified model answer (not checked against local data):\n我挺好的！你想聊点什么？",
+      "未经核实的模型回答（未对照本地数据检查）：\n我挺好的！你想聊点什么？",
     );
   });
 
-  it("keeps the canned select-target line for offline process-fact questions", async () => {
+  it("marks offline process-fact prose as an unverified model answer", async () => {
     const adapter: ModelProvider = {
       check: vi.fn().mockResolvedValue({ ok: true }),
       generate: vi.fn().mockResolvedValue({
@@ -761,11 +963,45 @@ describe("client-only Agent request service", () => {
 
     const completion = responses.at(-1);
     if (completion?.type !== "agent.complete") throw new Error("missing offline completion");
+    // With model prose available, even a process-fact question completes as clearly-marked
+    // unverified chat; the runtime never presents it as verified.
+    expect(completion.payload.fallbackText).toBe(
+      "未经核实的模型回答（未对照本地数据检查）：\n铁锭可以通过烧炼铁矿石获得。",
+    );
+    expect(adapter.generate).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the canned select-target line when the model produced no usable prose", async () => {
+    const adapter: ModelProvider = {
+      check: vi.fn().mockResolvedValue({ ok: true }),
+      generate: vi.fn().mockResolvedValue({ type: "final", fallbackText: "" }),
+    };
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registryWith([]),
+    });
+    const responses: AgentRuntimeResponse[] = [];
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "铁锭怎么做？",
+        webAuthorization: "off",
+      },
+      (response) => responses.push(response),
+    );
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    const completion = responses.at(-1);
+    if (completion?.type !== "agent.complete") throw new Error("missing offline completion");
     expect(completion.payload.fallbackText).toContain(
       "Select an exact local catalog target before requesting process facts.",
     );
-    expect(completion.payload.fallbackText).not.toContain("烧炼铁矿石");
     expect(completion.payload.fallbackText).not.toContain("Unverified model answer");
+    expect(completion.payload.fallbackText).not.toContain("未经核实的模型回答");
   });
 
   it("rejects inconsistent local and web contexts before collecting web evidence", async () => {
@@ -1372,6 +1608,7 @@ describe("client build preview flow", () => {
   async function respondToPreviewCall(
     service: ClientAgentRequestService,
     responses: readonly AgentRuntimeResponse[],
+    result: Readonly<Record<string, unknown>> = previewResult(),
   ): Promise<void> {
     await vi.waitFor(() => expect(responses.length).toBeGreaterThan(0));
     const contextCall = responses[0];
@@ -1410,7 +1647,7 @@ describe("client build preview flow", () => {
         status: "succeeded",
         source: "client_context",
         trust: "client_visible",
-        result: previewResult(),
+        result,
         error: null,
       }),
     ).toBe("accepted");
@@ -1445,7 +1682,8 @@ describe("client build preview flow", () => {
     expect(completion.payload.fallbackText).toContain(PREVIEW_ID);
     expect(completion.payload.fallbackText).toContain(PROJECT_ID);
     expect(completion.payload.fallbackText).toContain("未改动任何方块");
-    expect(completion.payload.fallbackText).not.toContain("The tower preview is ready.");
+    // The model's own wording is only quoted back as a bounded, clearly marked note.
+    expect(completion.payload.fallbackText).toContain("模型说明：The tower preview is ready.");
     expect(adapter.generate).toHaveBeenCalledTimes(5);
     const stored = projects.findOwned(PROJECT_ID, {
       serverId: "client-installation",
@@ -1662,7 +1900,9 @@ describe("client build preview flow", () => {
     expect(completion.payload.fallbackText).toContain(SECOND_PREVIEW_ID);
     expect(completion.payload.fallbackText).toContain("版本 2");
     expect(completion.payload.fallbackText).not.toContain(PREVIEW_ID);
-    expect(completion.payload.fallbackText).not.toContain("The revised tower preview is ready.");
+    expect(completion.payload.fallbackText).toContain(
+      "模型说明：The revised tower preview is ready.",
+    );
     expect(adapter.generate).toHaveBeenCalledTimes(8);
     const stored = projects.findOwned(PROJECT_ID, {
       serverId: "client-installation",
@@ -1672,13 +1912,15 @@ describe("client build preview flow", () => {
     expect(stored?.revision).toBe(2);
   });
 
-  it("still rejects a second project create in the same request", async () => {
-    const { localTools } = localProjectTools();
+  it("refuses a second project create but keeps the first project", async () => {
+    const { localTools, projects } = localProjectTools();
     let round = 0;
+    const toolOutputs: string[] = [];
     const adapter: ModelProvider = {
       check: vi.fn().mockResolvedValue({ ok: true }),
-      generate: vi.fn(async () => {
+      generate: vi.fn(async (request: ModelGenerationRequest) => {
         round += 1;
+        if (request.toolOutput !== undefined) toolOutputs.push(request.toolOutput.output);
         return {
           type: "tool_call" as const,
           providerCallId: `create-${String(round)}`,
@@ -1713,10 +1955,27 @@ describe("client build preview flow", () => {
     );
     await vi.waitFor(() => expect(service.activeCount).toBe(0));
 
+    // Every repeated create is refused with recoverable feedback — a second project is never
+    // persisted — until the Tool rounds run out; the already-saved project then settles the
+    // request with a partial completion instead of a bare error.
+    expect(toolOutputs.some((output) => output.includes("PROJECT_MUTATION_NOT_PERMITTED"))).toBe(
+      true,
+    );
+    const stored = projects.findOwned(PROJECT_ID, {
+      serverId: "client-installation",
+      playerUuid: SUBJECT_ID,
+    });
+    expect(stored?.name).toBe("Stone tower 1");
+    expect(
+      projects.findOwned("55555555-5555-4555-8555-555555555555", {
+        serverId: "client-installation",
+        playerUuid: SUBJECT_ID,
+      }),
+    ).toBeUndefined();
     const terminal = responses.at(-1);
-    if (terminal?.type !== "agent.error") throw new Error("missing error terminal");
-    expect(terminal.payload.code).toBe("TOOL_REJECTED");
-    expect(adapter.generate).toHaveBeenCalledTimes(2);
+    if (terminal?.type !== "agent.complete") throw new Error("missing partial completion");
+    expect(terminal.payload.fallbackText).toContain("项目已保存：Stone tower 1");
+    expect(terminal.payload.fallbackText).toContain("回答未完成");
   });
 
   it("feeds an unverified preview back so the model can bind the project and retry", async () => {
@@ -1852,21 +2111,29 @@ describe("client build preview flow", () => {
     expect(responses.at(-1)?.type).toBe("agent.complete");
   });
 
-  it("rejects project persistence for plain questions", async () => {
-    const { localTools } = localProjectTools();
+  it("feeds a project persistence attempt for a plain question back without persisting", async () => {
+    const { localTools, projects } = localProjectTools();
+    let round = 0;
+    const toolOutputs: string[] = [];
     const adapter: ModelProvider = {
       check: vi.fn().mockResolvedValue({ ok: true }),
-      generate: vi.fn().mockResolvedValue({
-        type: "tool_call",
-        providerCallId: "create",
-        providerName: "project_create",
-        arguments: {
-          name: "Stone tower",
-          summary: "A 5x8x5 solid stone tower.",
-          goals: [],
-          constraints: [],
-        },
-        continuation: { provider: "openai", items: [] },
+      generate: vi.fn(async (request: ModelGenerationRequest) => {
+        round += 1;
+        if (request.toolOutput !== undefined) toolOutputs.push(request.toolOutput.output);
+        return round === 1
+          ? {
+              type: "tool_call" as const,
+              providerCallId: "create",
+              providerName: "project_create",
+              arguments: {
+                name: "Stone tower",
+                summary: "A 5x8x5 solid stone tower.",
+                goals: [],
+                constraints: [],
+              },
+              continuation: { provider: "openai" as const, items: [] },
+            }
+          : { type: "final" as const, fallbackText: "Use three stone blocks for the base." };
       }),
     };
     const service = new ClientAgentRequestService({
@@ -1889,8 +2156,539 @@ describe("client build preview flow", () => {
     );
     await vi.waitFor(() => expect(service.activeCount).toBe(0));
 
+    // The gate never executes the mutation: the model is told why and can answer in prose, so
+    // the request completes instead of dying with a fatal TOOL_REJECTED.
+    expect(toolOutputs[0]).toContain("PROJECT_MUTATION_NOT_PERMITTED");
+    expect(toolOutputs[0]).toContain("does not ask to create or update");
+    expect(
+      projects.findOwned(PROJECT_ID, {
+        serverId: "client-installation",
+        playerUuid: SUBJECT_ID,
+      }),
+    ).toBeUndefined();
+    expect(responses.some((response) => response.type === "agent.error")).toBe(false);
     const terminal = responses.at(-1);
-    if (terminal?.type !== "agent.error") throw new Error("missing error terminal");
-    expect(terminal.payload.code).toBe("TOOL_REJECTED");
+    if (terminal?.type !== "agent.complete") throw new Error("missing completion");
+    expect(terminal.payload.fallbackText).toContain("Unverified model answer");
+    expect(terminal.payload.fallbackText).toContain("Use three stone blocks for the base.");
+  });
+
+  it("treats a polite English build question as a build request and corrects a prose-only first reply", async () => {
+    const { localTools } = localProjectTools();
+    let round = 0;
+    const generated: ModelGenerationRequest[] = [];
+    const adapter: ModelProvider = {
+      check: vi.fn().mockResolvedValue({ ok: true }),
+      generate: vi.fn(async (request: ModelGenerationRequest) => {
+        generated.push(request);
+        round += 1;
+        if (round === 1) {
+          return { type: "final" as const, fallbackText: "Sure, I can design that for you." };
+        }
+        if (round === 2) {
+          return {
+            type: "tool_call" as const,
+            providerCallId: "context",
+            providerName: "game_player_context_read",
+            arguments: {},
+            continuation: { provider: "openai" as const, items: [] },
+          };
+        }
+        if (round === 3) {
+          return {
+            type: "tool_call" as const,
+            providerCallId: "create",
+            providerName: "project_create",
+            arguments: {
+              name: "Small stone house",
+              summary: "A small stone house.",
+              goals: ["build the house"],
+              constraints: [],
+            },
+            continuation: { provider: "openai" as const, items: [] },
+          };
+        }
+        if (round === 4) {
+          return {
+            type: "tool_call" as const,
+            providerCallId: "read",
+            providerName: "project_read",
+            arguments: { projectId: PROJECT_ID },
+            continuation: { provider: "openai" as const, items: [] },
+          };
+        }
+        if (round === 5) {
+          return {
+            type: "tool_call" as const,
+            providerCallId: "preview",
+            providerName: "build_preview_create",
+            arguments: previewArguments(),
+            continuation: { provider: "openai" as const, items: [] },
+          };
+        }
+        return { type: "final" as const, fallbackText: "The house preview is ready." };
+      }),
+    };
+    const baseConfig = config();
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: {
+        ...baseConfig,
+        limits: { ...baseConfig.limits, maxToolRounds: 12 },
+      },
+      tools: await registryWith(ALL_CLIENT_TOOLS),
+      localTools,
+    });
+    const responses: AgentRuntimeResponse[] = [];
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "Can you build me a small stone house?",
+        webAuthorization: "off",
+      },
+      (response) => responses.push(response),
+    );
+    await respondToPreviewCall(service, responses);
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    // "Can you build …?" is an imperative build request: the first prose-only reply gets one
+    // correction round, after which the model runs the real Tool sequence to completion.
+    expect(generated[1]?.instructions).toContain("Correction:");
+    expect(responses.at(-1)?.type).toBe("agent.complete");
+    const completion = responses.at(-1);
+    if (completion?.type !== "agent.complete") throw new Error("missing completion");
+    // The forced completion follows the message language.
+    expect(completion.payload.fallbackText).toContain("Created the client-local build preview");
+    expect(completion.payload.fallbackText).toContain("No blocks were changed");
+    expect(completion.payload.fallbackText).toContain("Model note: The house preview is ready.");
+  });
+
+  it("permits a polite Chinese build question", async () => {
+    const { localTools } = localProjectTools();
+    const adapter = buildAdapter();
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registryWith(ALL_CLIENT_TOOLS),
+      localTools,
+    });
+    const responses: AgentRuntimeResponse[] = [];
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "能不能帮我建一座小木屋？",
+        webAuthorization: "off",
+      },
+      (response) => responses.push(response),
+    );
+    await respondToPreviewCall(service, responses);
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    const completion = responses.at(-1);
+    if (completion?.type !== "agent.complete") throw new Error("missing completion");
+    expect(completion.payload.fallbackText).toContain(PREVIEW_ID);
+  });
+
+  it("still treats a negated polite form as a refusal", async () => {
+    const { localTools, projects } = localProjectTools();
+    let round = 0;
+    const toolOutputs: string[] = [];
+    const adapter: ModelProvider = {
+      check: vi.fn().mockResolvedValue({ ok: true }),
+      generate: vi.fn(async (request: ModelGenerationRequest) => {
+        round += 1;
+        if (request.toolOutput !== undefined) toolOutputs.push(request.toolOutput.output);
+        return round === 1
+          ? {
+              type: "tool_call" as const,
+              providerCallId: "create",
+              providerName: "project_create",
+              arguments: {
+                name: "Stone tower",
+                summary: "A 5x8x5 solid stone tower.",
+                goals: [],
+                constraints: [],
+              },
+              continuation: { provider: "openai" as const, items: [] },
+            }
+          : { type: "final" as const, fallbackText: "好的，那不建了。" };
+      }),
+    };
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registryWith(ALL_CLIENT_TOOLS),
+      localTools,
+    });
+    const responses: AgentRuntimeResponse[] = [];
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "能不能不要建那个石塔？",
+        webAuthorization: "off",
+      },
+      (response) => responses.push(response),
+    );
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    // "能不能不要建…" is a negated request: nothing is persisted and the model is told to stop.
+    expect(toolOutputs[0]).toContain("PROJECT_MUTATION_NOT_PERMITTED");
+    expect(
+      projects.findOwned(PROJECT_ID, {
+        serverId: "client-installation",
+        playerUuid: SUBJECT_ID,
+      }),
+    ).toBeUndefined();
+    expect(responses.at(-1)?.type).toBe("agent.complete");
+  });
+
+  it("permits a rename request with a trailing question softener", async () => {
+    const { localTools, projects } = localProjectTools();
+    projects.create({
+      serverId: "client-installation",
+      playerUuid: SUBJECT_ID,
+      requestId: REQUEST_ID,
+      toolCallId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+      timestamp: "2026-07-17T00:00:00.000Z",
+      plan: { name: "石塔", summary: "一座石塔。", goals: ["建塔"], constraints: [] },
+    });
+    let round = 0;
+    const adapter: ModelProvider = {
+      check: vi.fn().mockResolvedValue({ ok: true }),
+      generate: vi.fn(async () => {
+        round += 1;
+        return round === 1
+          ? {
+              type: "tool_call" as const,
+              providerCallId: "update",
+              providerName: "project_update",
+              arguments: {
+                projectId: PROJECT_ID,
+                expectedRevision: 1,
+                name: "小木屋",
+                summary: "一座小木屋。",
+                goals: ["建屋"],
+                constraints: [],
+              },
+              continuation: { provider: "openai" as const, items: [] },
+            }
+          : { type: "final" as const, fallbackText: "已改名。" };
+      }),
+    };
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registryWith(ALL_CLIENT_TOOLS),
+      localTools,
+    });
+    const responses: AgentRuntimeResponse[] = [];
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "改名为小木屋好吗？",
+        webAuthorization: "off",
+      },
+      (response) => responses.push(response),
+    );
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    // The trailing "好吗？" does not veto the imperative rename, and the verified update renders
+    // into the offline answer instead of a canned failure line.
+    const completion = responses.at(-1);
+    if (completion?.type !== "agent.complete") throw new Error("missing completion");
+    expect(completion.payload.fallbackText).toContain("项目已更新：小木屋");
+    expect(completion.payload.fallbackText).not.toContain(
+      "Select an exact local catalog target before requesting process facts.",
+    );
+    const stored = projects.findOwned(PROJECT_ID, {
+      serverId: "client-installation",
+      playerUuid: SUBJECT_ID,
+    });
+    expect(stored?.name).toBe("小木屋");
+    expect(stored?.revision).toBe(2);
+  });
+
+  it("renders a pure save request as a success offline", async () => {
+    const { localTools } = localProjectTools();
+    let round = 0;
+    const adapter: ModelProvider = {
+      check: vi.fn().mockResolvedValue({ ok: true }),
+      generate: vi.fn(async () => {
+        round += 1;
+        return round === 1
+          ? {
+              type: "tool_call" as const,
+              providerCallId: "create",
+              providerName: "project_create",
+              arguments: {
+                name: "石塔设计图",
+                summary: "一座石塔的设计图。",
+                goals: ["建塔"],
+                constraints: [],
+              },
+              continuation: { provider: "openai" as const, items: [] },
+            }
+          : { type: "final" as const, fallbackText: "已保存。" };
+      }),
+    };
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registryWith(ALL_CLIENT_TOOLS),
+      localTools,
+    });
+    const responses: AgentRuntimeResponse[] = [];
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "保存项目：石塔设计图",
+        webAuthorization: "off",
+      },
+      (response) => responses.push(response),
+    );
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    const completion = responses.at(-1);
+    if (completion?.type !== "agent.complete") throw new Error("missing completion");
+    expect(completion.payload.fallbackText).toContain("项目已保存：石塔设计图");
+    expect(completion.payload.fallbackText).toContain("未改动任何世界数据");
+    expect(completion.payload.fallbackText).not.toContain("建造投影未能创建");
+    expect(completion.payload.fallbackText).not.toContain(
+      "Select an exact local catalog target before requesting process facts.",
+    );
+  });
+
+  it("includes the analysis self-check in the forced preview completion", async () => {
+    const { localTools } = localProjectTools();
+    const adapter = buildAdapter();
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registryWith(ALL_CLIENT_TOOLS),
+      localTools,
+    });
+    const responses: AgentRuntimeResponse[] = [];
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "保存项目：建一座 5x8x5 的石塔，并给我投影预览。",
+        webAuthorization: "off",
+      },
+      (response) => responses.push(response),
+    );
+    await respondToPreviewCall(
+      service,
+      responses,
+      previewResult({
+        analysis: {
+          floatingCells: 3,
+          interiorAirCells: 2,
+          topView: ["###"],
+          topViewLegend: { "#": "minecraft:stone" },
+        },
+      }),
+    );
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    const completion = responses.at(-1);
+    if (completion?.type !== "agent.complete") throw new Error("missing completion");
+    expect(completion.payload.fallbackText).toContain("自检：3 处悬空方块，2 处密封空腔。");
+  });
+
+  it("truncates an oversized Tool result instead of rejecting the request", async () => {
+    let round = 0;
+    const toolOutputs: string[] = [];
+    const adapter: ModelProvider = {
+      check: vi.fn().mockResolvedValue({ ok: true }),
+      generate: vi.fn(async (request: ModelGenerationRequest) => {
+        round += 1;
+        if (request.toolOutput !== undefined) toolOutputs.push(request.toolOutput.output);
+        return round === 1
+          ? {
+              type: "tool_call" as const,
+              providerCallId: "inspect-1",
+              providerName: "game_block_inspect",
+              arguments: { position: { x: 1, y: 2, z: 3 } },
+              continuation: { provider: "openai" as const, items: [] },
+            }
+          : { type: "final" as const, fallbackText: "方块实体数据很大。" };
+      }),
+    };
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registryWith(["game.block.inspect"]),
+    });
+    const responses: AgentRuntimeResponse[] = [];
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "那个方块实体里有什么？",
+        webAuthorization: "off",
+      },
+      (response) => responses.push(response),
+    );
+    await vi.waitFor(() => expect(responses[0]?.type).toBe("tool.call"));
+    const call = responses[0];
+    if (call?.type !== "tool.call") throw new Error("missing inspect Tool call");
+    const leaf = "x".repeat(128);
+    const data: Record<string, unknown> = {};
+    for (let outer = 0; outer < 8; outer += 1) {
+      const inner: Record<string, unknown> = {};
+      for (let index = 0; index < 8; index += 1) {
+        inner[`c${String(index)}`] = Array.from({ length: 16 }, () => leaf);
+      }
+      data[`k${String(outer)}`] = inner;
+    }
+    expect(
+      service.acceptToolResult(REQUEST_ID, {
+        toolCallId: call.payload.toolCallId,
+        sessionId: call.payload.sessionId,
+        playerUuid: SUBJECT_ID,
+        tool: call.payload.tool,
+        sequence: call.payload.sequence,
+        status: "succeeded",
+        source: "client_context",
+        trust: "client_visible",
+        result: {
+          found: true,
+          blockId: "minecraft:chest",
+          position: { x: 1, y: 2, z: 3 },
+          hasBlockEntity: true,
+          blockEntity: { data },
+        },
+        error: null,
+      }),
+    ).toBe("accepted");
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    // The oversized result reaches the model truncated and marked, never as a fatal TOOL_REJECTED.
+    expect(toolOutputs[0]).toContain('"truncated":true');
+    expect(Buffer.byteLength(toolOutputs[0] ?? "", "utf8")).toBeLessThanOrEqual(64 * 1024);
+    expect(responses.some((response) => response.type === "agent.error")).toBe(false);
+    expect(responses.at(-1)?.type).toBe("agent.complete");
+  });
+
+  it("settles a timeout with the verified project mutation instead of a bare error", async () => {
+    const { localTools, projects } = localProjectTools();
+    let round = 0;
+    const adapter: ModelProvider = {
+      check: vi.fn().mockResolvedValue({ ok: true }),
+      generate: vi.fn((request: ModelGenerationRequest) => {
+        round += 1;
+        if (round === 1) {
+          return Promise.resolve({
+            type: "tool_call" as const,
+            providerCallId: "create",
+            providerName: "project_create",
+            arguments: {
+              name: "石塔计划",
+              summary: "一座石塔。",
+              goals: ["建塔"],
+              constraints: [],
+            },
+            continuation: { provider: "openai" as const, items: [] },
+          });
+        }
+        return new Promise<never>((_resolve, reject) => {
+          request.signal.addEventListener("abort", () => {
+            reject(request.signal.reason as Error);
+          });
+        });
+      }),
+    };
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registryWith(ALL_CLIENT_TOOLS),
+      localTools,
+      timeoutMilliseconds: 50,
+    });
+    const responses: AgentRuntimeResponse[] = [];
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "保存项目：石塔计划",
+        webAuthorization: "off",
+      },
+      (response) => responses.push(response),
+    );
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    // The request timed out after the project was persisted: the player is told what exists,
+    // with an explicit note that the answer itself is incomplete.
+    expect(responses.some((response) => response.type === "agent.error")).toBe(false);
+    const terminal = responses.at(-1);
+    if (terminal?.type !== "agent.complete") throw new Error("missing partial completion");
+    expect(terminal.payload.fallbackText).toContain("项目已保存：石塔计划");
+    expect(terminal.payload.fallbackText).toContain("回答未完成");
+    expect(
+      projects.findOwned(PROJECT_ID, {
+        serverId: "client-installation",
+        playerUuid: SUBJECT_ID,
+      }),
+    ).toBeDefined();
+  });
+
+  it("keeps the plain timeout error when nothing renderable succeeded", async () => {
+    const adapter: ModelProvider = {
+      check: vi.fn().mockResolvedValue({ ok: true }),
+      generate: vi.fn(
+        (request: ModelGenerationRequest) =>
+          new Promise<never>((_resolve, reject) => {
+            request.signal.addEventListener("abort", () => {
+              reject(request.signal.reason as Error);
+            });
+          }),
+      ),
+    };
+    const service = new ClientAgentRequestService({
+      provider: adapter,
+      config: config(),
+      tools: await registryWith([]),
+      timeoutMilliseconds: 50,
+    });
+    const responses: AgentRuntimeResponse[] = [];
+    service.submit(
+      {
+        requestId: REQUEST_ID,
+        playerUuid: SUBJECT_ID,
+        sessionId: null,
+        module: "general",
+        message: "你好，聊聊天",
+        webAuthorization: "off",
+      },
+      (response) => responses.push(response),
+    );
+    await vi.waitFor(() => expect(service.activeCount).toBe(0));
+
+    expect(responses.at(-1)).toMatchObject({
+      type: "agent.error",
+      payload: { code: "MODEL_TIMEOUT" },
+    });
   });
 });

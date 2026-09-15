@@ -352,7 +352,8 @@ public final class StandaloneAssistantScreen extends Screen {
       state.lastCostMicroUsd = 0;
       state.lastCostKind = null;
       state.sources = List.of();
-      state.status = completion.errorCode();
+      var message = completion.errorMessage();
+      state.status = message == null || message.isBlank() ? completion.errorCode() : message;
     }
     rebuild();
   }

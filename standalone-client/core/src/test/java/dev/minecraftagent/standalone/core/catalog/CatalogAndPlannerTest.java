@@ -103,6 +103,50 @@ final class CatalogAndPlannerTest {
   }
 
   @Test
+  void searchMatchesMultiTokenQueriesAcrossNamesAndMods() {
+    var mekanism = item("mekanism:steel_ingot", "Steel Ingot", 1);
+    var other = item("othermod:steel_ingot", "Steel Ingot", 1);
+    var block = item("mekanism:steel_block", "Steel Block", 1);
+    var search = new ResourceSearchIndex(snapshot(List.of(mekanism, other, block), List.of()));
+
+    // Every query token hits the mekanism ingot (mod + name); the other-mod ingot misses the mod
+    // token and the mekanism block misses the ingot token, so full coverage ranks first.
+    var allTokens = search.search(GENERATION, "mekanism steel ingot", 10);
+    assertEquals(ResourceSearchIndex.Resolution.AMBIGUOUS, allTokens.resolution());
+    assertEquals(
+        List.of("mekanism:steel_ingot", "othermod:steel_ingot", "mekanism:steel_block"),
+        allTokens.candidates().stream().map(candidate -> candidate.resource().id()).toList());
+    var best = allTokens.candidates().get(0);
+    assertTrue(best.reasons().contains(ResourceSearchIndex.MatchReason.NAME_TOKEN));
+    // The mod token hits through the namespaced id first, which outranks the mod token tier.
+    assertTrue(best.reasons().contains(ResourceSearchIndex.MatchReason.ID_CONTAINS));
+    assertTrue(allTokens.candidates().get(0).score() > allTokens.candidates().get(1).score());
+    assertTrue(allTokens.candidates().get(1).score() > allTokens.candidates().get(2).score());
+
+    // A whole-name multi-word query still resolves through the exact-name tier unchanged.
+    var wholeName = search.search(GENERATION, "Steel Ingot", 10);
+    assertEquals(
+        List.of("mekanism:steel_ingot", "othermod:steel_ingot"),
+        wholeName.candidates().stream()
+            .map(candidate -> candidate.resource().id())
+            .limit(2)
+            .toList());
+    assertTrue(
+        wholeName
+            .candidates()
+            .get(0)
+            .reasons()
+            .contains(ResourceSearchIndex.MatchReason.EXACT_NAME));
+
+    // Single-token behavior is unchanged: every steel item ties on the name token tier and the
+    // stable resource key order breaks the tie.
+    var singleToken = search.search(GENERATION, "steel", 10);
+    assertEquals(
+        List.of("mekanism:steel_block", "mekanism:steel_ingot", "othermod:steel_ingot"),
+        singleToken.candidates().stream().map(candidate -> candidate.resource().id()).toList());
+  }
+
+  @Test
   void plannerComputesBatchesAndPrefersInventoryForOrGroups() {
     var table = item("minecraft:crafting_table", "Crafting Table", 1);
     var log = item("minecraft:oak_log", "Oak Log", 1);

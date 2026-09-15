@@ -158,7 +158,8 @@ public final class BuildPreviewToolExecutor implements ClientToolHandler, AutoCl
       throw failure("PREVIEW_LIMIT_EXCEEDED", failure.getMessage());
     } catch (IllegalArgumentException failure) {
       throw failure(
-          "TOOL_ARGUMENTS_INVALID", "The build preview arguments do not match the tool schema.");
+          "TOOL_ARGUMENTS_INVALID",
+          "The build preview arguments do not match the tool schema: " + failure.getMessage());
     }
     final PreviewTargets targets;
     try {

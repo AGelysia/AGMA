@@ -79,6 +79,13 @@ export interface RequestLifecycleOptions<
   readonly usageCloseFailureCode: UsageFailureCode;
   readonly run: (record: Record) => Promise<void>;
   readonly mapRunError: (error: unknown, playerUuid: string) => AgentTerminalResponse;
+  /**
+   * Optional timeout response factory. When the request timer fires, the run cannot settle the
+   * request itself (the abort races its in-flight awaits), so an audience may supply the terminal
+   * response here — e.g. to complete with verified partial results. Defaults to the plain
+   * MODEL_TIMEOUT error. It is called defensively: a throw falls back to the default.
+   */
+  readonly timeoutResponse?: (record: Record) => AgentTerminalResponse;
   readonly validateToolResult: (
     descriptor: Descriptor,
     payload: ToolResultPayload,
@@ -558,9 +565,15 @@ export class RequestLifecycle<Descriptor, Record extends RequestLifecycleRecord<
     record.terminalSent = true;
     this.#detach(record);
     record.controller.abort(new Error("MODEL_TIMEOUT"));
+    let response: AgentTerminalResponse | undefined;
+    try {
+      response = this.#options.timeoutResponse?.(record);
+    } catch (error) {
+      this.#logger.runtimeError("RUNTIME_INTERNAL_ERROR", record.input.requestId, error);
+    }
     this.safeRespond(
       record.respond,
-      modelTimeoutResponse(record.input.playerUuid),
+      response ?? modelTimeoutResponse(record.input.playerUuid),
       record.input.requestId,
     );
   }

@@ -5,8 +5,8 @@ export LC_ALL=C
 export TZ=UTC
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CLIENT_VERSION=0.6.2
-RUNTIME_VERSION=0.6.2
+CLIENT_VERSION=0.6.3
+RUNTIME_VERSION=0.6.3
 NODE_VERSION=22.23.1
 TARGETS=(1.18.2:fabric 1.18.2:forge 1.20.1:fabric 1.21.11:fabric)
 PLATFORMS=(linux-x86_64 windows-x86_64)

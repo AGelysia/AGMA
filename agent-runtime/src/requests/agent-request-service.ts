@@ -378,6 +378,19 @@ function providerError(
           retryable: false,
         },
       };
+    case "MODEL_NOT_FOUND":
+      return {
+        type: "agent.error",
+        payload: {
+          playerUuid,
+          code: "MODEL_UNAVAILABLE",
+          fallbackText:
+            audience === "client"
+              ? "The configured model was not found. Check the model name in the standalone client Provider settings."
+              : "The configured model was not found. Ask an administrator to check the model name in the AI settings.",
+          retryable: false,
+        },
+      };
     case "MODEL_UNAVAILABLE":
       return {
         type: "agent.error",
@@ -407,6 +420,17 @@ function providerError(
           code: "MODEL_RESPONSE_INVALID",
           fallbackText: "The AI returned an unusable response. Try again.",
           retryable: true,
+        },
+      };
+    case "MODEL_OUTPUT_TRUNCATED":
+      return {
+        type: "agent.error",
+        payload: {
+          playerUuid,
+          code: "MODEL_RESPONSE_INVALID",
+          fallbackText:
+            "The AI answer was cut off by the output length limit before any text was produced. Ask a simpler question or increase the model output token limit.",
+          retryable: false,
         },
       };
   }

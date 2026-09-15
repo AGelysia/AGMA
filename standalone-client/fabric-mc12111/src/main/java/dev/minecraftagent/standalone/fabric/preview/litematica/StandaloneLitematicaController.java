@@ -2,6 +2,7 @@ package dev.minecraftagent.standalone.fabric.preview.litematica;
 
 import dev.minecraftagent.standalone.common.preview.StandalonePreview;
 import dev.minecraftagent.standalone.fabric.preview.hologram.PreviewHologramBridge;
+import dev.minecraftagent.standalone.fabric.preview.hologram.PreviewHologramBridge.LoadListener;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -36,6 +37,7 @@ public final class StandaloneLitematicaController implements PreviewHologramBrid
   private final Consumer<Runnable> clientScheduler;
   private final ExecutorService ioExecutor;
   private final boolean ownsIoExecutor;
+  private volatile LoadListener loadListener;
 
   private UUID loadedPreviewId;
   private UUID pendingPreviewId;
@@ -105,6 +107,7 @@ public final class StandaloneLitematicaController implements PreviewHologramBrid
   public void load(StandalonePreview preview) {
     Objects.requireNonNull(preview, "preview");
     if (!available()) {
+      notifyLoadFailed(LitematicaDisplayReport.Failure.ADAPTER_UNAVAILABLE.name());
       return;
     }
     synchronized (this) {
@@ -297,8 +300,15 @@ public final class StandaloneLitematicaController implements PreviewHologramBrid
     }
   }
 
+  @Override
   public boolean available() {
     return adapter.isPresent();
+  }
+
+  /** Registers the listener that receives each asynchronous hologram load outcome. */
+  @Override
+  public void loadListener(LoadListener listener) {
+    this.loadListener = listener;
   }
 
   /** The preview currently loaded as the hologram, empty when none is displayed. */
@@ -339,6 +349,7 @@ public final class StandaloneLitematicaController implements PreviewHologramBrid
     if (!stagePreview(preview) || !commitPreview(preview, Set.of(preview.previewId()))) {
       clearPending(preview.previewId());
       LOGGER.warn("AGMA standalone preview could not be staged for Litematica");
+      notifyLoadFailed("STAGE_FAILED");
       return;
     }
     var prepared = prepareLoad(preview.previewId(), displayName(preview.previewId()));
@@ -361,7 +372,7 @@ public final class StandaloneLitematicaController implements PreviewHologramBrid
         loadedPreviewId = null;
         if (removed.state() != LitematicaDisplayReport.State.REMOVED) {
           report = removed;
-          logReport(report);
+          finishLoad(report);
           return;
         }
       }
@@ -371,7 +382,7 @@ public final class StandaloneLitematicaController implements PreviewHologramBrid
       }
       report = loaded;
     }
-    logReport(report);
+    finishLoad(report);
   }
 
   private synchronized void clearPending(UUID previewId) {
@@ -405,6 +416,29 @@ public final class StandaloneLitematicaController implements PreviewHologramBrid
   private static void logReport(LitematicaDisplayReport report) {
     if (report.state() == LitematicaDisplayReport.State.FAILED) {
       LOGGER.warn("AGMA standalone Litematica action failed: {}", report.failure().orElseThrow());
+    }
+  }
+
+  private void finishLoad(LitematicaDisplayReport report) {
+    logReport(report);
+    if (report.state() == LitematicaDisplayReport.State.LOADED) {
+      notifyLoaded();
+    } else if (report.state() == LitematicaDisplayReport.State.FAILED) {
+      notifyLoadFailed(report.failure().orElseThrow().name());
+    }
+  }
+
+  private void notifyLoaded() {
+    var listener = loadListener;
+    if (listener != null) {
+      runOnClientThread(() -> listener.onLoad(true, null));
+    }
+  }
+
+  private void notifyLoadFailed(String reason) {
+    var listener = loadListener;
+    if (listener != null) {
+      runOnClientThread(() -> listener.onLoad(false, reason));
     }
   }
 

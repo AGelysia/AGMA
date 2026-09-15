@@ -55,6 +55,7 @@ public final class CatalogToolExecutor implements ClientToolHandler, AutoCloseab
   private final AtomicBoolean closed = new AtomicBoolean();
 
   private volatile SearchCache searchCache;
+  private volatile ProcessCache processCache;
 
   public CatalogToolExecutor(CatalogToolSource source) {
     this(source, newToolExecutor(), Clock.systemUTC(), true);
@@ -315,6 +316,7 @@ public final class CatalogToolExecutor implements ClientToolHandler, AutoCloseab
     running.clear();
     requestInventories.clear();
     searchCache = null;
+    processCache = null;
     if (ownsExecutor) {
       executor.shutdownNow();
     }
@@ -391,22 +393,29 @@ public final class CatalogToolExecutor implements ClientToolHandler, AutoCloseab
       return processResult(view, status, List.of(), false);
     }
 
-    var matches = new ArrayList<ProcessRecord>();
-    for (var process : view.snapshot().processes()) {
-      task.checkCancelled();
-      if (uses ? uses(process, resourceId) : produces(process, resourceId)) {
-        matches.add(process);
+    var index = processIndex(view);
+    task.checkCancelled();
+    var serialized = new ArrayList<Map<String, Object>>();
+    final boolean truncated;
+    if (uses) {
+      var matches = new ArrayList<>(index.consumers().getOrDefault(resourceId, List.of()));
+      matches.sort(Comparator.comparing(ProcessRecord::processId));
+      truncated = matches.size() > limit;
+      for (var process : matches.subList(0, Math.min(limit, matches.size()))) {
+        task.checkCancelled();
+        serialized.add(wire(process));
       }
-    }
-    matches.sort(Comparator.comparing(ProcessRecord::processId));
-    var truncated = matches.size() > limit;
-    if (truncated) {
-      matches.subList(limit, matches.size()).clear();
-    }
-    var serialized = new ArrayList<Map<String, Object>>(matches.size());
-    for (var process : matches) {
-      task.checkCancelled();
-      serialized.add(wire(process));
+    } else {
+      var matches = new ArrayList<>(index.producers().getOrDefault(resourceId, List.of()));
+      matches.sort(
+          Comparator.comparing(ProducingMatch::primary)
+              .reversed()
+              .thenComparing(match -> match.process().processId()));
+      truncated = matches.size() > limit;
+      for (var match : matches.subList(0, Math.min(limit, matches.size()))) {
+        task.checkCancelled();
+        serialized.add(match.primary() ? wire(match.process()) : nonPrimary(wire(match.process())));
+      }
     }
     return processResult(view, "ready", List.copyOf(serialized), truncated);
   }
@@ -706,6 +715,27 @@ public final class CatalogToolExecutor implements ClientToolHandler, AutoCloseab
     }
   }
 
+  /**
+   * Returns the per-generation resource id to process indexes, built once per snapshot like the
+   * search cache so lookup/uses never scan the full process table per call. The producer index
+   * covers every output (primary flag included) while the consumer index covers only inputs and
+   * catalysts: workstations and energy are not "consumed" resources.
+   */
+  private ProcessCache processIndex(CatalogToolSource.CatalogView view) {
+    var cached = processCache;
+    if (cached != null && cached.snapshot() == view.snapshot()) {
+      return cached;
+    }
+    synchronized (this) {
+      cached = processCache;
+      if (cached == null || cached.snapshot() != view.snapshot()) {
+        cached = ProcessCache.build(view.snapshot());
+        processCache = cached;
+      }
+      return cached;
+    }
+  }
+
   private CatalogToolSource.CatalogView view() {
     return Objects.requireNonNull(source.catalogView(), "catalogView");
   }
@@ -797,19 +827,11 @@ public final class CatalogToolExecutor implements ClientToolHandler, AutoCloseab
     }
   }
 
-  private static boolean produces(ProcessRecord process, String resourceId) {
-    return process.outputs().stream()
-        .anyMatch(output -> output.primary() && output.resource().id().equals(resourceId));
-  }
-
-  private static boolean uses(ProcessRecord process, String resourceId) {
-    return process.inputs().stream()
-            .flatMap(group -> group.alternatives().stream())
-            .anyMatch(resource -> resource.id().equals(resourceId))
-        || process.catalysts().stream()
-            .anyMatch(catalyst -> catalyst.resource().id().equals(resourceId))
-        || (process.energy() != null && process.energy().id().equals(resourceId))
-        || process.workstations().stream().anyMatch(resource -> resource.id().equals(resourceId));
+  /** Marks a process matched through a non-primary (coproduct) output on the lookup wire. */
+  private static Map<String, Object> nonPrimary(Map<String, Object> serialized) {
+    var marked = new LinkedHashMap<String, Object>(serialized);
+    marked.put("primary", false);
+    return Collections.unmodifiableMap(marked);
   }
 
   private static String processStatus(
@@ -1059,6 +1081,62 @@ public final class CatalogToolExecutor implements ClientToolHandler, AutoCloseab
   private record Dependency(ResourceKey key, int depth) {}
 
   private record SearchCache(CatalogSnapshot snapshot, ResourceSearchIndex index) {}
+
+  private record ProducingMatch(ProcessRecord process, boolean primary) {}
+
+  private record ProcessCache(
+      CatalogSnapshot snapshot,
+      Map<String, List<ProducingMatch>> producers,
+      Map<String, List<ProcessRecord>> consumers) {
+
+    private static ProcessCache build(CatalogSnapshot snapshot) {
+      var producers = new java.util.HashMap<String, List<ProducingMatch>>();
+      var consumers = new java.util.HashMap<String, List<ProcessRecord>>();
+      for (var process : snapshot.processes()) {
+        for (var output : process.outputs()) {
+          var matches =
+              producers.computeIfAbsent(output.resource().id(), ignored -> new ArrayList<>());
+          var existing = -1;
+          for (var index = 0; index < matches.size(); index++) {
+            if (matches.get(index).process().equals(process)) {
+              existing = index;
+              break;
+            }
+          }
+          if (existing < 0) {
+            matches.add(new ProducingMatch(process, output.primary()));
+          } else if (output.primary()) {
+            matches.set(existing, new ProducingMatch(process, true));
+          }
+        }
+        var consumed = new HashSet<String>();
+        for (var group : process.inputs()) {
+          for (var alternative : group.alternatives()) {
+            if (consumed.add(alternative.id())) {
+              consumers
+                  .computeIfAbsent(alternative.id(), ignored -> new ArrayList<>())
+                  .add(process);
+            }
+          }
+        }
+        for (var catalyst : process.catalysts()) {
+          if (consumed.add(catalyst.resource().id())) {
+            consumers
+                .computeIfAbsent(catalyst.resource().id(), ignored -> new ArrayList<>())
+                .add(process);
+          }
+        }
+      }
+      var immutableProducers = new LinkedHashMap<String, List<ProducingMatch>>();
+      producers.forEach((key, value) -> immutableProducers.put(key, List.copyOf(value)));
+      var immutableConsumers = new LinkedHashMap<String, List<ProcessRecord>>();
+      consumers.forEach((key, value) -> immutableConsumers.put(key, List.copyOf(value)));
+      return new ProcessCache(
+          snapshot,
+          Collections.unmodifiableMap(immutableProducers),
+          Collections.unmodifiableMap(immutableConsumers));
+    }
+  }
 
   private static final class RunningTask {
     private final ClientToolCall call;

@@ -104,6 +104,17 @@ class BuildPreviewToolPayloadsTest {
   }
 
   @Test
+  void rejectsAnOutOfRangeRotationAtParseTime() {
+    // ClientToolCall validates rotation on the wire already; the parser re-checks defensively and
+    // names the legal values so the tool error can feed them back to the model.
+    var failure =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> PreviewArguments.parse(new HashMap<>(mutate("rotation", 45))));
+    assertEquals("preview rotation must be one of 0, 90, 180, 270", failure.getMessage());
+  }
+
+  @Test
   void boundsSequenceToTheContract() {
     assertDoesNotThrow(() -> call(validArguments(), 63));
     assertThrows(IllegalArgumentException.class, () -> call(validArguments(), 64));

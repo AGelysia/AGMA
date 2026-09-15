@@ -307,7 +307,7 @@ public final class StandaloneSettingsScreen extends Screen {
       localStatus = tr("screen.agma_standalone.private_data_deleted").getString();
       localStatusError = false;
     } catch (RuntimeException failure) {
-      localStatus = "CONFIG_DELETE_FAILED";
+      localStatus = tr("screen.agma_standalone.config_delete_failed").getString();
       localStatusError = true;
     }
     confirmDelete = false;
@@ -325,7 +325,7 @@ public final class StandaloneSettingsScreen extends Screen {
       localStatus = tr("screen.agma_standalone.runtime_uninstalled").getString();
       localStatusError = false;
     } catch (RuntimeException failure) {
-      localStatus = "RUNTIME_UNINSTALL_FAILED";
+      localStatus = tr("screen.agma_standalone.runtime_uninstall_failed").getString();
       localStatusError = true;
     }
     confirmUninstall = false;
@@ -442,7 +442,7 @@ public final class StandaloneSettingsScreen extends Screen {
         searchLanguage = profile.webEvidence().searchLanguage();
       }
     } catch (RuntimeException failure) {
-      localStatus = "CONFIG_FILE_INVALID";
+      localStatus = tr("screen.agma_standalone.config_file_invalid").getString();
       localStatusError = true;
     }
   }
@@ -470,7 +470,7 @@ public final class StandaloneSettingsScreen extends Screen {
       localStatus = tr("screen.agma_standalone.diagnostics_exported").getString();
       localStatusError = false;
     } catch (RuntimeException failure) {
-      localStatus = "DIAGNOSTIC_EXPORT_FAILED";
+      localStatus = tr("screen.agma_standalone.diagnostic_export_failed").getString();
       localStatusError = true;
     }
     rebuild();
@@ -552,6 +552,18 @@ public final class StandaloneSettingsScreen extends Screen {
       label(pose, left, top + 132, "screen.agma_standalone.search_cost");
       label(pose, left, top + 162, "screen.agma_standalone.search_budget");
       label(pose, left, top + 192, "screen.agma_standalone.locale");
+    }
+    var lifecycle = runtime.view().profile().state();
+    if (lifecycle == ClientLifecycleState.STARTING
+        || lifecycle == ClientLifecycleState.READY
+        || lifecycle == ClientLifecycleState.STOPPING) {
+      font.draw(
+          pose,
+          font.plainSubstrByWidth(
+              tr("screen.agma_standalone.save_requires_stop").getString(), panelWidth - 266),
+          left + 250,
+          top + panelHeight - 22,
+          SECONDARY_TEXT);
     }
     if (!localStatus.isBlank()) {
       font.draw(

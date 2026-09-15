@@ -3,6 +3,7 @@ package dev.minecraftagent.standalone.fabric;
 import dev.minecraftagent.standalone.common.CatalogToolExecutor;
 import dev.minecraftagent.standalone.common.ClientLifecycleState;
 import dev.minecraftagent.standalone.common.ClientRuntimeController;
+import dev.minecraftagent.standalone.common.ClientRuntimeStateText;
 import dev.minecraftagent.standalone.common.ClientToolHandler;
 import dev.minecraftagent.standalone.common.StandaloneUiState;
 import dev.minecraftagent.standalone.common.TextCompletion;
@@ -315,7 +316,8 @@ public final class StandaloneAssistantScreen extends Screen {
       state.lastCostMicroUsd = 0;
       state.lastCostKind = null;
       state.sources = List.of();
-      state.status = completion.errorCode();
+      var message = completion.errorMessage();
+      state.status = message == null || message.isBlank() ? completion.errorCode() : message;
     }
     rebuildWidgets();
   }
@@ -363,7 +365,9 @@ public final class StandaloneAssistantScreen extends Screen {
 
   private String safeRuntimeFailure() {
     var code = runtime.view().startupFailureCode();
-    return code == null ? "RUNTIME_START_FAILED" : code;
+    return Component.translatable(
+            ClientRuntimeStateText.startupFailureKey(code), code == null ? "" : code)
+        .getString();
   }
 
   private void scroll(int delta) {
@@ -389,7 +393,8 @@ public final class StandaloneAssistantScreen extends Screen {
     graphics.fill(left, top, left + panelWidth, top + panelHeight, PANEL_BACKGROUND);
     graphics.fill(left, top, left + panelWidth, top + 1, PANEL_BORDER);
     graphics.fill(left, top, left + 3, top + panelHeight, ACCENT);
-    var runtimeState = runtime.view().profile().state().name().toLowerCase(java.util.Locale.ROOT);
+    var runtimeState =
+        Component.translatable(ClientRuntimeStateText.stateKey(runtime.view().profile().state()));
     graphics.drawString(
         font,
         Component.translatable("screen.agma_standalone.runtime_state", runtimeState),

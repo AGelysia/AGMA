@@ -344,6 +344,181 @@ describe("OpenAI-compatible Chat Completions provider", () => {
     });
   });
 
+  it("truncates an over-long plain-text answer instead of rejecting it", async () => {
+    const provider = new OpenAiChatCompletionsProvider({
+      provider: "deepseek",
+      fetch: vi.fn().mockResolvedValue(
+        jsonResponse({
+          choices: [
+            {
+              index: 0,
+              finish_reason: "stop",
+              message: { role: "assistant", content: `  ${"x".repeat(12000)}  ` },
+            },
+          ],
+        }),
+      ),
+    });
+
+    await expect(provider.generate(request())).resolves.toEqual({
+      type: "final",
+      fallbackText: "x".repeat(8192),
+    });
+  });
+
+  it("rejects an empty completion cut off by the output token limit as actionable", async () => {
+    const provider = new OpenAiChatCompletionsProvider({
+      provider: "glm",
+      fetch: vi.fn().mockResolvedValue(
+        jsonResponse({
+          choices: [
+            {
+              index: 0,
+              finish_reason: "length",
+              message: {
+                role: "assistant",
+                content: "",
+                reasoning_content: "private chain of thought",
+              },
+            },
+          ],
+        }),
+      ),
+    });
+
+    const operation = provider.generate(request({ provider: "glm", model: "glm-test" }));
+    await expect(operation).rejects.toMatchObject({ code: "MODEL_OUTPUT_TRUNCATED" });
+    await expect(operation).rejects.not.toThrow(/private chain of thought/u);
+  });
+
+  it("disables GLM thinking mode in the request body", async () => {
+    const fetchImplementation = vi.fn().mockResolvedValue(
+      jsonResponse({
+        choices: [
+          {
+            index: 0,
+            finish_reason: "stop",
+            message: { role: "assistant", content: "Done." },
+          },
+        ],
+      }),
+    );
+    const provider = new OpenAiChatCompletionsProvider({
+      provider: "glm",
+      fetch: fetchImplementation,
+    });
+
+    await expect(
+      provider.generate(request({ provider: "glm", model: "glm-test" })),
+    ).resolves.toEqual({ type: "final", fallbackText: "Done." });
+
+    const body = JSON.parse(
+      String((fetchImplementation.mock.calls[0]?.[1] as RequestInit).body),
+    ) as Record<string, unknown>;
+    expect(body["thinking"]).toEqual({ type: "disabled" });
+  });
+
+  it("honors a configured Kimi base URL for international keys", async () => {
+    const fetchImplementation = vi.fn().mockResolvedValue(
+      jsonResponse({
+        object: "list",
+        data: [{ id: "kimi-test", object: "model", owned_by: "moonshot" }],
+      }),
+    );
+    const provider = new OpenAiChatCompletionsProvider({
+      provider: "kimi",
+      baseUrl: "https://api.moonshot.ai",
+      fetch: fetchImplementation,
+    });
+
+    await expect(
+      provider.check({
+        provider: "kimi",
+        model: "kimi-test",
+        apiKey: API_KEY,
+        signal: new AbortController().signal,
+      }),
+    ).resolves.toEqual({ ok: true });
+
+    const [url] = fetchImplementation.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("https://api.moonshot.ai/models");
+  });
+
+  it("replays an assistant continuation longer than the fallback text limit", async () => {
+    const longPreface = "x".repeat(9000);
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          choices: [
+            {
+              index: 0,
+              finish_reason: "tool_calls",
+              message: {
+                role: "assistant",
+                content: longPreface,
+                tool_calls: [
+                  {
+                    id: "call-1",
+                    type: "function",
+                    function: { name: "server_info_read", arguments: "{}" },
+                  },
+                ],
+              },
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          choices: [
+            {
+              index: 0,
+              finish_reason: "stop",
+              message: { role: "assistant", content: "Server is ready." },
+            },
+          ],
+        }),
+      );
+    const provider = new OpenAiChatCompletionsProvider({
+      provider: "deepseek",
+      fetch: fetchImplementation,
+    });
+    const base = request({
+      tools: [
+        {
+          id: "server.info.read",
+          providerName: "server_info_read",
+          description: "Read server information.",
+          parameters: { type: "object", properties: {}, additionalProperties: false },
+        },
+      ],
+    });
+
+    const first = await provider.generate(base);
+    if (first.type !== "tool_call") {
+      throw new Error("expected a tool call");
+    }
+    await expect(
+      provider.generate({
+        ...base,
+        continuation: first.continuation,
+        toolOutput: {
+          providerCallId: first.providerCallId,
+          output: '{"status":"succeeded","result":{"onlinePlayers":1}}',
+        },
+      }),
+    ).resolves.toEqual({ type: "final", fallbackText: "Server is ready." });
+
+    const secondBody = JSON.parse(
+      String((fetchImplementation.mock.calls[1]?.[1] as RequestInit).body),
+    ) as { messages: Array<Record<string, unknown>> };
+    expect(secondBody.messages.at(-2)).toMatchObject({
+      role: "assistant",
+      content: longPreface,
+    });
+  });
+
   it("rejects mismatched provider state and unknown tools", async () => {
     const unknownTool = new OpenAiChatCompletionsProvider({
       provider: "deepseek",
@@ -492,7 +667,7 @@ describe("OpenAI-compatible Chat Completions provider", () => {
   it.each([
     [401, "MODEL_AUTHENTICATION_FAILED"],
     [403, "MODEL_AUTHENTICATION_FAILED"],
-    [404, "MODEL_UNAVAILABLE"],
+    [404, "MODEL_NOT_FOUND"],
     [429, "MODEL_RATE_LIMITED"],
     [500, "PROVIDER_UNAVAILABLE"],
   ] as const)("maps HTTP %s without exposing private upstream detail", async (status, code) => {
