@@ -32,7 +32,9 @@ class LitematicaClientControllerTest {
     var report = controller.load(controller.prepareLoad(VIEW_ID, "Preview"));
 
     assertEquals(LitematicaDisplayReport.State.LOADED, report.state());
-    assertTrue(adapter.loaded.managedFile().startsWith(root));
+    // The controller anchors managed files at the real path; on Windows the @TempDir may carry
+    // an 8.3 short name that toRealPath() expands, so compare against the real path too.
+    assertTrue(adapter.loaded.managedFile().startsWith(root.toRealPath()));
     assertEquals(preview.contentHash(), adapter.loaded.contentSha256());
     assertEquals(preview.origin().x(), adapter.loaded.originX());
     assertEquals(preview.origin().y(), adapter.loaded.originY());

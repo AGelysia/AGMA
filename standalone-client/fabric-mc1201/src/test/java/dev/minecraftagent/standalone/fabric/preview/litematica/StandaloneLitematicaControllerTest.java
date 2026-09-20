@@ -36,7 +36,7 @@ class StandaloneLitematicaControllerTest {
     var report = controller.load(controller.prepareLoad(VIEW_ID, "Preview"));
 
     assertEquals(LitematicaDisplayReport.State.LOADED, report.state());
-    assertTrue(adapter.loaded.managedFile().startsWith(root));
+    assertTrue(adapter.loaded.managedFile().startsWith(root.toRealPath()));
     assertEquals(preview.changeSetHash(), adapter.loaded.contentSha256());
     assertEquals(preview.origin().x(), adapter.loaded.originX());
     assertEquals(preview.origin().y(), adapter.loaded.originY());
@@ -174,7 +174,7 @@ class StandaloneLitematicaControllerTest {
 
     assertEquals(1, adapter.loadCalls);
     assertEquals(Optional.of(preview.previewId()), controller.loadedPreviewId());
-    assertTrue(adapter.loaded.managedFile().startsWith(root));
+    assertTrue(adapter.loaded.managedFile().startsWith(root.toRealPath()));
     assertEquals(preview.origin().x(), adapter.loaded.originX());
 
     controller.load(preview);
