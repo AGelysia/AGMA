@@ -1,0 +1,16 @@
+{
+  "type": "techreborn:blast_furnace",
+  "power": 128,
+  "time": 200,
+  "heat": 1700,
+  "ingredients": [
+    {
+      "tag": "c:aluminum_dusts"
+    }
+  ],
+  "results": [
+    {
+      "item": "techreborn:aluminum_ingot"
+    }
+  ]
+}

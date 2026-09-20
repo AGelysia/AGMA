@@ -9,6 +9,7 @@
 !.env.example
 **/config.local.yml
 **/data/
+!standalone-client/core/src/test/resources/unpack-fixtures/data/
 **/logs/
 run/
 run-gametest/
