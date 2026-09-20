@@ -83,6 +83,10 @@ jobs:
       - name: Dependency audit
         working-directory: agent-runtime
         run: npm audit --audit-level=high
+      # paper-smoke.sh and managed-paper-smoke.sh grep logs with rg; the
+      # ubuntu-24.04 runner image no longer ships it.
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
       - name: Paper smoke test
         run: ./scripts/paper-smoke.sh
       - name: Managed runtime smoke test
