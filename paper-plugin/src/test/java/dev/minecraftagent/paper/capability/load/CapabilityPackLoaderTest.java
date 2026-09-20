@@ -14,17 +14,26 @@ import dev.minecraftagent.paper.capability.model.CapabilityApproval;
 import dev.minecraftagent.paper.capability.model.CapabilityDiagnostic.Code;
 import dev.minecraftagent.paper.capability.model.CapabilityManifest.PermissionMinimum;
 import dev.minecraftagent.paper.proposal.RiskLevel;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class CapabilityPackLoaderTest {
   @TempDir Path temporaryDirectory;
+
+  @BeforeEach
+  void requirePosixPermissions() {
+    Assumptions.assumeTrue(
+        FileSystems.getDefault().supportedFileAttributeViews().contains("posix"));
+  }
 
   @Test
   void loadsJsonAndYamlThroughTheSameCanonicalTypedPipeline() throws Exception {

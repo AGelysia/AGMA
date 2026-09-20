@@ -5,11 +5,13 @@ import dev.minecraftagent.paper.capability.load.CapabilityPackLoader;
 import dev.minecraftagent.paper.capability.load.InstalledPluginInventory;
 import dev.minecraftagent.paper.capability.load.InstalledPluginInventory.InstalledPlugin;
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.List;
 import java.util.Set;
+import org.junit.jupiter.api.Assumptions;
 
 public final class TestCapabilityManifests {
   private static final Set<PosixFilePermission> FILE_PERMISSIONS =
@@ -69,6 +71,8 @@ public final class TestCapabilityManifests {
   }
 
   public static Path createPack(Path parent, String name) throws IOException {
+    Assumptions.assumeTrue(
+        FileSystems.getDefault().supportedFileAttributeViews().contains("posix"));
     var root = Files.createDirectory(parent.resolve(name));
     Files.setPosixFilePermissions(
         root,
@@ -80,6 +84,8 @@ public final class TestCapabilityManifests {
   }
 
   public static Path write(Path root, String name, String source) throws IOException {
+    Assumptions.assumeTrue(
+        FileSystems.getDefault().supportedFileAttributeViews().contains("posix"));
     var file = Files.writeString(root.resolve(name), source);
     Files.setPosixFilePermissions(file, FILE_PERMISSIONS);
     return file;

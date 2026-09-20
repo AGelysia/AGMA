@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.minecraftagent.paper.runtime.RuntimeDeploymentMode;
 import java.net.URI;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -14,6 +15,8 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -21,6 +24,12 @@ class PaperConfigLoaderTest {
   @TempDir Path temporaryDirectory;
 
   private final PaperConfigLoader loader = new PaperConfigLoader();
+
+  @BeforeEach
+  void requirePosixPermissions() {
+    Assumptions.assumeTrue(
+        FileSystems.getDefault().supportedFileAttributeViews().contains("posix"));
+  }
 
   @Test
   void legacyRuntimeSettingsConstructorDefaultsToExternal() {
@@ -348,8 +357,6 @@ class PaperConfigLoaderTest {
 
   @Test
   void rejectsGroupOrWorldWritableConfiguration() throws Exception {
-    org.junit.jupiter.api.Assumptions.assumeTrue(
-        java.nio.file.FileSystems.getDefault().supportedFileAttributeViews().contains("posix"));
     var path = StartupTestFixture.writeConfig(temporaryDirectory, StartupTestFixture.validConfig());
     Files.setPosixFilePermissions(path, PosixFilePermissions.fromString("rw-rw-r--"));
 

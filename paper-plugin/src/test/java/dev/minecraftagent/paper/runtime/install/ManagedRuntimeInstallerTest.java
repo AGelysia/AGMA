@@ -14,6 +14,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -28,6 +29,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -38,6 +41,12 @@ class ManagedRuntimeInstallerTest {
       "{\"transport\":\"stdio\"}\n".getBytes(StandardCharsets.UTF_8);
 
   @TempDir Path temporaryDirectory;
+
+  @BeforeEach
+  void requirePosixPermissions() {
+    Assumptions.assumeTrue(
+        FileSystems.getDefault().supportedFileAttributeViews().contains("posix"));
+  }
 
   @Test
   void installsAtomicallyWithPrivatePermissionsAndIsIdempotent() throws Exception {

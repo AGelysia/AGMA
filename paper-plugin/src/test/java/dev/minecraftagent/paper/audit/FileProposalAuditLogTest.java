@@ -13,6 +13,7 @@ import dev.minecraftagent.paper.proposal.RiskLevel;
 import dev.minecraftagent.paper.startup.StartupFailure;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFileAttributes;
@@ -20,6 +21,8 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -42,6 +45,12 @@ class FileProposalAuditLogTest {
       PosixFilePermissions.fromString("rw-------");
 
   @TempDir Path temporaryDirectory;
+
+  @BeforeEach
+  void requirePosixPermissions() {
+    Assumptions.assumeTrue(
+        FileSystems.getDefault().supportedFileAttributeViews().contains("posix"));
+  }
 
   @Test
   void createsPrivateOwnerBoundAuditDirectoryAndFile() throws Exception {

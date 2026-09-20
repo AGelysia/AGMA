@@ -5,9 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import dev.minecraftagent.paper.startup.StartupFailure;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -15,6 +18,12 @@ class ManagedRuntimeSetupProbeTest {
   @TempDir Path temporaryDirectory;
 
   private final ManagedRuntimeSetupProbe probe = new ManagedRuntimeSetupProbe();
+
+  @BeforeEach
+  void requirePosixPermissions() {
+    Assumptions.assumeTrue(
+        FileSystems.getDefault().supportedFileAttributeViews().contains("posix"));
+  }
 
   @Test
   void acceptsAConfiguredProviderWithoutExposingItsValues() throws Exception {

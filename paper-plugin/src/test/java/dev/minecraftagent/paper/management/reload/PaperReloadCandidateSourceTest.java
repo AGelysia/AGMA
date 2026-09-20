@@ -3,6 +3,7 @@ package dev.minecraftagent.paper.management.reload;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -10,6 +11,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -19,13 +22,17 @@ class PaperReloadCandidateSourceTest {
 
   @TempDir Path temporaryDirectory;
 
+  @BeforeEach
+  void requirePosixPermissions() {
+    Assumptions.assumeTrue(
+        FileSystems.getDefault().supportedFileAttributeViews().contains("posix"));
+  }
+
   @Test
   void reusesStrictLoaderWithoutSideEffectsAndCapturesEnvironment() throws Exception {
     var configPath = temporaryDirectory.resolve("config.yml");
     Files.writeString(configPath, validConfig());
-    if (configPath.getFileSystem().supportedFileAttributeViews().contains("posix")) {
-      Files.setPosixFilePermissions(configPath, PosixFilePermissions.fromString("rw-------"));
-    }
+    Files.setPosixFilePermissions(configPath, PosixFilePermissions.fromString("rw-------"));
     var environment = new HashMap<>(Map.of("MINECRAFT_AGENT_SERVER_TOKEN", TOKEN));
     var source = new PaperReloadCandidateSource(configPath, temporaryDirectory, environment);
     environment.clear();
